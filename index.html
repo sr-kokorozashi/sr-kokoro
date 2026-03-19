@@ -886,8 +886,8 @@ async function save() {
       const rows = await res.json();
       if (rows && rows[0]) _supabaseRowId = rows[0].id;
     }
-    document.getElementById('sync-status').textContent = '☁️ 保存済';
-    document.getElementById('sync-status').style.color = 'var(--green)';
+    _lastSyncTime = Date.now();
+    updateSyncStatus();
   } catch(e) {
     console.error('Supabase save error:', e);
     document.getElementById('sync-status').textContent = '⚠️ クラウド保存失敗（ローカルのみ）';
