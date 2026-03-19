@@ -584,6 +584,9 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
             <option value="1">時短勤務（時短給付金対象）</option>
           </select>
         </div>
+        <div class="form-group"><label>時短勤務開始日（復帰日と異なる場合）</label>
+          <input class="form-input" id="ff-jitan-start-date" type="date" placeholder="空欄の場合は復帰日を使用">
+        </div>
         <div class="form-group"><label>育休延長</label>
           <select class="form-select" id="ff-ikukyu-extend">
             <option value="">延長なし（1歳まで）</option>
@@ -940,13 +943,36 @@ function getProcDate(c, procId) {
   if (v && typeof v === 'object') return v.date || null;
   return null;
 }
+function getProcMemo(c, procId) {
+  var v = c.procStatus && c.procStatus[procId];
+  if (v && typeof v === 'object') return v.memo || '';
+  return '';
+}
 function setProcSt(c, procId, status, date) {
   if (!c.procStatus) c.procStatus = {};
+  const existingMemo = getProcMemo(c, procId);
   if (status === '済') {
-    c.procStatus[procId] = { status: '済', date: date || today() };
+    c.procStatus[procId] = { status: '済', date: date || today(), memo: existingMemo };
+  } else if (status === '不要') {
+    c.procStatus[procId] = { status: '不要', date: null, memo: existingMemo };
   } else {
-    c.procStatus[procId] = status;
+    c.procStatus[procId] = { status: '未', date: null, memo: existingMemo };
   }
+}
+async function updateProcMemo(procId, caseId, memo, e) {
+  if (e) e.stopPropagation();
+  const c = cases.find(x => x.id === caseId);
+  if (!c) return;
+  if (!c.procStatus) c.procStatus = {};
+  const v = c.procStatus[procId];
+  if (typeof v === 'object' && v !== null) {
+    v.memo = memo;
+  } else {
+    // string形式（'不要'など）の場合はオブジェクトに変換
+    const st = v || '未';
+    c.procStatus[procId] = { status: st, date: null, memo: memo };
+  }
+  await save();
 }
 
 // ===== DATE UTILS =====
@@ -1294,31 +1320,35 @@ function getFemaleProcedures(c) {
   // 2歳まで育休を取得した場合、子が2歳に達するとそのまま終了するため時短給付金の対象期間がない
   if (c.ikukyuExtend !== '2y') {
   procs.push({ section: '【育児時短就業給付金（復帰後に時短勤務する場合）】', isSectionHeader: true });
+  // 時短開始日：jitanStartDateが設定されていればそちらを優先、なければ復帰日
+  const jitanStart = c.jitanStartDate || c.returnDate;
   // 2歳到達日前日
   const jitanEnd2y = calcSecondBirthday(c.birthDate || c.dueDate);
-  // 初回申請期限：時短開始日（≒復帰日）から4か月以内
-  const jitanInitDeadline = c.returnDate ? addDays(c.returnDate, 120) : null;
+  // 初回申請期限：時短開始日から4か月以内
+  const jitanInitDeadline = jitanStart ? addDays(jitanStart, 120) : null;
+  const jitanStartNote = c.jitanStartDate && c.returnDate && c.jitanStartDate !== c.returnDate
+    ? `時短開始日：${fmtDate(c.jitanStartDate)}（復帰日${fmtDate(c.returnDate)}と異なる）` : '';
   procs.push({
     id: 'f-jitan-chingin', no: '①',
     name: '育児時短就業開始時賃金証明書（初回のみ）',
     period: null,
     deadline: jitanInitDeadline,
-    sendDate: c.returnDate ? addDays(c.returnDate, 5) : null,
+    sendDate: jitanStart ? addDays(jitanStart, 5) : null,
     docs: '雇用保険被保険者休業開始時賃金月額証明書・所定労働時間短縮開始時賃金証明書・賃金台帳・出勤簿・労働条件通知書等',
-    note: '育休から引き続き（14日以内に）時短開始の場合は不要',
+    note: '育休から引き続き（14日以内に）時短開始の場合は不要' + (jitanStartNote ? '\n' + jitanStartNote : ''),
   });
   procs.push({
     id: 'f-jitan-shikaku', no: '②',
     name: '育児時短就業給付 受給資格確認・初回支給申請',
-    period: c.returnDate ? `${fmtDate(c.returnDate)} 〜 ${fmtDate(add2MonthsMinus1(c.returnDate))}` : '—',
+    period: jitanStart ? `${fmtDate(jitanStart)} 〜 ${fmtDate(add2MonthsMinus1(jitanStart))}` : '—',
     deadline: jitanInitDeadline,
-    sendDate: c.returnDate ? addDays(c.returnDate, 14) : null,
+    sendDate: jitanStart ? addDays(jitanStart, 14) : null,
     docs: '育児時短就業給付受給資格確認票・（初回）育児時短就業給付金支給申請書・母子手帳または住民票（子の生年月日確認）・育児時短就業開始日確認書類・本来の週所定労働時間確認書類（就業規則等）・労働条件通知書（時短後）・出勤簿・賃金台帳',
-    note: '時短開始日から4か月以内に申請。賃金証明書と同時提出可。',
+    note: '時短開始日から4か月以内に申請。賃金証明書と同時提出可。' + (jitanStartNote ? '\n' + jitanStartNote : ''),
   });
   // 第2回以降（2か月ごと・子が2歳になるまで）
-  if (c.returnDate && jitanEnd2y) {
-    let jps = add2MonthsMinus1(c.returnDate);
+  if (jitanStart && jitanEnd2y) {
+    let jps = add2MonthsMinus1(jitanStart);
     jps = addDays(jps, 1); // 第2回開始
     let jitanNum = 2;
     for (let i = 0; i < 10; i++) {
@@ -1672,13 +1702,14 @@ async function saveNewCase(gender) {
       returnDate: document.getElementById('ff-return-date').value,
       ikukyuExtend: document.getElementById('ff-ikukyu-extend').value,
       jitan: document.getElementById('ff-jitan').value,
+      jitanStartDate: document.getElementById('ff-jitan-start-date').value,
       spouseIkukyu: document.getElementById('ff-spouse-ikukyu').value,
       memo: document.getElementById('ff-memo').value.trim(),
       procStatus: {}, createdAt: new Date().toISOString(),
     };
     cases.push(c); await save();
     closeModal('modal-new-female');
-    ['ff-company','ff-name','ff-child-name','ff-due-date','ff-birth-date','ff-return-date','ff-memo'].forEach(id => document.getElementById(id).value = '');
+    ['ff-company','ff-name','ff-child-name','ff-due-date','ff-birth-date','ff-return-date','ff-jitan-start-date','ff-memo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ff-dates-preview').style.display = 'none';
   } else {
     const company = document.getElementById('fm-company').value.trim();
@@ -1790,21 +1821,27 @@ function openCaseDetail(id) {
     }
     const st = getProcSt(c, p.id);
     const stDate = getProcDate(c, p.id);
+    const stMemo = getProcMemo(c, p.id);
     const overdue = p.deadline && p.deadline < t && st !== '済' && st !== '不要';
     const displaySt = overdue ? '期限超過' : st;
     const deadlineStyle = p.deadline && daysUntil(p.deadline) <= 7 && st !== '済' && st !== '不要' ? 'color:var(--red);font-weight:700;' : '';
     const daysLabel = p.deadline && daysUntil(p.deadline) >= 0 && st !== '済' ? `<br><span style="font-size:10px;color:var(--text-muted);">あと${daysUntil(p.deadline)}日</span>` : '';
     const dateInput = st === '済' ? `<br><input type="date" value="${stDate||''}" style="margin-top:4px;font-size:10px;border:1px solid var(--green);border-radius:4px;padding:2px 4px;color:var(--green);background:var(--green-bg);width:120px;" onchange="updateProcDate('${p.id}','${id}',this.value,event)" onclick="event.stopPropagation()">` : '';
+    const escapedMemo = (stMemo || '').replace(/"/g, '&quot;');
+    const memoInput = `<input type="text" value="${escapedMemo}" placeholder="備考" style="margin-top:5px;display:block;width:100%;font-size:11px;border:1px solid #c5d8ee;border-radius:4px;padding:3px 7px;font-family:inherit;color:#6a8fad;background:#f0f5fb;" onchange="updateProcMemo('${p.id}','${id}',this.value,event)" onclick="event.stopPropagation()">`;
     return `<tr>
       <td style="white-space:nowrap;color:var(--text-muted);font-size:11px;">${p.no}</td>
       <td style="max-width:200px;font-size:12px;">${p.name}${p.note ? `<br><span style="font-size:10px;color:var(--text-muted);white-space:pre-line;">${p.note}</span>` : ''}</td>
       <td style="font-size:11px;color:var(--text-muted);max-width:160px;">${p.period || '—'}</td>
       <td style="font-size:11px;max-width:200px;color:var(--text-muted);">${p.docs || '—'}</td>
       <td style="white-space:nowrap;font-size:11px;${deadlineStyle}">${p.deadline ? fmtDate(p.deadline) : '—'}${daysLabel}</td>
-      <td style="white-space:nowrap;min-width:160px;">
-        <button class="status-btn ${displaySt}" onclick="toggleStatus('${p.id}','${id}',event)">${displaySt}</button>
-        ${st !== '不要' ? `<button class="status-btn 不要" style="margin-left:4px;font-size:10px;" onclick="setIryo('${p.id}','${id}',event)">不要</button>` : ''}
-        ${dateInput}
+      <td style="min-width:200px;">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <button class="status-btn ${displaySt}" onclick="toggleStatus('${p.id}','${id}',event)">${displaySt}</button>
+          ${st !== '不要' ? `<button class="status-btn 不要" style="font-size:10px;" onclick="setIryo('${p.id}','${id}',event)">不要</button>` : ''}
+          ${dateInput}
+        </div>
+        ${memoInput}
       </td>
     </tr>`;
   }).join('');
@@ -1819,6 +1856,7 @@ function openCaseDetail(id) {
       <div class="info-item highlight"><div class="info-item-label">育休開始日</div><div class="info-item-value date">${fmtDate(d.ikukyuStart)}</div></div>
       <div class="info-item"><div class="info-item-label">育休終了日（${calcIkukyuEndLabel(c.ikukyuExtend)}）</div><div class="info-item-value date">${fmtDate(d.ikukyuEnd)}</div></div>
       <div class="info-item"><div class="info-item-label">職場復帰予定日</div><div class="info-item-value date">${fmtDate(c.returnDate)}</div></div>
+      <div class="info-item${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? ' warn' : ''}"><div class="info-item-label">時短勤務開始日${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? '（復帰日と異なる）' : ''}</div><div class="info-item-value date">${c.jitanStartDate ? fmtDate(c.jitanStartDate) : (c.returnDate ? fmtDate(c.returnDate) + '（復帰日と同じ）' : '—')}</div></div>
       <div class="info-item"><div class="info-item-label">出産予定日 / 実分娩日</div><div class="info-item-value date">${fmtDate(c.dueDate)} / ${fmtDate(c.birthDate)}</div></div>
     </div>`;
   } else {
@@ -1890,6 +1928,7 @@ function openEditModal() {
         <div class="form-group"><label>実分娩日</label><input class="form-input" type="date" id="e-birth-date" value="${c.birthDate||''}"></div>
         <div class="form-group"><label>復帰予定日</label><input class="form-input" type="date" id="e-return-date" value="${c.returnDate||''}"></div>
         <div class="form-group"><label>復帰後の勤務形態</label><select class="form-select" id="e-jitan"><option value="" ${!c.jitan?'selected':''}>通常勤務</option><option value="1" ${c.jitan==='1'?'selected':''}>時短勤務</option></select></div>
+        <div class="form-group"><label>時短勤務開始日（復帰日と異なる場合）</label><input class="form-input" type="date" id="e-jitan-start-date" value="${c.jitanStartDate||''}" placeholder="空欄の場合は復帰日を使用"></div>
         <div class="form-group"><label>育休延長</label><select class="form-select" id="e-ikukyu-extend"><option value="" ${!c.ikukyuExtend?'selected':''}>延長なし（1歳）</option><option value="18m" ${c.ikukyuExtend==='18m'?'selected':''}>1歳6か月まで</option><option value="2y" ${c.ikukyuExtend==='2y'?'selected':''}>2歳まで</option></select></div>
         <div class="form-group"><label>配偶者育休</label><select class="form-select" id="e-spouse-ikukyu"><option value="yes" ${c.spouseIkukyu==='yes'?'selected':''}>14日以上取得</option><option value="sangokyu" ${c.spouseIkukyu==='sangokyu'?'selected':''}>産後休業なし</option><option value="musho" ${c.spouseIkukyu==='musho'?'selected':''}>無業・自営</option><option value="no" ${c.spouseIkukyu==='no'?'selected':''}>取得なし</option><option value="unknown" ${c.spouseIkukyu==='unknown'?'selected':''}>未確認</option></select></div>
         <div class="form-group full"><label>備考</label><textarea class="form-textarea" id="e-memo">${c.memo||''}</textarea></div>
@@ -1934,6 +1973,7 @@ async function saveEdit() {
   c.returnDate = document.getElementById('e-return-date').value;
   if (document.getElementById('e-ikukyu-extend')) c.ikukyuExtend = document.getElementById('e-ikukyu-extend').value;
   if (document.getElementById('e-jitan')) c.jitan = document.getElementById('e-jitan').value;
+  if (document.getElementById('e-jitan-start-date')) c.jitanStartDate = document.getElementById('e-jitan-start-date').value;
   c.spouseIkukyu = document.getElementById('e-spouse-ikukyu').value;
   c.memo = document.getElementById('e-memo').value.trim();
   if (c.gender === 'male') {
