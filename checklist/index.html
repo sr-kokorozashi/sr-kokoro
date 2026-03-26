@@ -771,12 +771,12 @@ async function loadData() {
   const rows = await sbGet();
   if (rows === null) {
     setSyncStatus('❌ 接続失敗（ローカルで動作中）');
-    // fallback to localStorage
     const local = localStorage.getItem('cl-cases');
     if (local) cases = JSON.parse(local);
   } else {
     cases = rows.map(r => ({
       ...r,
+      id: String(r.id),
       checks: r.checks || {},
       waitFlags: r.wait_flags || {},
       waitMemo: r.wait_memo || '',
@@ -807,7 +807,6 @@ async function saveCase(c) {
 }
 
 async function insertCase(c) {
-  localStorage.setItem('cl-cases', JSON.stringify(cases));
   const payload = {
     company: c.company,
     name: c.name,
@@ -822,7 +821,8 @@ async function insertCase(c) {
   };
   const row = await sbInsert(payload);
   if (row) {
-    c.id = row.id;
+    c.id = String(row.id);
+    localStorage.setItem('cl-cases', JSON.stringify(cases));
     _lastSync = Date.now();
     setSyncStatus('☁️ 保存済');
     return true;
@@ -1165,7 +1165,7 @@ async function createCase() {
   document.getElementById('n-na').value = '';
   selProc = null;
   document.getElementById('n-submit').disabled = true;
-  renderAll();
+  // Supabaseに保存（IDが確定してからUIを更新）
   const ok = await insertCase(c);
   if (ok) {
     toast('✅ 案件を作成しました');
@@ -1173,6 +1173,7 @@ async function createCase() {
     openChecklist(c.id);
   } else {
     toast('⚠️ DB保存に失敗しました。テーブルの設定を確認してください。');
+    renderAll();
   }
 }
 
