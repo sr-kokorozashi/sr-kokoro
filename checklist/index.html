@@ -1153,27 +1153,39 @@ async function createCase() {
   const co = document.getElementById('n-co').value.trim();
   const na = document.getElementById('n-na').value.trim();
   if (!co || !selProc) return;
-  const c = {
-    id: 'tmp_' + Date.now(),
-    company: co, name: na, proc: selProc,
-    status: 'none', checks: {}, waitFlags: {}, waitMemo: '', tantoLog: [],
-    created_at: new Date().toISOString(),
-  };
-  cases.push(c);
+  const procKey = selProc;
   closeModal('ov-new');
   document.getElementById('n-co').value = '';
   document.getElementById('n-na').value = '';
   selProc = null;
   document.getElementById('n-submit').disabled = true;
-  // Supabaseに保存（IDが確定してからUIを更新）
-  const ok = await insertCase(c);
-  if (ok) {
+  setSyncStatus('🔄 保存中...');
+  // まずSupabaseに保存してIDを確定させる
+  const payload = {
+    company: co, name: na, proc: procKey,
+    status: 'none', checks: {}, wait_flags: {}, wait_memo: '', tanto_log: [],
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  };
+  const row = await sbInsert(payload);
+  if (row) {
+    const c = {
+      ...row,
+      id: String(row.id),
+      checks: row.checks || {},
+      waitFlags: row.wait_flags || {},
+      waitMemo: row.wait_memo || '',
+      tantoLog: row.tanto_log || [],
+    };
+    cases.push(c);
+    localStorage.setItem('cl-cases', JSON.stringify(cases));
+    _lastSync = Date.now();
+    setSyncStatus('☁️ 保存済');
     toast('✅ 案件を作成しました');
     renderAll();
     openChecklist(c.id);
   } else {
     toast('⚠️ DB保存に失敗しました。テーブルの設定を確認してください。');
-    renderAll();
+    setSyncStatus('⚠️ 保存失敗');
   }
 }
 
