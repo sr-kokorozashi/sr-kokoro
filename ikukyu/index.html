@@ -354,7 +354,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
     <!-- UPCOMING -->
     <div class="page" id="page-upcoming">
       <div class="page-header">
-        <div><div class="page-title">期限カレンダー</div><div class="page-sub">今後30日間の期限一覧</div></div>
+        <div><div class="page-title">期限カレンダー</div><div class="page-sub">期限超過・申請可能な手続き一覧</div></div>
       </div>
       <div id="upcoming-content"></div>
     </div>
@@ -1224,6 +1224,7 @@ function getFemaleProcedures(c) {
     name: '育児休業給付 受給資格確認・第1回支給申請',
     period: d.kyufuPeriods[0] ? `${fmtDate(d.kyufuPeriods[0].start)} 〜 ${fmtDate(d.kyufuPeriods[0].end)}` : '—',
     deadline: d.kyufuPeriods[0] ? calcDeadline(d.kyufuPeriods[0].end) : null,
+    availableDate: d.kyufuPeriods[0] ? addDays(d.kyufuPeriods[0].end, 1) : null,
     sendDate: d.kyufuPeriods[0] ? addDays(d.kyufuPeriods[0].end, -5) : null,
     docs: '育児休業給付受給資格確認票・（初回）育児休業給付金支給申請書・母子手帳（出生届出済証明ページ）・賃金台帳・出勤簿',
     note: '賃金証明書と同時提出可',
@@ -1270,6 +1271,7 @@ function getFemaleProcedures(c) {
         name: rowName,
         period: fmtDate(p.start) + ' 〜 ' + fmtDate(p.end),
         deadline: p.deadline,
+        availableDate: addDays(p.end, 1),
         sendDate: addDays(p.end, -5),
         docs: '育児休業給付金支給申請書・賃金台帳・出勤簿',
         note: rowNote,
@@ -1408,6 +1410,7 @@ function getFemaleProcedures(c) {
     name: '育児時短就業給付 受給資格確認・初回支給申請',
     period: jitanStart ? `${fmtDate(jitanStart)} 〜 ${fmtDate(add2MonthsMinus1(jitanStart))}` : '—',
     deadline: jitanInitDeadline,
+    availableDate: jitanStart ? addDays(add2MonthsMinus1(jitanStart), 1) : null,
     sendDate: jitanStart ? addDays(jitanStart, 14) : null,
     docs: '育児時短就業給付受給資格確認票・（初回）育児時短就業給付金支給申請書・母子手帳または住民票（子の生年月日確認）・育児時短就業開始日確認書類・本来の週所定労働時間確認書類（就業規則等）・労働条件通知書（時短後）・出勤簿・賃金台帳',
     note: '時短開始日から4か月以内に申請。賃金証明書と同時提出可。' + (jitanStartNote ? '\n' + jitanStartNote : ''),
@@ -1427,6 +1430,7 @@ function getFemaleProcedures(c) {
         name: `育児時短就業給付金 第${jitanNum}回`,
         period: `${fmtDate(jps)} 〜 ${fmtDate(jend)}`,
         deadline: jdeadline,
+        availableDate: addDays(jend, 1),
         sendDate: addDays(jend, -5),
         docs: '育児時短就業給付金支給申請書・賃金台帳・出勤簿',
         note: '各月賃金の10%。支給限度額471,393円。最低2,411円以下不支給。',
@@ -1506,6 +1510,7 @@ function getMaleProcedures(c) {
       name: '出生時育児休業給付金（産後パパ育休給付）',
       period: b ? `出生後8週間以内（〜${fmtDate(d.papaPeriodEnd)}）` : '—',
       deadline: papaDeadline,
+      availableDate: d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 1) : null,
       sendDate: d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 3) : null,
       docs: '①育児休業給付受給資格確認票・出生時育児休業給付金支給申請書（専用様式・通常育休の様式と別）　②雇用保険被保険者休業開始時賃金月額証明書（①と同時提出）　③母子手帳（出生届出済証明ページ）のコピー　④出生時育児休業申出書のコピー　⑤賃金台帳・出勤簿（対象期間分）　⑥通帳またはキャッシュカードのコピー',
       note: '⚠️ 申請受付開始は産後8週間経過後。賃金証明書と同時に申請する。\n就業日数が最大10日（10日超の場合は80時間）以下であること。\n2回分割取得の場合も1回の申請書で申請可。',
@@ -1562,6 +1567,7 @@ function getMaleProcedures(c) {
       name: '育児休業給付金 受給資格確認・第1回支給申請',
       period: d.kyufuPeriods[0] ? `${fmtDate(d.kyufuPeriods[0].start)} 〜 ${fmtDate(d.kyufuPeriods[0].end)}` : '—',
       deadline: d.kyufuPeriods[0] ? d.kyufuPeriods[0].deadline : null,
+      availableDate: d.kyufuPeriods[0] ? addDays(d.kyufuPeriods[0].end, 1) : null,
       sendDate: d.kyufuPeriods[0] ? addDays(d.kyufuPeriods[0].end, -5) : null,
       docs: '育児休業給付受給資格確認票・（初回）育児休業給付金支給申請書・母子手帳（出生届出済証明ページ）のコピー・賃金台帳・出勤簿',
       note: '賃金証明書と同時提出可（産後パパ育休後に引き続く場合も初回申請が必要な場合あり）',
@@ -1576,6 +1582,7 @@ function getMaleProcedures(c) {
           name: `育児休業給付金 第${p.num}回${isLast ? '【延長確認必須】' : ''}`,
           period: `${fmtDate(p.start)} 〜 ${fmtDate(p.end)}`,
           deadline: p.deadline,
+          availableDate: addDays(p.end, 1),
           sendDate: addDays(p.end, -5),
           docs: '育児休業給付金支給申請書・賃金台帳・出勤簿',
           note: isLast ? '⚠️ 延長の場合：①延長事由認定申告書②保育所申込書写し③入所保留通知書を添付' : '',
@@ -1601,6 +1608,7 @@ function getMaleProcedures(c) {
       name: '育児休業給付金 受給資格確認・第2回ブロック初回支給申請',
       period: d.kyufuPeriods.filter(p => p.blockNum === 2)[0] ? `${fmtDate(d.kyufuPeriods.filter(p => p.blockNum === 2)[0].start)} 〜 ${fmtDate(d.kyufuPeriods.filter(p => p.blockNum === 2)[0].end)}` : '—',
       deadline: d.kyufuPeriods.filter(p => p.blockNum === 2)[0]?.deadline || null,
+      availableDate: d.kyufuPeriods.filter(p => p.blockNum === 2)[0] ? addDays(d.kyufuPeriods.filter(p => p.blockNum === 2)[0].end, 1) : null,
       sendDate: d.kyufuPeriods.filter(p => p.blockNum === 2)[0] ? addDays(d.kyufuPeriods.filter(p => p.blockNum === 2)[0].end, -5) : null,
       docs: '育児休業給付受給資格確認票・（初回）育児休業給付金支給申請書・母子手帳（出生届出済証明ページ）・賃金台帳・出勤簿',
       note: '分割取得の場合、2回目ブロックでも受給資格確認が必要な場合あり（ハローワークで確認）',
@@ -1612,6 +1620,7 @@ function getMaleProcedures(c) {
           name: `育児休業給付金 第${p.num}回`,
           period: `${fmtDate(p.start)} 〜 ${fmtDate(p.end)}`,
           deadline: p.deadline,
+          availableDate: addDays(p.end, 1),
           sendDate: addDays(p.end, -5),
           docs: '育児休業給付金支給申請書・賃金台帳・出勤簿',
           note: '',
@@ -1738,6 +1747,7 @@ function getAlerts(c) {
     if (status === '済' || status === '不要') return;
     if (p.deadline && p.deadline < t) alerts.push({ type: 'overdue', proc: p });
     else if (p.deadline && daysUntil(p.deadline) <= 7) alerts.push({ type: 'soon', proc: p });
+    else if (p.availableDate && p.availableDate <= t) alerts.push({ type: 'available', proc: p });
   });
   return alerts;
 }
@@ -1867,6 +1877,7 @@ function renderCaseTable() {
     const alerts = getAlerts(c);
     const overdue = alerts.filter(a => a.type === 'overdue').length;
     const soon = alerts.filter(a => a.type === 'soon').length;
+    const available = alerts.filter(a => a.type === 'available').length;
     const gLabel = c.gender === 'male' ? '<span class="gender-badge male">♂ 男性</span>' : '<span class="gender-badge female">♀ 女性</span>';
     let nextDeadline = '—';
     const futureDead = getProcedures(c).filter(p => !p.isSectionHeader && p.deadline && getProcSt(c, p.id) !== '済' && daysUntil(p.deadline) >= 0).sort((a,b) => a.deadline > b.deadline ? 1 : -1);
@@ -1893,6 +1904,7 @@ function renderCaseTable() {
         ${kobunshoChips}
         ${!kobunshoChips && overdue > 0 ? `<span class="alert-chip red">超過${overdue}件</span>` : ''}
         ${!kobunshoChips && soon > 0 ? `<span class="alert-chip orange">7日内${soon}件</span>` : ''}
+        ${!kobunshoChips && available > 0 ? `<span class="alert-chip" style="background:#eef7f2;color:#27ae60;">申請可${available}件</span>` : ''}
         ${!kobunshoChips && alerts.length === 0 ? '<span style="font-size:11px;color:var(--text-muted);">問題なし</span>' : ''}
       </div></td>
     </tr>`;
@@ -2123,9 +2135,12 @@ function renderDashboard() {
     procs.forEach(p => {
       const status = getProcSt(c, p.id);
       if (status === '済' || status === '不要') { if(status==='済') done++; return; }
-      if (!p.deadline) return;
-      const days = daysUntil(p.deadline);
-      if (days !== null && days < 0) upcomingItems.push({ c, p, days });
+      const days = p.deadline ? daysUntil(p.deadline) : null;
+      if (days !== null && days < 0) {
+        upcomingItems.push({ c, p, days, type: 'overdue' });
+      } else if (p.availableDate && p.availableDate <= today() && (!p.deadline || days >= 0)) {
+        upcomingItems.push({ c, p, days: 0, type: 'available' });
+      }
     });
   });
   document.getElementById('stat-total').textContent = cases.length;
@@ -2140,43 +2155,51 @@ function renderDashboard() {
     el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">期限超過の手続きはありません</div></div>`;
     return;
   }
-  el.innerHTML = `<div class="upcoming-list">${upcomingItems.slice(0,10).map(({c,p,days}) => {
-    const cls = days < 0 ? 'urgent' : days <= 3 ? 'urgent' : days <= 7 ? 'soon' : '';
-    const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : days === 0 ? '今日' : `あと${days}日`;
+  el.innerHTML = `<div class="upcoming-list">${upcomingItems.slice(0,10).map(({c,p,days,type}) => {
+    const isAvailable = type === 'available';
+    const cls = days < 0 ? 'urgent' : isAvailable ? 'soon' : '';
+    const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : isAvailable ? '申請可能' : `あと${days}日`;
     const gIcon = c.gender === 'male' ? '♂' : '♀';
     return `<div class="upcoming-item ${cls}" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
       <div class="upcoming-date"><div class="day">${dayLabel}</div><div style="font-size:10px;margin-top:2px;">${fmtDate(p.deadline)}</div></div>
       <div style="flex:1;"><div class="upcoming-title">${gIcon} ${p.name}</div><div class="upcoming-meta">${c.company} / ${c.name}</div></div>
-      <div class="upcoming-badge"><span class="badge ${days < 0 ? '期限超過' : '未'}">${days < 0 ? '期限超過' : '対応待ち'}</span></div>
+      <div class="upcoming-badge"><span class="badge ${days < 0 ? '期限超過' : isAvailable ? '育休中' : '未'}">${days < 0 ? '期限超過' : isAvailable ? '申請可能' : '対応待ち'}</span></div>
     </div>`;
   }).join('')}</div>`;
 }
 
 function renderUpcoming() {
   const allItems = [];
+  const t = today();
   cases.forEach(c => {
     getProcedures(c).filter(p => !p.isSectionHeader).forEach(p => {
-      if (!p.deadline) return;
       const status = getProcSt(c, p.id);
       if (status === '済' || status === '不要') return;
-      const days = daysUntil(p.deadline);
-      if (days !== null && days <= 30) allItems.push({ c, p, days });
+      const days = p.deadline ? daysUntil(p.deadline) : null;
+      // 期限超過
+      if (days !== null && days < 0) {
+        allItems.push({ c, p, days, type: 'overdue' });
+      // 申請可能（支給期間終了翌日以降・期限内）
+      } else if (p.availableDate && p.availableDate <= t && (days === null || days >= 0)) {
+        allItems.push({ c, p, days: days ?? 999, type: 'available' });
+      }
     });
   });
   allItems.sort((a,b) => a.days - b.days);
   const el = document.getElementById('upcoming-content');
   if (allItems.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><div class="empty-text">30日以内の期限はありません</div></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><div class="empty-text">対応が必要な手続きはありません</div></div>`;
     return;
   }
-  el.innerHTML = `<div class="upcoming-list">${allItems.map(({c,p,days}) => {
-    const cls = days < 0 ? 'urgent' : days <= 7 ? 'soon' : '';
-    const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : days === 0 ? '今日期限' : `あと${days}日`;
+  el.innerHTML = `<div class="upcoming-list">${allItems.map(({c,p,days,type}) => {
+    const isAvailable = type === 'available';
+    const cls = !isAvailable ? 'urgent' : 'soon';
+    const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : isAvailable ? '申請可能' : `あと${days}日`;
     const gIcon = c.gender === 'male' ? '♂' : '♀';
     return `<div class="upcoming-item ${cls}" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
       <div class="upcoming-date"><div class="day">${dayLabel}</div><div style="font-size:10px;margin-top:3px;">${fmtDate(p.deadline)}</div></div>
       <div style="flex:1;"><div class="upcoming-title">${gIcon} ${p.name}</div><div class="upcoming-meta">${c.company} / ${c.name}${p.period ? `　${p.period}` : ''}</div></div>
-      <span class="badge ${days < 0 ? '期限超過' : '未'}">${days < 0 ? '期限超過' : '未対応'}</span>
+      <span class="badge ${isAvailable ? '育休中' : '期限超過'}">${isAvailable ? '申請可能' : '期限超過'}</span>
     </div>`;
   }).join('')}</div>`;
 }
