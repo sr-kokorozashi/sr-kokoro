@@ -258,7 +258,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
       <div class="sidebar-item active" onclick="openPage('dashboard')" id="nav-dashboard">🏠 ダッシュボード</div>
       <div class="sidebar-item" onclick="openPage('cases')" id="nav-cases">📋 案件一覧 <span class="sidebar-badge" id="badge-cases">0</span></div>
       <div class="sidebar-item" onclick="openPage('upcoming')" id="nav-upcoming">📅 期限カレンダー <span class="sidebar-badge" id="badge-upcoming">0</span></div>
-      <div class="sidebar-item" onclick="openPage('handover')" id="nav-handover">📌 引継ぎメモ一覧</div>
+      <div class="sidebar-item" onclick="openPage('handover')" id="nav-handover">📌 引継ぎメモ一覧 <span class="sidebar-badge" id="badge-handover">0</span></div>
       <div class="sidebar-item" onclick="openPage('templates')" id="nav-templates">📄 連絡テンプレート</div>
     </div>
     <div class="sidebar-section">
@@ -2065,6 +2065,7 @@ function openCaseDetail(id) {
       <div class="info-item"><div class="info-item-label">職場復帰予定日</div><div class="info-item-value date">${fmtDate(c.returnDate)}</div></div>
       <div class="info-item${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? ' warn' : ''}"><div class="info-item-label">時短勤務開始日${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? '（復帰日と異なる）' : ''}</div><div class="info-item-value date">${c.jitanStartDate ? fmtDate(c.jitanStartDate) : (c.returnDate ? fmtDate(c.returnDate) + '（復帰日と同じ）' : '—')}</div></div>
       <div class="info-item"><div class="info-item-label">出産予定日 / 実分娩日</div><div class="info-item-value date">${fmtDate(c.dueDate)} / ${fmtDate(c.birthDate)}</div></div>
+      ${(c.shimbi || c.shiharai) ? `<div class="info-item"><div class="info-item-label">💴 賃金締日 / 支払日</div><div class="info-item-value" style="font-size:13px;">${c.shimbi||'—'} / ${c.shiharai||'—'}</div></div>` : ''}
     </div>`;
   } else {
     const d = getMaleDates(c);
@@ -2076,6 +2077,7 @@ function openCaseDetail(id) {
       <div class="info-item highlight"><div class="info-item-label">産後パパ育休 第1回</div><div class="info-item-value date">${c.papa1Start ? fmtDate(c.papa1Start)+' 〜 '+fmtDate(c.papa1End) : '未設定'}</div></div>
       <div class="info-item"><div class="info-item-label">産後パパ育休 第2回</div><div class="info-item-value date">${c.papa2Start ? fmtDate(c.papa2Start)+' 〜 '+fmtDate(c.papa2End) : 'なし'}</div></div>
       <div class="info-item"><div class="info-item-label">育休第1回 / 第2回</div><div class="info-item-value date">${c.ikukyu1Start ? fmtDate(c.ikukyu1Start) : '—'} / ${c.ikukyu2Start ? fmtDate(c.ikukyu2Start) : '—'}</div></div>
+      ${(c.shimbi || c.shiharai) ? `<div class="info-item"><div class="info-item-label">💴 賃金締日 / 支払日</div><div class="info-item-value" style="font-size:13px;">${c.shimbi||'—'} / ${c.shiharai||'—'}</div></div>` : ''}
     </div>`;
   }
 
@@ -2085,10 +2087,7 @@ function openCaseDetail(id) {
       <thead><tr><th>No.</th><th>手続き・給付金</th><th>対象期間</th><th>添付書類</th><th>届出期日</th><th>ステータス</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    ${(c.shimbi || c.shiharai) ? `<div style="margin-top:12px;padding:12px 16px;background:var(--surface2);border-radius:8px;font-size:13px;display:flex;gap:24px;">
-      ${c.shimbi ? `<span>💴 <strong>締日：</strong>${c.shimbi}</span>` : ''}
-      ${c.shiharai ? `<span>📅 <strong>支払日：</strong>${c.shiharai}</span>` : ''}
-    </div>` : ''}
+
     ${c.hikitsugi ? `<div style="margin-top:12px;padding:12px 16px;background:#fff8e8;border-left:3px solid #f0a500;border-radius:8px;font-size:13px;white-space:pre-wrap;"><strong>📌 引継ぎメモ：</strong><br>${c.hikitsugi}</div>` : ''}
     ${c.memo ? `<div style="margin-top:12px;padding:12px 16px;background:var(--accent-bg);border-radius:8px;font-size:13px;"><strong>📝 備考：</strong>${c.memo}</div>` : ''}
   `;
@@ -2248,6 +2247,12 @@ function renderDashboard() {
   document.getElementById('stat-done').textContent = done;
   document.getElementById('badge-cases').textContent = cases.length;
   document.getElementById('badge-upcoming').textContent = upcomingItems.length;
+  // 引継ぎメモのバッジ（未済項目がある案件数）
+  const handoverCount = cases.filter(c =>
+    getProcedures(c).filter(p => !p.isSectionHeader)
+      .some(p => getProcHikitsugi(c, p.id).some(i => !i.done))
+  ).length;
+  document.getElementById('badge-handover').textContent = handoverCount;
   upcomingItems.sort((a,b) => a.days - b.days);
   const el = document.getElementById('dashboard-upcoming');
   if (upcomingItems.length === 0) {
