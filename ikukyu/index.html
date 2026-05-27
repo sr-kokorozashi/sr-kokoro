@@ -258,6 +258,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
       <div class="sidebar-item active" onclick="openPage('dashboard')" id="nav-dashboard">🏠 ダッシュボード</div>
       <div class="sidebar-item" onclick="openPage('cases')" id="nav-cases">📋 案件一覧 <span class="sidebar-badge" id="badge-cases">0</span></div>
       <div class="sidebar-item" onclick="openPage('upcoming')" id="nav-upcoming">📅 期限カレンダー <span class="sidebar-badge" id="badge-upcoming">0</span></div>
+      <div class="sidebar-item" onclick="openPage('handover')" id="nav-handover">📌 引継ぎメモ一覧</div>
       <div class="sidebar-item" onclick="openPage('templates')" id="nav-templates">📄 連絡テンプレート</div>
     </div>
     <div class="sidebar-section">
@@ -357,6 +358,14 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
         <div><div class="page-title">期限カレンダー</div><div class="page-sub">期限超過・申請可能な手続き一覧</div></div>
       </div>
       <div id="upcoming-content"></div>
+    </div>
+
+    <!-- HANDOVER -->
+    <div class="page" id="page-handover">
+      <div class="page-header">
+        <div><div class="page-title">引継ぎメモ一覧</div><div class="page-sub">引継ぎメモが入力されている案件の一覧</div></div>
+      </div>
+      <div id="handover-content"></div>
     </div>
 
     <!-- TEMPLATES -->
@@ -613,6 +622,9 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
             <option value="unknown">未確認</option>
           </select>
         </div>
+        <div class="form-group"><label>賃金締日</label><input class="form-input" type="text" id="ff-shimbi" placeholder="例：末日、25日"></div>
+        <div class="form-group"><label>賃金支払日</label><input class="form-input" type="text" id="ff-shiharai" placeholder="例：翌月10日、当月25日"></div>
+        <div class="form-group full"><label>引継ぎメモ</label><textarea class="form-textarea" id="ff-hikitsugi" placeholder="引継ぎ事項を入力"></textarea></div>
         <div class="form-group full"><label>備考</label><textarea class="form-textarea" id="ff-memo"></textarea></div>
       </div>
       <div id="ff-dates-preview" style="display:none; margin-top:20px;">
@@ -704,6 +716,9 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
             </div>
           </div>
         </div>
+        <div class="form-group"><label>賃金締日</label><input class="form-input" type="text" id="fm-shimbi" placeholder="例：末日、25日"></div>
+        <div class="form-group"><label>賃金支払日</label><input class="form-input" type="text" id="fm-shiharai" placeholder="例：翌月10日、当月25日"></div>
+        <div class="form-group full"><label>引継ぎメモ</label><textarea class="form-textarea" id="fm-hikitsugi" placeholder="引継ぎ事項を入力"></textarea></div>
         <div class="form-group full"><label>備考</label><textarea class="form-textarea" id="fm-memo"></textarea></div>
       </div>
     </div>
@@ -995,6 +1010,53 @@ async function updateKobunsho(procId, caseId, val, e) {
   } else {
     c.procStatus[procId] = { status: v || '未', date: null, memo: '', kobunsho: val };
   }
+  await save();
+  renderAll();
+  openCaseDetail(caseId);
+}
+
+// 引継ぎ項目ヘルパー
+function getProcHikitsugi(c, procId) {
+  var v = c.procStatus && c.procStatus[procId];
+  if (v && typeof v === 'object') return v.hikitsugi || [];
+  return [];
+}
+async function addHikitsugiItem(procId, caseId, e) {
+  if (e) e.stopPropagation();
+  const c = cases.find(x => x.id === caseId);
+  if (!c) return;
+  const inputEl = document.getElementById('hikitsugi-input-' + procId);
+  if (!inputEl) return;
+  const text = inputEl.value.trim();
+  if (!text) return;
+  if (!c.procStatus) c.procStatus = {};
+  const v = c.procStatus[procId];
+  if (typeof v !== 'object' || v === null) {
+    c.procStatus[procId] = { status: v || '未', date: null, memo: '', hikitsugi: [] };
+  }
+  if (!c.procStatus[procId].hikitsugi) c.procStatus[procId].hikitsugi = [];
+  c.procStatus[procId].hikitsugi.push({ text, done: false, id: Date.now() });
+  inputEl.value = '';
+  await save();
+  renderAll();
+  openCaseDetail(caseId);
+}
+async function toggleHikitsugiDone(procId, caseId, itemId, e) {
+  if (e) e.stopPropagation();
+  const c = cases.find(x => x.id === caseId);
+  if (!c || !c.procStatus || !c.procStatus[procId]) return;
+  const items = c.procStatus[procId].hikitsugi || [];
+  const item = items.find(i => i.id === itemId);
+  if (item) item.done = !item.done;
+  await save();
+  renderAll();
+  openCaseDetail(caseId);
+}
+async function deleteHikitsugiItem(procId, caseId, itemId, e) {
+  if (e) e.stopPropagation();
+  const c = cases.find(x => x.id === caseId);
+  if (!c || !c.procStatus || !c.procStatus[procId]) return;
+  c.procStatus[procId].hikitsugi = (c.procStatus[procId].hikitsugi || []).filter(i => i.id !== itemId);
   await save();
   renderAll();
   openCaseDetail(caseId);
@@ -1386,7 +1448,7 @@ function getFemaleProcedures(c) {
 
   // ── 育児時短就業給付金（復帰後に時短の場合・2歳育休取得者は対象外） ──
   // 2歳まで育休を取得した場合、子が2歳に達するとそのまま終了するため時短給付金の対象期間がない
-  if (c.ikukyuExtend !== '2y' && c.jitan === '1') {
+  if (c.ikukyuExtend !== '2y') {
   procs.push({ section: '【育児時短就業給付金（復帰後に時短勤務する場合）】', isSectionHeader: true });
   // 時短開始日：jitanStartDateが設定されていればそちらを優先、なければ復帰日
   const jitanStart = c.jitanStartDate || c.returnDate;
@@ -1659,7 +1721,7 @@ function getMaleProcedures(c) {
     note: '復帰後3か月の賃金確定後',
   });
   // ── 育児時短就業給付金（男性・復帰後に時短の場合・2歳育休取得者は対象外） ──
-  if (c.ikukyuExtend !== '2y' && c.jitan === '1') {
+  if (c.ikukyuExtend !== '2y') {
   procs.push({ section: '【育児時短就業給付金（復帰後に時短勤務する場合）】', isSectionHeader: true, isMale: true });
   const mJitanEnd2y = calcSecondBirthday(c.birthDate || c.dueDate);
   const mJitanInitDeadline = c.returnDate ? addDays(c.returnDate, 120) : null;
@@ -1788,12 +1850,15 @@ async function saveNewCase(gender) {
       jitan: document.getElementById('ff-jitan').value,
       jitanStartDate: document.getElementById('ff-jitan-start-date').value,
       spouseIkukyu: document.getElementById('ff-spouse-ikukyu').value,
+      shimbi: document.getElementById('ff-shimbi').value.trim(),
+      shiharai: document.getElementById('ff-shiharai').value.trim(),
+      hikitsugi: document.getElementById('ff-hikitsugi').value.trim(),
       memo: document.getElementById('ff-memo').value.trim(),
       procStatus: {}, createdAt: new Date().toISOString(),
     };
     cases.push(c); await save();
     closeModal('modal-new-female');
-    ['ff-company','ff-name','ff-child-name','ff-due-date','ff-birth-date','ff-return-date','ff-jitan-start-date','ff-memo'].forEach(id => document.getElementById(id).value = '');
+    ['ff-company','ff-name','ff-child-name','ff-due-date','ff-birth-date','ff-return-date','ff-jitan-start-date','ff-shimbi','ff-shiharai','ff-hikitsugi','ff-memo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ff-dates-preview').style.display = 'none';
   } else {
     const company = document.getElementById('fm-company').value.trim();
@@ -1818,12 +1883,15 @@ async function saveNewCase(gender) {
       ikukyu1End: document.getElementById('fm-ikukyu1-end').value,
       ikukyu2Start: document.getElementById('fm-ikukyu2-start').value,
       ikukyu2End: document.getElementById('fm-ikukyu2-end').value,
+      shimbi: document.getElementById('fm-shimbi').value.trim(),
+      shiharai: document.getElementById('fm-shiharai').value.trim(),
+      hikitsugi: document.getElementById('fm-hikitsugi').value.trim(),
       memo: document.getElementById('fm-memo').value.trim(),
       procStatus: {}, createdAt: new Date().toISOString(),
     };
     cases.push(c); await save();
     closeModal('modal-new-male');
-    ['fm-company','fm-name','fm-child-name','fm-due-date','fm-birth-date','fm-return-date','fm-papa1-start','fm-papa1-end','fm-papa2-start','fm-papa2-end','fm-ikukyu1-start','fm-ikukyu1-end','fm-ikukyu2-start','fm-ikukyu2-end','fm-memo'].forEach(id => document.getElementById(id).value = '');
+    ['fm-company','fm-name','fm-child-name','fm-due-date','fm-birth-date','fm-return-date','fm-papa1-start','fm-papa1-end','fm-papa2-start','fm-papa2-end','fm-ikukyu1-start','fm-ikukyu1-end','fm-ikukyu2-start','fm-ikukyu2-end','fm-shimbi','fm-shiharai','fm-hikitsugi','fm-memo'].forEach(id => document.getElementById(id).value = '');
   }
   renderAll();
   showToast('✅ 案件を登録しました');
@@ -1942,6 +2010,22 @@ function openCaseDetail(id) {
     const dateInput = st === '済' ? `<br><input type="date" value="${stDate||''}" style="margin-top:4px;font-size:10px;border:1px solid var(--green);border-radius:4px;padding:2px 4px;color:var(--green);background:var(--green-bg);width:120px;" onchange="updateProcDate('${p.id}','${id}',this.value,event)" onclick="event.stopPropagation()">` : '';
     const escapedMemo = (stMemo || '').replace(/"/g, '&quot;');
     const memoInput = `<input type="text" value="${escapedMemo}" placeholder="備考" style="margin-top:5px;display:block;width:100%;font-size:11px;border:1px solid #c5d8ee;border-radius:4px;padding:3px 7px;font-family:inherit;color:#6a8fad;background:#f0f5fb;" onchange="updateProcMemo('${p.id}','${id}',this.value,event)" onclick="event.stopPropagation()">`;
+    // 引継ぎ項目
+    const hikitsugiItems = getProcHikitsugi(c, p.id);
+    const hikitsugiList = hikitsugiItems.map(item => `
+      <div style="display:flex;align-items:center;gap:6px;margin-top:3px;" onclick="event.stopPropagation()">
+        <button onclick="toggleHikitsugiDone('${p.id}','${id}',${item.id},event)" style="min-width:32px;padding:2px 6px;font-size:10px;border-radius:4px;border:1px solid ${item.done ? 'var(--green)' : 'var(--border)'};background:${item.done ? 'var(--green-bg)' : 'var(--surface2)'};color:${item.done ? 'var(--green)' : 'var(--text-muted)'};cursor:pointer;">${item.done ? '済' : '未'}</button>
+        <span style="font-size:11px;flex:1;${item.done ? 'text-decoration:line-through;color:var(--text-muted);' : 'color:var(--text);'}">${item.text}</span>
+        <button onclick="deleteHikitsugiItem('${p.id}','${id}',${item.id},event)" style="font-size:10px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0 2px;">✕</button>
+      </div>`).join('');
+    const hikitsugiInput = `
+      <div style="margin-top:6px;" onclick="event.stopPropagation()">
+        ${hikitsugiList}
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <input id="hikitsugi-input-${p.id}" type="text" placeholder="引継ぎ項目を追加" style="flex:1;font-size:11px;border:1px solid #f0c06e;border-radius:4px;padding:3px 7px;font-family:inherit;color:#8a6000;background:#fffbf0;" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){addHikitsugiItem('${p.id}','${id}',event)}">
+          <button onclick="addHikitsugiItem('${p.id}','${id}',event)" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid #f0c06e;background:#fffbf0;color:#8a6000;cursor:pointer;">追加</button>
+        </div>
+      </div>`;
     const needsKobunsho = isKobunshoRequired(p.id);
     const kobunshoSt = needsKobunsho ? getKobunsho(c, p.id) : null;
     const kobunshoCell = needsKobunsho ? `
@@ -1964,6 +2048,7 @@ function openCaseDetail(id) {
         </div>
         ${kobunshoCell}
         ${memoInput}
+        ${hikitsugiInput}
       </td>
     </tr>`;
   }).join('');
@@ -2000,7 +2085,12 @@ function openCaseDetail(id) {
       <thead><tr><th>No.</th><th>手続き・給付金</th><th>対象期間</th><th>添付書類</th><th>届出期日</th><th>ステータス</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    ${c.memo ? `<div style="margin-top:16px;padding:12px 16px;background:var(--accent-bg);border-radius:8px;font-size:13px;"><strong>📝 備考：</strong>${c.memo}</div>` : ''}
+    ${(c.shimbi || c.shiharai) ? `<div style="margin-top:12px;padding:12px 16px;background:var(--surface2);border-radius:8px;font-size:13px;display:flex;gap:24px;">
+      ${c.shimbi ? `<span>💴 <strong>締日：</strong>${c.shimbi}</span>` : ''}
+      ${c.shiharai ? `<span>📅 <strong>支払日：</strong>${c.shiharai}</span>` : ''}
+    </div>` : ''}
+    ${c.hikitsugi ? `<div style="margin-top:12px;padding:12px 16px;background:#fff8e8;border-left:3px solid #f0a500;border-radius:8px;font-size:13px;white-space:pre-wrap;"><strong>📌 引継ぎメモ：</strong><br>${c.hikitsugi}</div>` : ''}
+    ${c.memo ? `<div style="margin-top:12px;padding:12px 16px;background:var(--accent-bg);border-radius:8px;font-size:13px;"><strong>📝 備考：</strong>${c.memo}</div>` : ''}
   `;
   document.getElementById('modal-detail').classList.add('open');
 }
@@ -2053,6 +2143,9 @@ function openEditModal() {
         <div class="form-group"><label>時短勤務開始日（復帰日と異なる場合）</label><input class="form-input" type="date" id="e-jitan-start-date" value="${c.jitanStartDate||''}" placeholder="空欄の場合は復帰日を使用"></div>
         <div class="form-group"><label>育休延長</label><select class="form-select" id="e-ikukyu-extend"><option value="" ${!c.ikukyuExtend?'selected':''}>延長なし（1歳）</option><option value="18m" ${c.ikukyuExtend==='18m'?'selected':''}>1歳6か月まで</option><option value="2y" ${c.ikukyuExtend==='2y'?'selected':''}>2歳まで</option></select></div>
         <div class="form-group"><label>配偶者育休</label><select class="form-select" id="e-spouse-ikukyu"><option value="yes" ${c.spouseIkukyu==='yes'?'selected':''}>14日以上取得</option><option value="sangokyu" ${c.spouseIkukyu==='sangokyu'?'selected':''}>産後休業なし</option><option value="musho" ${c.spouseIkukyu==='musho'?'selected':''}>無業・自営</option><option value="no" ${c.spouseIkukyu==='no'?'selected':''}>取得なし</option><option value="unknown" ${c.spouseIkukyu==='unknown'?'selected':''}>未確認</option></select></div>
+        <div class="form-group"><label>賃金締日</label><input class="form-input" type="text" id="e-shimbi" value="${c.shimbi||''}" placeholder="例：末日、25日"></div>
+        <div class="form-group"><label>賃金支払日</label><input class="form-input" type="text" id="e-shiharai" value="${c.shiharai||''}" placeholder="例：翌月10日、当月25日"></div>
+        <div class="form-group full"><label>引継ぎメモ</label><textarea class="form-textarea" id="e-hikitsugi" placeholder="引継ぎ事項を入力">${c.hikitsugi||''}</textarea></div>
         <div class="form-group full"><label>備考</label><textarea class="form-textarea" id="e-memo">${c.memo||''}</textarea></div>
       </div>`;
   } else {
@@ -2077,6 +2170,9 @@ function openEditModal() {
         <div class="form-group"><label>第1回 終了</label><input class="form-input" type="date" id="e-ikukyu1-end" value="${c.ikukyu1End||''}"></div>
         <div class="form-group"><label>第2回 開始</label><input class="form-input" type="date" id="e-ikukyu2-start" value="${c.ikukyu2Start||''}"></div>
         <div class="form-group"><label>第2回 終了</label><input class="form-input" type="date" id="e-ikukyu2-end" value="${c.ikukyu2End||''}"></div>
+        <div class="form-group"><label>賃金締日</label><input class="form-input" type="text" id="e-shimbi" value="${c.shimbi||''}" placeholder="例：末日、25日"></div>
+        <div class="form-group"><label>賃金支払日</label><input class="form-input" type="text" id="e-shiharai" value="${c.shiharai||''}" placeholder="例：翌月10日、当月25日"></div>
+        <div class="form-group full"><label>引継ぎメモ</label><textarea class="form-textarea" id="e-hikitsugi" placeholder="引継ぎ事項を入力">${c.hikitsugi||''}</textarea></div>
         <div class="form-group full"><label>備考</label><textarea class="form-textarea" id="e-memo">${c.memo||''}</textarea></div>
       </div>`;
   }
@@ -2097,6 +2193,9 @@ async function saveEdit() {
   if (document.getElementById('e-jitan')) c.jitan = document.getElementById('e-jitan').value;
   if (document.getElementById('e-jitan-start-date')) c.jitanStartDate = document.getElementById('e-jitan-start-date').value;
   c.spouseIkukyu = document.getElementById('e-spouse-ikukyu').value;
+  c.shimbi = document.getElementById('e-shimbi').value.trim();
+  c.shiharai = document.getElementById('e-shiharai').value.trim();
+  c.hikitsugi = document.getElementById('e-hikitsugi').value.trim();
   c.memo = document.getElementById('e-memo').value.trim();
   if (c.gender === 'male') {
     c.papa1Start = document.getElementById('e-papa1-start').value;
@@ -2168,6 +2267,44 @@ function renderDashboard() {
   }).join('')}</div>`;
 }
 
+function renderHandover() {
+  const el = document.getElementById('handover-content');
+  if (!el) return;
+  // 未済の引継ぎ項目がある手続きを全案件から収集
+  const allItems = [];
+  cases.forEach(c => {
+    const procs = getProcedures(c).filter(p => !p.isSectionHeader);
+    procs.forEach(p => {
+      const items = getProcHikitsugi(c, p.id).filter(i => !i.done);
+      if (items.length === 0) return;
+      allItems.push({ c, p, items });
+    });
+  });
+  if (allItems.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">未済の引継ぎ項目はありません</div></div>`;
+    return;
+  }
+  const gIcon = c => c.gender === 'male' ? '♂' : '♀';
+  el.innerHTML = `<div class="upcoming-list">${allItems.map(({c, p, items}) => {
+    const status = getStatus(c);
+    const itemsHtml = items.map(item => `
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+        <button onclick="toggleHikitsugiDone('${p.id}','${c.id}',${item.id},event)" style="min-width:32px;padding:2px 6px;font-size:10px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;">未</button>
+        <span style="font-size:12px;color:var(--text);">${item.text}</span>
+      </div>`).join('');
+    return `<div class="upcoming-item" style="align-items:flex-start;">
+      <div style="min-width:80px;text-align:center;padding-top:2px;">
+        <span class="badge ${status}" style="font-size:11px;">${status}</span>
+      </div>
+      <div style="flex:1;">
+        <div class="upcoming-title" style="cursor:pointer;" onclick="openCaseDetail('${c.id}')">${gIcon(c)} ${c.company} / ${c.name}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${p.name}</div>
+        ${itemsHtml}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
 function renderUpcoming() {
   const allItems = [];
   const t = today();
@@ -2211,6 +2348,7 @@ function openPage(name) {
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('nav-'+name)?.classList.add('active');
   if (name === 'upcoming') renderUpcoming();
+  if (name === 'handover') renderHandover();
 }
 function openNewCaseModal(gender) {
   document.getElementById(gender === 'male' ? 'modal-new-male' : 'modal-new-female').classList.add('open');
@@ -2772,7 +2910,7 @@ function handleImportFile(event) {
   };
   reader.readAsText(file);
 }
-function renderAll() { renderDashboard(); renderCaseTable(); }
+function renderAll() { renderDashboard(); renderCaseTable(); renderHandover(); }
 
 // ===== 自動再読み込み（5分ごと） =====
 let _lastSyncTime = Date.now();
