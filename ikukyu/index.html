@@ -1448,7 +1448,7 @@ function getFemaleProcedures(c) {
 
   // ── 育児時短就業給付金（復帰後に時短の場合・2歳育休取得者は対象外） ──
   // 2歳まで育休を取得した場合、子が2歳に達するとそのまま終了するため時短給付金の対象期間がない
-  if (c.ikukyuExtend !== '2y') {
+  if (c.ikukyuExtend !== '2y' && c.jitan === '1') {
   procs.push({ section: '【育児時短就業給付金（復帰後に時短勤務する場合）】', isSectionHeader: true });
   // 時短開始日：jitanStartDateが設定されていればそちらを優先、なければ復帰日
   const jitanStart = c.jitanStartDate || c.returnDate;
@@ -1721,7 +1721,7 @@ function getMaleProcedures(c) {
     note: '復帰後3か月の賃金確定後',
   });
   // ── 育児時短就業給付金（男性・復帰後に時短の場合・2歳育休取得者は対象外） ──
-  if (c.ikukyuExtend !== '2y') {
+  if (c.ikukyuExtend !== '2y' && c.jitan === '1') {
   procs.push({ section: '【育児時短就業給付金（復帰後に時短勤務する場合）】', isSectionHeader: true, isMale: true });
   const mJitanEnd2y = calcSecondBirthday(c.birthDate || c.dueDate);
   const mJitanInitDeadline = c.returnDate ? addDays(c.returnDate, 120) : null;
@@ -2063,7 +2063,7 @@ function openCaseDetail(id) {
       <div class="info-item highlight"><div class="info-item-label">育休開始日</div><div class="info-item-value date">${fmtDate(d.ikukyuStart)}</div></div>
       <div class="info-item"><div class="info-item-label">育休終了日（${calcIkukyuEndLabel(c.ikukyuExtend)}）</div><div class="info-item-value date">${fmtDate(d.ikukyuEnd)}</div></div>
       <div class="info-item"><div class="info-item-label">職場復帰予定日</div><div class="info-item-value date">${fmtDate(c.returnDate)}</div></div>
-      <div class="info-item${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? ' warn' : ''}"><div class="info-item-label">時短勤務開始日${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? '（復帰日と異なる）' : ''}</div><div class="info-item-value date">${c.jitanStartDate ? fmtDate(c.jitanStartDate) : (c.returnDate ? fmtDate(c.returnDate) + '（復帰日と同じ）' : '—')}</div></div>
+      ${c.jitan === '1' ? `<div class="info-item${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? ' warn' : ''}"><div class="info-item-label">時短勤務開始日${c.jitanStartDate && c.jitanStartDate !== c.returnDate ? '（復帰日と異なる）' : ''}</div><div class="info-item-value date">${c.jitanStartDate ? fmtDate(c.jitanStartDate) : (c.returnDate ? fmtDate(c.returnDate) + '（復帰日と同じ）' : '—')}</div></div>` : ''}
       <div class="info-item"><div class="info-item-label">出産予定日 / 実分娩日</div><div class="info-item-value date">${fmtDate(c.dueDate)} / ${fmtDate(c.birthDate)}</div></div>
       ${(c.shimbi || c.shiharai) ? `<div class="info-item"><div class="info-item-label">💴 賃金締日 / 支払日</div><div class="info-item-value" style="font-size:13px;">${c.shimbi||'—'} / ${c.shiharai||'—'}</div></div>` : ''}
     </div>`;
