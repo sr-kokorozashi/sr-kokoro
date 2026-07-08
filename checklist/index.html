@@ -331,6 +331,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
       <label class="fl">使用する様式（複数選択可） <span class="req">*</span></label>
       <div id="rousai-shoshiki-grid" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
     </div>
+    <div id="fuyo-select-area" style="display:none;margin-bottom:12px;">
+      <label class="fl">扶養家族</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="fuyo-yes-label">
+          <input type="radio" name="fuyo-radio" id="fuyo-yes" value="yes" checked onchange="updateFuyoSelect()"> あり
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="fuyo-no-label">
+          <input type="radio" name="fuyo-radio" id="fuyo-no" value="no" onchange="updateFuyoSelect()"> なし
+        </label>
+      </div>
+    </div>
     <div class="mbtns">
       <button class="bcn" onclick="closeModal('ov-new')">キャンセル</button>
       <button class="bsb" id="n-submit" disabled onclick="createCase()">作成する</button>
@@ -438,224 +449,722 @@ const ROUSAI_SHOSHIKI = [
   { key: 's22',   label: '様式第22号',    desc: '第三者行為災害届（業務・通勤共通）' },
 ];
 
-const PROC_KEYS = ["入社","退職","同日得喪","扶養","氏名変更","住所変更","傷病手当","月変・賃金入力","賞与支払届","36協定","労災","療養費","限度額","70歳","保険証再交付","事業所成立","事業所廃止","所在地変更","名称変更","代表者変更","海外労災","就業規則届","一人親方"];
+const PROC_KEYS = ["入社","入社（健保組合）","退職","退職（健保組合）","同日得喪","同日得喪（健保組合）","扶養","扶養（削除）","氏名変更","住所変更","傷病手当","月変・賃金入力","賞与支払届","36協定","労災","療養費","限度額","70歳","保険証再交付","事業所成立","事業所廃止","所在地変更","名称変更","代表者変更","海外労災","就業規則届","一人親方"];
 
 const P = {
-"入社":{color:"#2563EB",icon:"👤",sections:[
-  {title:"手続き前にやること",tasks:[
-    {id:"n1",label:"お客様へ入社連絡票受領の連絡",note:"入社連絡票が届いたことをお客様にメール・電話で確認します。",warn:null},
-    {id:"n2",label:"入社連絡票のドキュ",note:"受領した入社連絡票をドキュサインでスキャン・保存します。",warn:null},
-    {id:"n3",label:"ドキュの名前の変更",note:"ファイル名を「会社名_氏名_入社連絡票_日付」に統一します。",warn:null},
-    {id:"n4",label:"入社連絡票の内容を確認",note:"記載漏れ・誤字がないか確認します。",warn:"⚠️ PBMCは扶養者がいないかSmartHRで確認すること"},
-    {id:"n5",label:"個人マスタの入力",note:"ろうむinOneに個人情報を入力。社会保険非加入の場合は健保番号・厚年番号を消去してください。",warn:"⚠️ 会社名（所属先）を確認：こりすorクルミ・ショウ企画・ナインジー等"},
-    {id:"n6",label:"社会保険料控除表をメールで送る",note:"入力完了後、社会保険料控除表をお客様へメール送付します。",warn:null},
+
+"入社":{color:"#2563EB",icon:"👤",hasFuyo:true,sections:[
+  {title:"入社手続き前にやること",tasks:[
+    {id:"n1",label:"お客様へ入社連絡票受領の連絡",note:"",warn:null},
+    {id:"n2",label:"入社連絡票のドキュ",note:"",warn:null},
+    {id:"n3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"n4",label:"入社連絡票の内容を確認",note:"",warn:null},
+    {id:"n5",label:"個人マスタの入力",note:"",warn:"⚠️ 社会保険に加入しない場合は健保番号、厚年番号を消去　※会社名(所属先）確認　こりすorクルミ　ショウ企画"},
+    {id:"n6",label:"社会保険料控除表をメールで送る",note:"",warn:null},
   ]},
   {title:"手続き",tasks:[
-    {id:"n7",label:"雇用保険資格取得手続き",note:"e-GovまたはろうむinOneで提出します。",warn:"⚠️ 入社後取得の場合は個マスタの労保画面に✓を入れること"},
-    {id:"n8",label:"社会保険資格取得手続き",note:"健保組合の場合は健保・厚年それぞれ提出します。70歳以上は別途確認。",warn:"⚠️ 70歳以上該当者は別手続きが必要"},
-    {id:"n9",label:"被扶養者手続き",note:"扶養家族がいる場合は被扶養者異動届を提出します。",warn:"⚠️ 個マスタへの登録も忘れずに。紙提出の場合は特に注意"},
-    {id:"n10",label:"3号手続き",note:"健保組合の場合のみ実施。第3号被保険者届を提出します。",warn:null},
-    {id:"n11",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理・保存します。",warn:null},
+    {id:"n7",label:"雇用保険資格取得手続き",note:"",warn:"⚠️ 入社後に取得した場合、個マスタの労保画面に✓を入れる"},
+    {id:"n8",label:"社会保険資格取得手続き",note:"",warn:"⚠️ 70歳以上該当者"},
+    {id:"n9",label:"被扶養者手続き",note:"",warn:"⚠️ 個マスタ登録する(扶養手続きを紙で提出する時、要注意）",fuyoOnly:true},
+    {id:"n10",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書取得・整理",tasks:[
-    {id:"n12",label:"雇用保険公文書取得",note:"電子申請ならe-Govから、紙ならハローワークから受領します。",warn:null},
-    {id:"n13",label:"雇用保険公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"n14",label:"社会保険公文書取得",note:"健保組合の場合は健保・厚年それぞれ取得します。",warn:null},
-    {id:"n15",label:"社会保険公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"n16",label:"被扶養者公文書取得",note:"扶養手続きがあった場合のみ実施します。",warn:null},
-    {id:"n17",label:"被扶養者公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"n18",label:"第３号公文書取得",note:"健保組合はけんぽ協会から、その他はe-Govから取得します。",warn:null},
-    {id:"n19",label:"第３号公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"n20",label:"社会保険料控除表送付済みか確認",note:"手続き前にメールが届いているか確認します。",warn:null},
-    {id:"n21",label:"入社ドキュを整理する",note:"すべての書類が揃っているか確認してフォルダを整理します。",warn:null},
+    {id:"n11",label:"雇用保険公文書取得",note:"",warn:null},
+    {id:"n12",label:"雇用保険公文書のドキュ",note:"",warn:null},
+    {id:"n13",label:"社会保険公文書取得",note:"",warn:null},
+    {id:"n14",label:"社会保険公文書のドキュ",note:"",warn:null},
+    {id:"n15",label:"被扶養者公文書取得",note:"",warn:null,fuyoOnly:true},
+    {id:"n16",label:"被扶養者公文書のドキュ",note:"",warn:null,fuyoOnly:true},
+    {id:"n17",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
+    {id:"n18",label:"入社ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"n22",label:"雇用保険公文書の送付",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"n23",label:"社会保険公文書の送付",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"n24",label:"被扶養者公文書の送付",note:"扶養手続きがあった場合のみ送付します。",warn:null},
-    {id:"n25",label:"雇用保険事務処理簿の送付",note:"事務組合のみ送付が必要です。",warn:"⚠️ 事務組合のみ実施"},
-    {id:"n26",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+    {id:"n19",label:"雇用保険公文書の送付",note:"",warn:null},
+    {id:"n20",label:"社会保険公文書の送付",note:"",warn:null},
+    {id:"n21",label:"被扶養者公文書の送付",note:"",warn:null,fuyoOnly:true},
+    {id:"n22",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"入社（健保組合）":{color:"#2563EB",icon:"👤",hasFuyo:true,sections:[
+  {title:"入社手続き前にやること",tasks:[
+    {id:"nk1",label:"お客様へ入社連絡票受領の連絡",note:"",warn:null},
+    {id:"nk2",label:"入社連絡票のドキュ",note:"",warn:null},
+    {id:"nk3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"nk4",label:"入社連絡票の内容を確認",note:"",warn:null},
+    {id:"nk5",label:"個人マスタの入力",note:"",warn:"⚠️ 社会保険に加入しない場合は健保番号、厚年番号を消去"},
+    {id:"nk6",label:"社会保険料控除表をメールで送る",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"nk7",label:"雇用保険資格取得手続き",note:"",warn:"⚠️ 入社後に取得した場合、個マスタの労保画面に✓を入れる"},
+    {id:"nk8",label:"健康保険資格取得手続き",note:"健保組合",warn:null},
+    {id:"nk9",label:"厚生年金保険手続き",note:"",warn:null},
+    {id:"nk10",label:"被扶養者手続き",note:"健保組合（電子申請不可、添付書類確認）",warn:"⚠️ 個マスタ登録する(扶養手続きを紙で提出する時、要注意）",fuyoOnly:true},
+    {id:"nk11",label:"3号手続き",note:"電子申請可能（単独申請）",warn:null,fuyoOnly:true},
+    {id:"nk12",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書取得・整理",tasks:[
+    {id:"nk13",label:"雇用保険公文書取得",note:"",warn:null},
+    {id:"nk14",label:"雇用保険公文書のドキュ",note:"",warn:null},
+    {id:"nk15",label:"健康保険公文書取得",note:"",warn:null},
+    {id:"nk16",label:"健康保険公文書のドキュ",note:"",warn:null},
+    {id:"nk17",label:"厚生年金保険公文書取得",note:"",warn:null},
+    {id:"nk18",label:"厚生年金保険公文書のドキュ",note:"",warn:null},
+    {id:"nk19",label:"被扶養者公文書取得",note:"",warn:null,fuyoOnly:true},
+    {id:"nk20",label:"被扶養者公文書のドキュ",note:"",warn:null,fuyoOnly:true},
+    {id:"nk21",label:"第３号公文書取得",note:"□e-Gov",warn:null,fuyoOnly:true},
+    {id:"nk22",label:"第３号公文書のドキュ",note:"",warn:null,fuyoOnly:true},
+    {id:"nk23",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
+    {id:"nk24",label:"入社ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"nk25",label:"雇用保険公文書の送付",note:"",warn:null},
+    {id:"nk26",label:"健康保険公文書の送付",note:"",warn:null},
+    {id:"nk27",label:"厚生年金保険公文書の送付",note:"",warn:null},
+    {id:"nk28",label:"被扶養者公文書の送付",note:"",warn:null,fuyoOnly:true},
+    {id:"nk29",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "退職":{color:"#DC2626",icon:"🚪",sections:[
-  {title:"手続き前にやること",tasks:[
-    {id:"t1",label:"お客様へ退職連絡票受領の連絡",note:"退職連絡票が届いたことをお客様に確認します。",warn:null},
-    {id:"t2",label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分の出勤簿を依頼します。",warn:"⚠️ 離職票が急ぎの場合は賃金台帳も依頼すること"},
-    {id:"t3",label:"退職理由に応じて必要な添付書類を依頼",note:"契約期間満了の場合：最後の契約書（雇止め明示があるときは最終を含む直近2回分）",warn:null},
-    {id:"t4",label:"退職連絡票のドキュ",note:"受領した退職連絡票をドキュに保存します。",warn:null},
-    {id:"t5",label:"ドキュの名前の変更",note:"ファイル名を「会社名_氏名_退職連絡票_日付」に統一します。",warn:null},
-    {id:"t6",label:"退職連絡票の内容を確認",note:"退職日・退職理由・給与支払情報等を確認します。",warn:null},
-    {id:"t7",label:"個人マスタに退職内容を入力",note:"ろうむinOneの個人マスタに退職日・退職理由を入力します。",warn:null},
-    {id:"t8",label:"健康保険資格喪失証明書と退職後の健康保険のお知らせを送る",note:"退職後の健康保険（任意継続・国民健康保険等）について案内します。",warn:null},
-    {id:"t9",label:"保険証回収の依頼",note:"健康保険証の返却をお客様経由で本人に依頼します。",warn:null},
+  {title:"退職手続き前にやること",tasks:[
+    {id:"t1",label:"お客様へ退職連絡票受領の連絡",note:"",warn:null},
+    {id:"t2",label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分",warn:"⚠️ 離職票急ぎの場合は、賃金台帳を依頼してください"},
+    {id:"t3",label:"退職理由に応じて必要な添付書類を依頼",note:"契約期間満了：最後の契約書（雇止めの明示があるときは最終を含む直近２回分）",warn:null},
+    {id:"t4",label:"退職連絡票のドキュ",note:"",warn:null},
+    {id:"t5",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"t6",label:"退職連絡票の内容を確認",note:"",warn:null},
+    {id:"t7",label:"個人マスタに退職内容を入力",note:"",warn:null},
+    {id:"t8",label:"健康保険資格喪失証明書と退職後の健康保険のお知らせを送る",note:"",warn:null},
+    {id:"t9",label:"保険証回収の依頼",note:"",warn:null},
   ]},
   {title:"退職手続き",tasks:[
-    {id:"t10",label:"雇用保険喪失手続き or 離職票発行手続き",note:"ショウ企画は退職時の所属を確認し、違っていたら転勤届を出すこと。",warn:"⚠️ 退職でないのに喪失した場合、個マスタ労保画面の✓を外すこと"},
-    {id:"t11",label:"社会保険資格喪失手続き",note:"健保組合の場合は健保・厚年それぞれ提出します。",warn:null},
-    {id:"t12",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理・保存します。",warn:null},
+    {id:"t10",label:"雇用保険喪失手続き or 離職票発行手続き",note:"",warn:"⚠️ 退職ではないのに喪失した場合、個マスタの労保画面の✓を外す　□ショウ企画は、退職時現在の所属を確認し、違っていたら転勤届を出す"},
+    {id:"t11",label:"社会保険資格喪失手続き",note:"",warn:null},
+    {id:"t12",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
-  {title:"公文書取得・整理",tasks:[
-    {id:"t13",label:"離職票or雇喪確認通知書 公文書取得",note:"e-Govまたはハローワークから取得します。",warn:null},
-    {id:"t14",label:"離職票or雇喪認通知書 公文書ドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"t15",label:"社会保険公文書取得",note:"健保組合の場合は健保・厚年それぞれ取得します。",warn:null},
-    {id:"t16",label:"社会保険公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"t17",label:"退職ドキュを整理する",note:"すべての書類が揃っているか確認してフォルダを整理します。",warn:null},
+  {title:"手続き後",tasks:[
+    {id:"t13",label:"離職票or雇喪確認通知書　公文書取得",note:"",warn:null},
+    {id:"t14",label:"離職票or雇喪認通知書公文書ドキュ",note:"",warn:null},
+    {id:"t15",label:"社会保険公文書取得",note:"",warn:null},
+    {id:"t16",label:"社会保険公文書のドキュ",note:"",warn:null},
+    {id:"t17",label:"退職ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"t18",label:"離職票or雇喪認通知書 公文書の送付",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"t19",label:"社会保険公文書の送付orアップ",note:"健保組合の場合は健保・厚年それぞれ送付します。",warn:null},
-    {id:"t20",label:"雇用保険事務処理簿の送付",note:"事務組合のみ送付が必要です。",warn:"⚠️ 事務組合のみ実施"},
-    {id:"t21",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+    {id:"t18",label:"離職票or雇喪認通知書公文書の送付",note:"",warn:null},
+    {id:"t19",label:"社会保険公文書の送付orアップ",note:"",warn:null},
+    {id:"t20",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"退職（健保組合）":{color:"#DC2626",icon:"🚪",sections:[
+  {title:"退職手続き前にやること",tasks:[
+    {id:"tk1",label:"お客様へ退職連絡票受領の連絡",note:"",warn:null},
+    {id:"tk2",label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分",warn:"⚠️ 離職票急ぎの場合は、賃金台帳を依頼してください"},
+    {id:"tk3",label:"退職理由に応じて必要な添付書類を依頼",note:"契約期間満了：最後の契約書（雇止めの明示があるときは最終を含む直近２回分）",warn:null},
+    {id:"tk4",label:"退職連絡票のドキュ",note:"",warn:null},
+    {id:"tk5",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"tk6",label:"退職連絡票の内容を確認",note:"",warn:null},
+    {id:"tk7",label:"個人マスタに退職内容を入力",note:"",warn:null},
+    {id:"tk8",label:"健康保険資格喪失証明書と退職後の健康保険のお知らせを送る",note:"",warn:null},
+    {id:"tk9",label:"保険証回収の依頼",note:"",warn:null},
+  ]},
+  {title:"退職手続き",tasks:[
+    {id:"tk10",label:"雇用保険喪失手続き or 離職票発行手続き",note:"",warn:"⚠️ 退職ではないのに喪失した場合、個マスタの労保画面の✓を外す"},
+    {id:"tk11",label:"健康保険資格喪失手続き",note:"健保組合",warn:null},
+    {id:"tk12",label:"厚生年金保険資格喪失手続き",note:"",warn:null},
+    {id:"tk13",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"手続き後",tasks:[
+    {id:"tk14",label:"離職票or雇喪確認通知書　公文書取得",note:"",warn:null},
+    {id:"tk15",label:"離職票or雇喪認通知書公文書ドキュ",note:"",warn:null},
+    {id:"tk16",label:"健康保険公文書取得",note:"健保組合",warn:null},
+    {id:"tk17",label:"健康保険公文書のドキュ",note:"",warn:null},
+    {id:"tk18",label:"厚生年金保険公文書取得",note:"",warn:null},
+    {id:"tk19",label:"厚生年金保険公文書のドキュ",note:"",warn:null},
+    {id:"tk20",label:"退職ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"tk21",label:"離職票or雇喪認通知書公文書の送付",note:"",warn:null},
+    {id:"tk22",label:"健康保険公文書の送付orアップ",note:"",warn:null},
+    {id:"tk23",label:"厚生年金保険公文書の送付orアップ",note:"",warn:null},
+    {id:"tk24",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "同日得喪":{color:"#7C3AED",icon:"🔄",sections:[
   {title:"手続き前にやること",tasks:[
-    {id:"d1",label:"お客様へ連絡票受領の連絡",note:"同日得喪の連絡票が届いたことをお客様に確認します。",warn:null},
-    {id:"d2",label:"連絡票のドキュ",note:"受領した連絡票をドキュに保存します。",warn:null},
-    {id:"d3",label:"ドキュの名前の変更",note:"ファイル名を「会社名_氏名_同日得喪_日付」に統一します。",warn:null},
-    {id:"d4",label:"連絡票の内容を確認",note:"取得・喪失日、標準報酬月額等を確認します。",warn:null},
-    {id:"d5",label:"個人マスタの更新",note:"ろうむinOneで個人情報を更新します。",warn:null},
-    {id:"d6",label:"社会保険料控除表をメールで送る",note:"更新後、社会保険料控除表をお客様へメール送付します。",warn:null},
+    {id:"d1",label:"嘱託賃金の確認",note:"",warn:null},
+    {id:"d2",label:"書類のドキュ",note:"",warn:null},
+    {id:"d3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"d4",label:"個人マスタの作成",note:"",warn:"⚠️ ※会社名(所属先）確認　こりすorクルミ　ショウ企画"},
+    {id:"d5",label:"社会保険料控除表をメールで送る",note:"",warn:null},
   ]},
   {title:"喪失手続き",tasks:[
-    {id:"d7",label:"社会保険資格喪失手続き",note:"健保組合の場合は健保・厚年それぞれ提出します。",warn:null},
-    {id:"d8",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
+    {id:"d6",label:"社会保険資格喪失手続き",note:"",warn:null},
+    {id:"d7",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"喪失手続き後",tasks:[
+    {id:"d8",label:"社会保険公文書取得",note:"",warn:null},
+    {id:"d9",label:"社会保険公文書のドキュ",note:"",warn:null},
   ]},
   {title:"取得手続き",tasks:[
-    {id:"d9",label:"社会保険資格取得手続き",note:"健保組合の場合は健保・厚年それぞれ提出。70歳以上・添付書類を確認。",warn:"⚠️ 添付書類の確認を忘れずに"},
-    {id:"d10",label:"被扶養者手続き",note:"扶養家族がいる場合は被扶養者異動届を提出します。",warn:"⚠️ 個マスタへの登録も忘れずに"},
-    {id:"d11",label:"3号手続き",note:"健保組合の場合のみ実施します。",warn:null},
-    {id:"d12",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
+    {id:"d10",label:"社会保険資格取得手続き",note:"",warn:null},
+    {id:"d11",label:"被扶養者手続き",note:"",warn:null},
+    {id:"d12",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
-  {title:"公文書取得・整理",tasks:[
-    {id:"d13",label:"社会保険公文書取得（喪失分）",note:"健保組合の場合は健保・厚年それぞれ取得します。",warn:null},
-    {id:"d14",label:"社会保険公文書取得（取得分）",note:"健保組合の場合は健保・厚年それぞれ取得します。",warn:null},
-    {id:"d15",label:"被扶養者公文書取得",note:"扶養手続きがあった場合のみ実施します。",warn:null},
-    {id:"d16",label:"公文書のドキュ",note:"すべての公文書をドキュに保存します。",warn:null},
-    {id:"d17",label:"同日得喪ドキュを整理する",note:"すべての書類が揃っているか確認してフォルダを整理します。",warn:null},
+  {title:"取得手続き後",tasks:[
+    {id:"d13",label:"社会保険公文書取得",note:"",warn:null},
+    {id:"d14",label:"社会保険公文書のドキュ",note:"",warn:null},
+    {id:"d15",label:"被扶養者公文書取得",note:"",warn:null},
+    {id:"d16",label:"被扶養者公文書のドキュ",note:"",warn:null},
+    {id:"d17",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
+    {id:"d18",label:"ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"d18",label:"社会保険公文書の送付（喪失分）",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"d19",label:"社会保険公文書の送付（取得分）",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"d20",label:"社会保険料控除表の確認",note:"変更後の控除表をお客様へ再送付します。",warn:null},
-    {id:"d21",label:"雇用保険事務処理簿の送付",note:"事務組合のみ送付が必要です。",warn:"⚠️ 事務組合のみ実施"},
-    {id:"d22",label:"被扶養者公文書の送付",note:"扶養手続きがあった場合のみ送付します。",warn:null},
-    {id:"d23",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+    {id:"d19",label:"社会保険公文書の送付",note:"□取得　□喪失",warn:null},
+    {id:"d20",label:"被扶養者公文書の送付",note:"",warn:null},
+    {id:"d21",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"同日得喪（健保組合）":{color:"#7C3AED",icon:"🔄",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"dk1",label:"嘱託賃金の確認",note:"",warn:null},
+    {id:"dk2",label:"書類のドキュ",note:"",warn:null},
+    {id:"dk3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"dk4",label:"個人マスタの作成",note:"",warn:null},
+    {id:"dk5",label:"社会保険料控除表をメールで送る",note:"",warn:null},
+  ]},
+  {title:"喪失手続き",tasks:[
+    {id:"dk6",label:"健康保険資格喪失手続き",note:"健保組合",warn:null},
+    {id:"dk7",label:"厚生年金保険資格喪失手続き",note:"",warn:null},
+    {id:"dk8",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"喪失手続き後",tasks:[
+    {id:"dk9",label:"健康保険公文書取得",note:"",warn:null},
+    {id:"dk10",label:"健康保険公文書のドキュ",note:"",warn:null},
+    {id:"dk11",label:"厚生年金保険公文書取得",note:"",warn:null},
+    {id:"dk12",label:"厚生年金保険公文書のドキュ",note:"",warn:null},
+  ]},
+  {title:"取得手続き",tasks:[
+    {id:"dk13",label:"健康保険資格取得手続き",note:"健保組合",warn:null},
+    {id:"dk14",label:"厚生年金保険資格取得手続き",note:"",warn:null},
+    {id:"dk15",label:"被扶養者手続き",note:"",warn:"⚠️ 個マスタ被扶養者登録する　電子申請不可、添付書類確認"},
+    {id:"dk16",label:"3号手続き",note:"電子申請可能（単独申請）",warn:null},
+    {id:"dk17",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"取得手続き後",tasks:[
+    {id:"dk18",label:"健康保険公文書取得",note:"",warn:null},
+    {id:"dk19",label:"健康保険公文書のドキュ",note:"",warn:null},
+    {id:"dk20",label:"厚生年金保険公文書取得",note:"",warn:null},
+    {id:"dk21",label:"厚生年金保険公文書のドキュ",note:"",warn:null},
+    {id:"dk22",label:"被扶養者公文書取得",note:"",warn:null},
+    {id:"dk23",label:"被扶養者公文書のドキュ",note:"",warn:null},
+    {id:"dk24",label:"第３号公文書取得",note:"□e-Gov",warn:null},
+    {id:"dk25",label:"第３号公文書のドキュ",note:"",warn:null},
+    {id:"dk26",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
+    {id:"dk27",label:"ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"dk28",label:"社会保険公文書の送付",note:"",warn:null},
+    {id:"dk29",label:"被扶養者公文書の送付",note:"",warn:null},
+    {id:"dk30",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "扶養":{color:"#0891B2",icon:"👨‍👩‍👧",sections:[
   {title:"手続き前にやること",tasks:[
-    {id:"f1",label:"お客様へ扶養変更連絡票受領の連絡",note:"扶養変更の連絡票が届いたことをお客様に確認します。",warn:null},
-    {id:"f2",label:"連絡票のドキュ",note:"受領した連絡票をドキュに保存します。",warn:null},
-    {id:"f3",label:"ドキュの名前の変更",note:"ファイル名を「会社名_氏名_扶養変更_日付」に統一します。",warn:null},
-    {id:"f4",label:"連絡票の内容を確認",note:"扶養追加・削除、扶養対象者の情報を確認します。",warn:"⚠️ 収入証明書等の添付書類が必要な場合あり"},
-    {id:"f5",label:"個人マスタの更新",note:"ろうむinOneで扶養情報を更新します。",warn:"⚠️ 個マスタへの登録も忘れずに"},
-    {id:"f6",label:"添付書類の確認",note:"収入証明・続柄証明等の必要書類を確認します。",warn:null},
-    {id:"f7",label:"社会保険料控除表をメールで送る",note:"更新後、社会保険料控除表をお客様へメール送付します。",warn:null},
+    {id:"f1",label:"お客様へ被扶養者連絡票受領の連絡",note:"□資格確認証　要・不要",warn:null},
+    {id:"f2",label:"被扶養者連絡票のドキュ",note:"",warn:null},
+    {id:"f3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"f4",label:"被扶養者連絡票の内容を確認",note:"",warn:"⚠️ 被保険者の収入が1,000万円以上の場合は、被扶養者の課税非課税証明を依頼"},
+    {id:"f5",label:"個人マスタの入力",note:"",warn:null},
   ]},
   {title:"扶養手続き",tasks:[
-    {id:"f8",label:"被扶養者手続き",note:"電子申請時、被保険者の収入入力を忘れずに。1,000万円以上は9,999,999と入力。",warn:"⚠️ 個マスタへの登録も忘れずに。紙提出の場合は特に注意"},
-    {id:"f9",label:"3号手続き",note:"健保組合の場合のみ実施します。",warn:null},
-    {id:"f10",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
+    {id:"f6",label:"被扶養者手続き",note:"",warn:"⚠️ 電申時、被保険者の収入を忘れずに入力する　※1,000万円以上の場合は9,999,999と入力　□個マスタ登録する(扶養手続きを紙で提出する時、要注意）"},
+    {id:"f7",label:"3号手続き",note:"健保組合の場合は単独申請",warn:null},
+    {id:"f8",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
-  {title:"公文書取得・整理",tasks:[
-    {id:"f11",label:"社会保険公文書取得",note:"健保組合の場合は健保・厚年それぞれ取得します。",warn:null},
-    {id:"f12",label:"公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"f13",label:"第3号公文書取得",note:"健保組合の場合はけんぽ協会から取得します。",warn:null},
-    {id:"f14",label:"第3号公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"f15",label:"扶養ドキュを整理する",note:"すべての書類が揃っているか確認してフォルダを整理します。",warn:null},
+  {title:"手続き後",tasks:[
+    {id:"f9",label:"被扶養者公文書取得",note:"",warn:null},
+    {id:"f10",label:"被扶養者公文書のドキュ",note:"",warn:null},
+    {id:"f11",label:"第３号公文書取得",note:"健保組合□e-Gov",warn:null},
+    {id:"f12",label:"第３号公文書のドキュ",note:"健保組合□e-Gov",warn:null},
+    {id:"f13",label:"被扶養者/第３号ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"f16",label:"社会保険公文書の送付",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"f17",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+    {id:"f14",label:"公文書の送付",note:"",warn:null},
+    {id:"f15",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"扶養（削除）":{color:"#0891B2",icon:"👨‍👩‍👧",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"fd1",label:"お客様へ被扶養者連絡票受領の連絡",note:"",warn:null},
+    {id:"fd2",label:"被扶養者連絡票のドキュ",note:"",warn:null},
+    {id:"fd3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"fd4",label:"被扶養者連絡票の内容を確認",note:"",warn:null},
+    {id:"fd5",label:"個人マスタの入力",note:"",warn:null},
+    {id:"fd6",label:"被扶養者資格喪失証明書",note:"",warn:null},
+    {id:"fd7",label:"保険証回収の依頼（削除の場合）",note:"",warn:null},
+  ]},
+  {title:"扶養手続き",tasks:[
+    {id:"fd8",label:"被扶養者手続き",note:"",warn:"⚠️ 電申時、被保険者の収入を忘れずに入力する　※1,000万円以上の場合は9,999,999と入力　□個マスタ登録する(扶養手続きを紙で提出する時、要注意）"},
+    {id:"fd9",label:"3号手続き",note:"健保組合の場合は単独申請",warn:null},
+    {id:"fd10",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"手続き後",tasks:[
+    {id:"fd11",label:"被扶養者公文書取得",note:"",warn:null},
+    {id:"fd12",label:"被扶養者公文書のドキュ",note:"",warn:null},
+    {id:"fd13",label:"第３号公文書取得",note:"健保組合□e-Gov",warn:null},
+    {id:"fd14",label:"第３号公文書のドキュ",note:"健保組合□e-Gov",warn:null},
+    {id:"fd15",label:"被扶養者/第３号ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"fd16",label:"公文書の送付",note:"",warn:null},
+    {id:"fd17",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "氏名変更":{color:"#059669",icon:"✏️",sections:[
   {title:"手続き前にやること",tasks:[
-    {id:"s1",label:"お客様へ氏名変更連絡票受領の連絡",note:"マイナ保険証と紐付け済みなら手続き不要。扶養者は届出が必要です。",warn:null},
-    {id:"s2",label:"連絡票のドキュ",note:"受領した連絡票をドキュに保存します。",warn:null},
-    {id:"s3",label:"ドキュの名前の変更",note:"ファイル名を「会社名_旧氏名→新氏名_氏名変更_日付」に統一します。",warn:null},
-    {id:"s4",label:"連絡票の内容を確認",note:"旧氏名・新氏名・変更日を確認します。",warn:null},
-    {id:"s5",label:"ろうむinOneで新氏名を更新",note:"社会保険氏名変更手続き画面で新しい氏名に変更します。",warn:null},
-    {id:"s6",label:"保険証回収依頼しない",note:"手続き後「資格確認書が届かない」と連絡が来たら申請して保険証を回収。",warn:null},
+    {id:"s1",label:"お客様へ氏名変更連絡票受領の連絡",note:"マイナ保険証と紐付けされていれば手続き不要　※ただし扶養者は紐付けされていても届出が必要",warn:null},
+    {id:"s2",label:"氏名変更連絡票のドキュ",note:"",warn:null},
+    {id:"s3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"s4",label:"氏名変更連絡票の内容を確認",note:"マイナ保険証と紐付けされていなければ自動的に資格確認書が発行されるため確認不要",warn:null},
+    {id:"s5",label:"ろうむinOneの社会保険氏名変更手続きにて新氏名を更新",note:"",warn:null},
+    {id:"s6",label:"保険証回収依頼しない",note:"手続き後「資格確認書が届かない」と連絡が来たら申請し保険証を回収",warn:null},
   ]},
-  {title:"氏名変更手続き",tasks:[
-    {id:"s7",label:"雇用保険被保険者氏名変更届",note:"ハローワークへ提出します。e-Govでも可。",warn:null},
-    {id:"s8",label:"社会保険氏名変更届",note:"健保組合の場合は健保・厚年それぞれ提出します。",warn:null},
-    {id:"s9",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
+  {title:"手続き",tasks:[
+    {id:"s7",label:"氏名変更届手続き",note:"",warn:null},
+    {id:"s8",label:"扶養者変更手続き",note:"紙の扶養異動届を使用し、変更に〇・赤黒で提出（添付書類は不要）",warn:null},
+    {id:"s9",label:"氏名変更届の公文書をドキュ",note:"□e-Gov",warn:null},
+    {id:"s10",label:"扶養者の公文書をドキュ",note:"",warn:null},
+    {id:"s11",label:"氏名変更届のドキュを整理",note:"",warn:null},
   ]},
-  {title:"公文書取得・送付",tasks:[
-    {id:"s10",label:"雇用保険公文書取得",note:"e-Govまたはハローワークから受領します。",warn:null},
-    {id:"s11",label:"社会保険公文書取得",note:"健保組合の場合は健保・厚年それぞれ取得します。",warn:null},
-    {id:"s12",label:"公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"s13",label:"公文書の送付",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"s14",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+  {title:"公文書の送付",tasks:[
+    {id:"s12",label:"ドキュのみ、送付しない",note:"",warn:null},
+    {id:"s13",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "住所変更":{color:"#0891B2",icon:"🏠",sections:[
-  {title:"手続き",tasks:[
-    {id:"ad1",label:"お客様へ住所変更連絡票受領の連絡",note:"住所変更の連絡票が届いたことをお客様に確認します。",warn:null},
-    {id:"ad2",label:"個人マスタの住所を更新",note:"ろうむinOneで新住所に更新します。",warn:null},
-    {id:"ad3",label:"雇用保険 住所変更届（必要な場合）",note:"マイナ保険証連携済みの場合は不要です。",warn:null},
-    {id:"ad4",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"ad5",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+  {title:"手続き前にやること",tasks:[
+    {id:"ad1",label:"お客様へ住所変更連絡票受領の連絡",note:"",warn:null},
+    {id:"ad2",label:"住所変更連絡票のドキュ",note:"",warn:null},
+    {id:"ad3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"ad4",label:"住所変更連絡票の内容を確認",note:"",warn:null},
+    {id:"ad5",label:"ろうむinOneの社会保険住所変更手続きにて新住所を更新",note:"",warn:"⚠️ 電話番号も入力すること"},
+    {id:"ad6",label:"個マスタの住所を確認",note:"",warn:null},
+    {id:"ad7",label:"ウォンツは、関東ITに郵送が必要",note:"控は戻ってこないので送付のみ",warn:null},
   ]},
 ]},
 "傷病手当":{color:"#BE185D",icon:"🏥",sections:[
   {title:"手続き前にやること",tasks:[
-    {id:"sh1",label:"傷病手当金申請書の準備",note:"協会けんぽまたは健保組合の申請書を準備します。",warn:null},
-    {id:"sh2",label:"申請対象期間の確認",note:"待期期間（3日）を含む欠勤期間を確認します。",warn:"⚠️ 有給消化日は支給対象外"},
-    {id:"sh3",label:"賃金台帳・出勤簿の収集",note:"申請期間の賃金台帳・出勤簿を収集します。",warn:null},
+    {id:"sh1",label:"お客様へ傷病入院連絡票受領の連絡",note:"",warn:null},
+    {id:"sh2",label:"傷病入院連絡票のドキュ",note:"",warn:null},
+    {id:"sh3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"sh4",label:"傷病入院連絡票の内容を確認",note:"",warn:null},
   ]},
-  {title:"申請手続き",tasks:[
-    {id:"sh4",label:"事業主記載欄の記入",note:"会社の証明欄（給与支払状況等）を記入します。",warn:null},
-    {id:"sh5",label:"申請書の提出",note:"協会けんぽまたは健保組合へ提出します。",warn:null},
-    {id:"sh6",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
+  {title:"書類作成",tasks:[
+    {id:"sh5",label:"傷病手当金支給申請書の作成",note:"",warn:null},
+    {id:"sh6",label:"出勤状況の確認",note:"",warn:null},
+    {id:"sh7",label:"欠勤控除・有給取得有無の確認",note:"",warn:null},
   ]},
-  {title:"公文書取得・送付",tasks:[
-    {id:"sh7",label:"支給決定通知書の取得",note:"協会けんぽまたは健保組合から受領します。",warn:null},
-    {id:"sh8",label:"公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"sh9",label:"公文書の送付",note:"お客様へ郵送またはドキュで送付します。",warn:null},
-    {id:"sh10",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+  {title:"印取り・回収",tasks:[
+    {id:"sh8",label:"傷病手当金支給申請書の印取り",note:"",warn:null},
+    {id:"sh9",label:"傷病手当金支給申請書の印取回収",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"sh10",label:"傷病手当金支給申請",note:"協会けんぽ又は健保組合",warn:null},
+    {id:"sh11",label:"控書類の回収・ドキュ",note:"",warn:null},
+    {id:"sh12",label:"傷病手当金申請ドキュを整理",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"sh13",label:"傷病手当金控書類の送付",note:"",warn:null},
+    {id:"sh14",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "月変・賃金入力":{color:"#0369A1",icon:"💴",sections:[
   {title:"手続き前にやること",tasks:[
-    {id:"mc1",label:"賃金データの収集",note:"お客様から賃金変動データを収集します。",warn:null},
-    {id:"mc2",label:"月変対象者の確認",note:"3か月連続で2等級以上の変動がある者を確認します。",warn:"⚠️ 固定的賃金の変動が前提"},
-    {id:"mc3",label:"ろうむinOneで賃金入力",note:"対象者の賃金台帳入力を行います。",warn:null},
+    {id:"mc1",label:"賃金台帳の回収",note:"",warn:null},
+    {id:"mc2",label:"賃金台帳のドキュ csvはODへ",note:"",warn:null},
+    {id:"mc3",label:"賃金台帳回収＆月変チェックリストへ入力",note:"",warn:null},
+    {id:"mc4",label:"賃金台帳の入力",note:"",warn:"⚠️ 年末調整還付金気を付ける（支給項目に載っていたらマイナスする）"},
+    {id:"mc5",label:"保険料確認",note:"",warn:null},
+    {id:"mc6",label:"月変推定者リストの作成",note:"",warn:null},
+    {id:"mc7",label:"月変推定者リストのドキュ",note:"",warn:null},
+    {id:"mc8",label:"月変該当者のチェック",note:"",warn:null},
+    {id:"mc9",label:"月変該当者のドキュ",note:"",warn:null},
+    {id:"mc10",label:"ドキュの名前の変更",note:"",warn:null},
   ]},
   {title:"月変手続き",tasks:[
-    {id:"mc4",label:"月額変更届の作成",note:"ろうむinOneで月額変更届を作成します。",warn:null},
-    {id:"mc5",label:"月額変更届の提出",note:"年金事務所または健保組合へ提出します。",warn:null},
-    {id:"mc6",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
+    {id:"mc11",label:"月変手続き",note:"",warn:"⚠️ 健保組合　□健保　□厚年  □70歳以上該当者"},
+    {id:"mc12",label:"手続き後、ドキュを整理する",note:"",warn:null},
+    {id:"mc13",label:"社会保険料控除表をメールで送る",note:"",warn:null},
   ]},
-  {title:"公文書取得・送付",tasks:[
-    {id:"mc7",label:"社会保険料変更通知の取得",note:"年金事務所または健保組合から受領します。",warn:null},
-    {id:"mc8",label:"公文書のドキュ",note:"取得した公文書をドキュに保存します。",warn:null},
-    {id:"mc9",label:"社会保険料控除表の更新・送付",note:"更新後の控除表をお客様へメール送付します。",warn:null},
-    {id:"mc10",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+  {title:"手続き後",tasks:[
+    {id:"mc14",label:"月変公文書取得",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+    {id:"mc15",label:"月変公文書のドキュ",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+    {id:"mc16",label:"月変ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"mc17",label:"月変公文書の送付",note:"",warn:null},
+    {id:"mc18",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
+    {id:"mc19",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+  {title:"Wチェック",tasks:[
+    {id:"mc20",label:"担当者",note:"",warn:null},
   ]},
 ]},
 "賞与支払届":{color:"#B45309",icon:"🎁",sections:[
-  {title:"手続き",tasks:[
-    {id:"by1",label:"賞与支払データの収集",note:"お客様から賞与支払データを収集します。",warn:null},
-    {id:"by2",label:"ろうむinOneで賞与入力",note:"対象者の賞与額を入力します。",warn:"⚠️ 支払日から5日以内に提出が必要"},
-    {id:"by3",label:"賞与支払届の作成",note:"ろうむinOneで賞与支払届を作成します。",warn:null},
-    {id:"by4",label:"賞与支払届の提出",note:"年金事務所または健保組合へ提出します。",warn:null},
-    {id:"by5",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"by6",label:"公文書取得・ドキュ",note:"標準賞与額通知書等を取得しドキュに保存します。",warn:null},
-    {id:"by7",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+  {title:"手続き前にやること",tasks:[
+    {id:"by1",label:"賞与台帳の回収",note:"",warn:null},
+    {id:"by2",label:"賞与台帳のドキュ",note:"",warn:null},
+    {id:"by3",label:"賞与台帳の入力",note:"",warn:"⚠️ 産育休社保免除されているか"},
+  ]},
+  {title:"当事務所で賞与計算する場合",tasks:[
+    {id:"by4",label:"賞与額の確認",note:"",warn:null},
+    {id:"by5",label:"賞与計算",note:"",warn:null},
+    {id:"by6",label:"賞与支給控除一覧表のドキュ",note:"",warn:null},
+    {id:"by7",label:"社会保険料の確認",note:"",warn:"⚠️ 産育休社保免除されているか"},
+    {id:"by8",label:"所得税の確認",note:"アムルックさんのみ所得税計算なし",warn:null},
+    {id:"by9",label:"ダブルチェック",note:"",warn:null},
+  ]},
+  {title:"賞与支払手続き",tasks:[
+    {id:"by10",label:"賞与支払届手続き",note:"",warn:"⚠️ 健保組合　□健保　□厚年  □70歳以上該当者"},
+    {id:"by11",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"手続き後",tasks:[
+    {id:"by12",label:"公文書取得",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+    {id:"by13",label:"公文書のドキュ",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+    {id:"by14",label:"賞与支払届ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"by15",label:"公文書の送付",note:"",warn:null},
+    {id:"by16",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "36協定":{color:"#7C3AED",icon:"📝",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"sa1",label:"残業時間、休日労働有無の確認",note:"",warn:null},
+    {id:"sa2",label:"特別条項有無の確認",note:"月45時間、年間360時間を超える場合",warn:null},
+  ]},
+  {title:"書類作成",tasks:[
+    {id:"sa3",label:"36協定の作成",note:"",warn:"⚠️ 様式を確認する（必ず新様式を使うこと）"},
+    {id:"sa4",label:"特別条項の作成",note:"昨年、特別条項を締結していなくてもお客様に確認すること",warn:null},
+    {id:"sa5",label:"カレンダーの作成",note:"フラッフィーは中野先生・自立は平井先生に確認する",warn:null},
+  ]},
+  {title:"印取り・回収",tasks:[
+    {id:"sa6",label:"協定書の印取り",note:"",warn:null},
+    {id:"sa7",label:"協定書の印取回収",note:"",warn:null},
+    {id:"sa8",label:"協定書の内容の確認",note:"",warn:null},
+  ]},
   {title:"手続き",tasks:[
-    {id:"36a1",label:"36協定届の準備",note:"労使協定を締結後、届出書を準備します。",warn:null},
-    {id:"36a2",label:"内容確認（時間外・休日労働の上限確認）",note:"月45時間・年360時間の原則と特別条項を確認します。",warn:"⚠️ 特別条項の場合は月100時間・年720時間上限"},
-    {id:"36a3",label:"36協定届の提出",note:"労働基準監督署またはe-Govで提出します。",warn:null},
-    {id:"36a4",label:"受付印済み書類の受領",note:"受付印済みの協定届を受領します。",warn:null},
-    {id:"36a5",label:"ドキュ整理・お客様への送付",note:"受付印済み書類をドキュに保存し、お客様へ送付します。",warn:null},
-    {id:"36a6",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
+    {id:"sa9",label:"36協定届出",note:"",warn:null},
+    {id:"sa10",label:"36協定控書類の回収・ドキュ",note:"",warn:null},
+    {id:"sa11",label:"36協定ドキュを整理",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"sa12",label:"36協定控えの送付",note:"",warn:null},
+    {id:"sa13",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"療養費":{color:"#BE185D",icon:"💊",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"ry1",label:"お客様へ療養費連絡票受領の連絡",note:"",warn:null},
+    {id:"ry2",label:"療養費連絡票のドキュ",note:"",warn:null},
+    {id:"ry3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"ry4",label:"療養費連絡票の内容を確認",note:"",warn:null},
+  ]},
+  {title:"書類作成",tasks:[
+    {id:"ry5",label:"療養費支給申請書の作成",note:"",warn:null},
+    {id:"ry6",label:"領収書の確認",note:"",warn:null},
+  ]},
+  {title:"印取り・回収",tasks:[
+    {id:"ry7",label:"療養費支給申請書の印取り",note:"",warn:null},
+    {id:"ry8",label:"療養費支給申請書の印取回収",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"ry9",label:"療養費支給申請",note:"協会けんぽ又は健保組合",warn:null},
+    {id:"ry10",label:"控書類の回収・ドキュ",note:"",warn:null},
+    {id:"ry11",label:"療養費申請ドキュを整理",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"ry12",label:"療養費控書類の送付",note:"",warn:null},
+    {id:"ry13",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"限度額":{color:"#0891B2",icon:"🏷️",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"gd1",label:"お客様へ限度額連絡受領の連絡",note:"",warn:null},
+    {id:"gd2",label:"限度額連絡のドキュ",note:"",warn:null},
+    {id:"gd3",label:"ドキュの名前の変更",note:"",warn:null},
+  ]},
+  {title:"書類作成",tasks:[
+    {id:"gd4",label:"限度額適用認定申請書の作成",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"gd5",label:"限度額支給申請",note:"協会けんぽ又は健保組合",warn:null},
+    {id:"gd6",label:"控書類の回収・ドキュ",note:"",warn:null},
+    {id:"gd7",label:"限度額申請ドキュを整理",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"gd8",label:"限度額控書類の送付",note:"",warn:null},
+    {id:"gd9",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"70歳":{color:"#D97706",icon:"🧓",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"ag1",label:"お客様に給与変更があるか確認",note:"",warn:null},
+    {id:"ag2",label:"個人マスタの入力",note:"",warn:"⚠️ 取得区分の「70歳以上被用者該当」のチェックを忘れずに"},
+    {id:"ag3",label:"社会保険料控除表をメールで送る",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"ag4",label:"厚生年金喪失手続き",note:"",warn:null},
+    {id:"ag5",label:"手続き後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"手続き後",tasks:[
+    {id:"ag6",label:"公文書の取得",note:"",warn:null},
+    {id:"ag7",label:"取得後、ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"ag8",label:"公文書の送付orアップ",note:"",warn:null},
+    {id:"ag9",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"保険証再交付":{color:"#059669",icon:"💳",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"hk1",label:"お客様へ再交付連絡票受領の連絡",note:"",warn:null},
+    {id:"hk2",label:"再交付連絡票のドキュ",note:"",warn:null},
+    {id:"hk3",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"hk4",label:"再交付連絡票の内容を確認",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"hk5",label:"再交付申請書を作成",note:"",warn:null},
+    {id:"hk6",label:"再交付申請書をけんぽ協会に送付",note:"",warn:null},
+    {id:"hk7",label:"再交付申請書の控書類を受領",note:"",warn:null},
+    {id:"hk8",label:"再交付申請書のドキュを整理",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"hk9",label:"再交付申請書の公文書の送付",note:"",warn:null},
+    {id:"hk10",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"事業所成立":{color:"#0369A1",icon:"🏢",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"es1",label:"会社情報をもらう",note:"会社情報シートに入力してもらう　□保険料控除月の確認　当月or翌月",warn:null},
+    {id:"es2",label:"入社連絡票をもらう",note:"",warn:null},
+    {id:"es3",label:"手続きに必要な添付書類をもらう",note:"",warn:null},
+  ]},
+  {title:"ろうむinOne登録",tasks:[
+    {id:"es4",label:"事業所マスタの作成",note:"",warn:null},
+    {id:"es5",label:"個人マスタの作成",note:"",warn:null},
+  ]},
+  {title:"顧問契約の場合",tasks:[
+    {id:"es6",label:"ラベルの作成",note:"",warn:null},
+    {id:"es7",label:"送付状の作成",note:"",warn:null},
+    {id:"es8",label:"事務所レター送付リストに追加",note:"",warn:null},
+    {id:"es9",label:"マイコモンに顧客登録",note:"",warn:null},
+    {id:"es10",label:"賃金台帳回収シートに追加",note:"",warn:null},
+    {id:"es11",label:"提出代行の作成",note:"",warn:null},
+    {id:"es12",label:"ドキュフォルダ作成",note:"",warn:null},
+  ]},
+  {title:"書類作成",tasks:[
+    {id:"es13",label:"適用事業報告",note:"",warn:null},
+    {id:"es14",label:"労働保険成立届",note:"",warn:null},
+    {id:"es15",label:"労働保険概算保険料申告",note:"年間賃金額の確認",warn:null},
+    {id:"es16",label:"雇用保険設置届、資格取得",note:"",warn:null},
+    {id:"es17",label:"社会保険新規適用、資格取得",note:"",warn:null},
+    {id:"es18",label:"36協定作成",note:"",warn:null},
+    {id:"es19",label:"健保・厚年保険料口座振替納付申出書",note:"",warn:"⚠️ 金融機関に確認印をもらう　□その後、年金事務センターに送付"},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"es20",label:"労働保険成立・概算申告書届出",note:"",warn:null},
+    {id:"es21",label:"雇用保険設置届、資格取得届出",note:"",warn:null},
+    {id:"es22",label:"社会保険新規適用、資格取得届出",note:"",warn:null},
+    {id:"es23",label:"36協定届出",note:"一覧表にも記入",warn:null},
+    {id:"es24",label:"就業規則、各種規程届出",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"es25",label:"労働保険成立・概算申告書　控送付",note:"",warn:null},
+    {id:"es26",label:"雇用保険設置届、資格取得　控送付",note:"",warn:null},
+    {id:"es27",label:"社会保険新規適用、資格取得　控送付",note:"",warn:null},
+    {id:"es28",label:"36協定の控送付",note:"",warn:null},
+    {id:"es29",label:"就業規則、各種規程の控送付",note:"",warn:null},
+    {id:"es30",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"事業所廃止":{color:"#DC2626",icon:"🏚️",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"ec1",label:"手続きに必要な情報をもらう",note:"",warn:null},
+  ]},
+  {title:"手続き（従業員）",tasks:[
+    {id:"ec2",label:"社保喪失",note:"",warn:null},
+    {id:"ec3",label:"雇保喪失",note:"",warn:null},
+  ]},
+  {title:"書類作成（会社）",tasks:[
+    {id:"ec4",label:"労働保険申告書（清算）",note:"",warn:null},
+    {id:"ec5",label:"雇用保険廃止届",note:"",warn:null},
+    {id:"ec6",label:"社会保険全喪届",note:"",warn:null},
+  ]},
+  {title:"手続き（会社）",tasks:[
+    {id:"ec7",label:"労働保険申告書（清算）",note:"",warn:null},
+    {id:"ec8",label:"雇用保険廃止届",note:"",warn:null},
+    {id:"ec9",label:"社会保険全喪届",note:"",warn:"⚠️ 添付書類　労働保険申告書控の写し"},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"ec10",label:"労働保険申告書（清算）",note:"",warn:null},
+    {id:"ec11",label:"雇用保険廃止届",note:"",warn:null},
+    {id:"ec12",label:"社会保険全喪届",note:"",warn:null},
+  ]},
+]},
+"所在地変更":{color:"#0891B2",icon:"📍",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"sl1",label:"変更後の謄本または賃貸借契約書をもらう",note:"",warn:null},
+    {id:"sl2",label:"電話番号に変更がないか確認",note:"",warn:null},
+  ]},
+  {title:"書類作成",tasks:[
+    {id:"sl3",label:"事業所マスタの変更",note:"",warn:null},
+  ]},
+  {title:"書類作成（届出）",tasks:[
+    {id:"sl4",label:"労働保険所在地変更届",note:"事務組合（SR,中企団）は事務組合用の書類",warn:null},
+    {id:"sl5",label:"雇用保険事業所各種変更届",note:"事務組合（SR,中企団）は事務組合用の書類",warn:null},
+    {id:"sl6",label:"社会保険所在地変更届",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+  ]},
+  {title:"顧問契約の場合",tasks:[
+    {id:"sl7",label:"ラベルの変更",note:"",warn:null},
+    {id:"sl8",label:"送付状の変更",note:"ファイル名に新住所と入れること・レタパ送付状も変更",warn:null},
+    {id:"sl9",label:"提出代行証明書の変更",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"sl10",label:"労働保険所在地変更届",note:"",warn:null},
+    {id:"sl11",label:"雇用保険事業所各種変更届",note:"",warn:null},
+    {id:"sl12",label:"社会保険所在地変更届",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"sl13",label:"労働保険所在地変更届　控送付",note:"",warn:null},
+    {id:"sl14",label:"雇用保険事業所各種変更届　控送付",note:"",warn:null},
+    {id:"sl15",label:"社会保険所在地変更届　控送付",note:"",warn:null},
+    {id:"sl16",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+  {title:"管轄が変わった場合",tasks:[
+    {id:"sl17",label:"個マスタの労働保険番号変更",note:"",warn:null},
+    {id:"sl18",label:"個マスタ雇用保険番号変更",note:"",warn:null},
+    {id:"sl19",label:"個マスタ社会保険記号番号変更",note:"",warn:null},
+  ]},
+]},
+"名称変更":{color:"#059669",icon:"🏷️",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"nm1",label:"変更後の謄本をもらう",note:"",warn:null},
+  ]},
+  {title:"書類作成",tasks:[
+    {id:"nm2",label:"事業所マスタの変更",note:"",warn:null},
+  ]},
+  {title:"書類作成（届出）",tasks:[
+    {id:"nm3",label:"労働保険名称変更届",note:"事務組合（SR,中企団）は事務組合用の書類",warn:null},
+    {id:"nm4",label:"雇用保険事業所各種変更届",note:"事務組合（SR,中企団）は事務組合用の書類",warn:null},
+    {id:"nm5",label:"社会保険名称変更届",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+    {id:"nm6",label:"保険料口座振替納付(変更)申出書",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+  ]},
+  {title:"顧問契約の場合",tasks:[
+    {id:"nm7",label:"ラベルの変更",note:"",warn:null},
+    {id:"nm8",label:"送付状の変更",note:"ファイル名に新名称と入れること",warn:null},
+    {id:"nm9",label:"提出代行証明書の変更",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"nm10",label:"労働保険名称変更届",note:"",warn:null},
+    {id:"nm11",label:"雇用保険事業所各種変更届",note:"",warn:null},
+    {id:"nm12",label:"社会保険名称変更届",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"nm13",label:"労働保険名称変更届　控送付",note:"",warn:null},
+    {id:"nm14",label:"雇用保険事業所各種変更届　控送付",note:"",warn:null},
+    {id:"nm15",label:"社会保険名称変更届　控送付",note:"",warn:null},
+    {id:"nm16",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"代表者変更":{color:"#7C3AED",icon:"👑",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"rp1",label:"変更後の謄本をもらう",note:"",warn:null},
+  ]},
+  {title:"書類作成",tasks:[
+    {id:"rp2",label:"事業所マスタの変更",note:"",warn:null},
+  ]},
+  {title:"書類作成（届出）",tasks:[
+    {id:"rp3",label:"社会保険事業所関係変更届",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+    {id:"rp4",label:"社会保険料　口座振替変更申出書",note:"",warn:null},
+    {id:"rp5",label:"SR経営労務センター事業主会員各種届",note:"口座振替変更の届は不要",warn:"⚠️ SRに加入している場合（会社によって状況が異なるためSRへ電話でも確認すること）"},
+  ]},
+  {title:"顧問契約の場合",tasks:[
+    {id:"rp6",label:"ラベルの変更",note:"",warn:null},
+    {id:"rp7",label:"提出代行証明書の変更",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"rp8",label:"社会保険事業所関係変更届",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
+    {id:"rp9",label:"社会保険料　口座振替変更申出書",note:"",warn:null},
+    {id:"rp10",label:"SR経営労務センター事業主会員各種届",note:"",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"rp11",label:"社会保険事業所関係変更届　控送付",note:"",warn:null},
+    {id:"rp12",label:"SRからの控送付",note:"",warn:null},
+    {id:"rp13",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"海外労災":{color:"#DC2626",icon:"✈️",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"kl1",label:"お客様からのメール受領について返信",note:"",warn:null},
+    {id:"kl2",label:"頂いたファイルをドキュ",note:"",warn:"⚠️ ファイル名「西暦（開始日）・国名・対象者または人数」に変更"},
+    {id:"kl3",label:"ファイルの内容を確認",note:"加入の際は、特に注意。加入日に必ず間に合うように申請",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"kl4",label:"電子（E-GOV）or 紙　で申請",note:"※紙申請の場合は、レターパック（青）で郵送すること　※脱退と連絡が来た際は注意。脱退でなく「変更」で申請する",warn:null},
+  ]},
+  {title:"手続き後",tasks:[
+    {id:"kl5",label:"申請後の控書類をドキュ",note:"電子申請の場合は控PDFをドキュ・紙申請の場合は控書類をドキュ",warn:null},
+    {id:"kl6",label:"レターパック郵送の際はNoシールを保管",note:"",warn:null},
+    {id:"kl7",label:"ドキュを整理する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"kl8",label:"控書類を送付",note:"電子申請の場合は「手続き完了」の日時が記載された画面をスクショして送付",warn:null},
+    {id:"kl9",label:"チェックリストのドキュ",note:"",warn:null},
+  ]},
+]},
+"就業規則届":{color:"#0369A1",icon:"📋",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"jr1",label:"就業規則届の作成",note:"OneDrive　社労士　8就業規則・協定書　以前届出している場合はOneDriveの就業規則フォルダに保存してある",warn:null},
+    {id:"jr2",label:"意見書の作成",note:"OneDrive　社労士　8就業規則・協定書",warn:null},
+    {id:"jr3",label:"届出する規程の確認",note:"",warn:null},
+  ]},
+  {title:"印取り・回収",tasks:[
+    {id:"jr4",label:"意見書の送付",note:"意見書を送付し、従業員代表の署名・捺印をもらう。2部返送を依頼",warn:null},
+    {id:"jr5",label:"意見書の回収",note:"",warn:null},
+  ]},
+  {title:"届出書類の確認",tasks:[
+    {id:"jr6",label:"意見書の確認",note:"",warn:"⚠️ 意見が記載されているか　□意見を求めた日付　□従業員代表の職名・署名・捺印・選出方法　□同じものを２部返送"},
+    {id:"jr7",label:"就業規則届の確認",note:"",warn:"⚠️ 記入漏れはないか　□２部用意（現状印鑑は不要）　□社労士印を捺印したか"},
+    {id:"jr8",label:"届出規程の確認",note:"",warn:"⚠️ 同じものを２部ずつ用意したか"},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"jr9",label:"管轄の監督署へ送付",note:"就業規則届２部・意見書２部・届出対象規程一式2部",warn:null},
+  ]},
+  {title:"控書類の送付",tasks:[
+    {id:"jr10",label:"控書類をドキュ",note:"",warn:null},
+    {id:"jr11",label:"控書類をお客様に送付",note:"",warn:null},
+  ]},
+]},
+"一人親方":{color:"#B45309",icon:"🔨",sections:[
+  {title:"手続き前にやること",tasks:[
+    {id:"hp1",label:"加入者の氏名・加入日・日額の確認",note:"",warn:null},
+    {id:"hp2",label:"見積書の作成・送付",note:"",warn:"⚠️ 保険料の変更はないか確認"},
+    {id:"hp3",label:"入会申込書の送付・振込のご案内",note:"",warn:null},
+  ]},
+  {title:"書類回収・入金チェック",tasks:[
+    {id:"hp4",label:"入会申込書の回収",note:"",warn:null},
+    {id:"hp5",label:"入金確認（先生にお願いする）",note:"",warn:null},
+  ]},
+  {title:"手続き",tasks:[
+    {id:"hp6",label:"一人親方内訳明細をSRにFAXする",note:"",warn:null},
+    {id:"hp7",label:"一人親方名簿に入力",note:"",warn:null},
+    {id:"hp8",label:"入会申込書をSRに郵送する",note:"",warn:null},
+  ]},
+  {title:"公文書の送付",tasks:[
+    {id:"hp9",label:"一人親方カードを送付",note:"",warn:null},
+    {id:"hp10",label:"領収証を送付",note:"",warn:null},
+    {id:"hp11",label:"一人親方名簿に整理番号を入力",note:"",warn:null},
+    {id:"hp12",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
 "労災":{color:"#DC2626",icon:"🦺",isRousai:true,sections:[
@@ -723,127 +1232,6 @@ const P = {
     {id:"lc_fin",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
   ]},
 ]},
-"療養費":{color:"#BE185D",icon:"💊",sections:[
-  {title:"手続き",tasks:[
-    {id:"ry1",label:"療養費申請書の準備",note:"協会けんぽまたは健保組合の申請書を準備します。",warn:null},
-    {id:"ry2",label:"領収書・診療明細書の確認",note:"対象の領収書・診療明細書を確認します。",warn:null},
-    {id:"ry3",label:"申請書の提出",note:"協会けんぽまたは健保組合へ提出します。",warn:null},
-    {id:"ry4",label:"公文書取得・ドキュ",note:"支給決定通知書等を取得しドキュに保存します。",warn:null},
-    {id:"ry5",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"限度額":{color:"#0891B2",icon:"🏷️",sections:[
-  {title:"手続き",tasks:[
-    {id:"gd1",label:"限度額適用認定申請書の準備",note:"協会けんぽまたは健保組合の申請書を準備します。",warn:null},
-    {id:"gd2",label:"申請書の提出",note:"協会けんぽまたは健保組合へ提出します（郵送可）。",warn:null},
-    {id:"gd3",label:"限度額適用認定証の受領",note:"認定証が届いたらお客様へ転送します。",warn:null},
-    {id:"gd4",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"70歳":{color:"#D97706",icon:"🧓",sections:[
-  {title:"手続き",tasks:[
-    {id:"70a1",label:"70歳到達者の確認",note:"70歳到達日（誕生日の前日）を確認します。",warn:"⚠️ 厚生年金保険資格喪失・健保は継続"},
-    {id:"70a2",label:"70歳到達時の届出準備",note:"厚生年金保険70歳以上被用者該当届を準備します。",warn:null},
-    {id:"70a3",label:"届出の提出",note:"年金事務所へ提出します。",warn:null},
-    {id:"70a4",label:"社会保険料控除表の更新・送付",note:"厚生年金料が変わるため控除表を更新しお客様へ送付します。",warn:null},
-    {id:"70a5",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"保険証再交付":{color:"#059669",icon:"💳",sections:[
-  {title:"手続き",tasks:[
-    {id:"hk1",label:"再交付申請書の準備",note:"協会けんぽまたは健保組合の申請書を準備します。",warn:null},
-    {id:"hk2",label:"申請書の提出",note:"協会けんぽまたは健保組合へ提出します。",warn:null},
-    {id:"hk3",label:"保険証の受領・お客様への送付",note:"保険証が届いたらお客様へ送付します。",warn:null},
-    {id:"hk4",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"事業所成立":{color:"#0369A1",icon:"🏢",sections:[
-  {title:"手続き",tasks:[
-    {id:"es1",label:"事業所情報の収集",note:"事業所名称・所在地・設立年月日・業種等を確認します。",warn:null},
-    {id:"es2",label:"雇用保険適用事業所設置届",note:"ハローワークへ提出します（設置日の翌日から10日以内）。",warn:"⚠️ 翌日から10日以内"},
-    {id:"es3",label:"労働保険関係成立届",note:"労働基準監督署へ提出します。",warn:null},
-    {id:"es4",label:"社会保険新規適用届",note:"年金事務所へ提出します。",warn:null},
-    {id:"es5",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"es6",label:"公文書取得・お客様への送付",note:"各公文書を取得しお客様へ送付します。",warn:null},
-    {id:"es7",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"事業所廃止":{color:"#DC2626",icon:"🏚️",sections:[
-  {title:"手続き",tasks:[
-    {id:"ec1",label:"廃止日・最終雇用者の確認",note:"廃止日と在籍従業員を確認します。",warn:null},
-    {id:"ec2",label:"雇用保険廃止届",note:"ハローワークへ提出します。",warn:null},
-    {id:"ec3",label:"労働保険確定申告・廃止",note:"労働基準監督署へ提出します。",warn:null},
-    {id:"ec4",label:"社会保険全喪届",note:"年金事務所へ提出します。",warn:null},
-    {id:"ec5",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"ec6",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"所在地変更":{color:"#0891B2",icon:"📍",sections:[
-  {title:"手続き",tasks:[
-    {id:"ad1b",label:"変更日・新住所の確認",note:"変更年月日と新所在地を確認します。",warn:null},
-    {id:"ad2b",label:"雇用保険事業所所在地変更届",note:"ハローワークへ提出します。",warn:null},
-    {id:"ad3b",label:"社会保険適用事業所名称/所在地変更（訂正）届",note:"年金事務所へ提出します。",warn:null},
-    {id:"ad4b",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"ad5b",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"名称変更":{color:"#059669",icon:"🏷️",sections:[
-  {title:"手続き",tasks:[
-    {id:"nm1",label:"変更日・新名称の確認",note:"変更年月日と新名称を確認します。",warn:null},
-    {id:"nm2",label:"雇用保険事業所名称変更届",note:"ハローワークへ提出します。",warn:null},
-    {id:"nm3",label:"社会保険名称変更届",note:"年金事務所へ提出します。",warn:null},
-    {id:"nm4",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"nm5",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"代表者変更":{color:"#7C3AED",icon:"👑",sections:[
-  {title:"手続き",tasks:[
-    {id:"rp1",label:"変更日・新代表者情報の確認",note:"変更年月日と新代表者の氏名・生年月日等を確認します。",warn:null},
-    {id:"rp2",label:"社会保険代表者変更届",note:"年金事務所へ提出します（代表者が被保険者の場合）。",warn:null},
-    {id:"rp3",label:"雇用保険関係の確認",note:"代表者交代に伴う雇用保険手続きを確認します。",warn:null},
-    {id:"rp4",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"rp5",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"海外労災":{color:"#DC2626",icon:"✈️",sections:[
-  {title:"手続き",tasks:[
-    {id:"kl1",label:"海外派遣者の確認",note:"海外特別加入者かどうかを確認します。",warn:"⚠️ 海外特別加入していない場合は適用外"},
-    {id:"kl2",label:"療養補償給付申請書（海外用）の準備",note:"海外用の様式を準備します。",warn:null},
-    {id:"kl3",label:"申請書の提出",note:"本社管轄の労働基準監督署へ提出します。",warn:null},
-    {id:"kl4",label:"手続き後、ドキュを整理する",note:"提出済み書類をドキュで整理します。",warn:null},
-    {id:"kl5",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"就業規則届":{color:"#0369A1",icon:"📋",sections:[
-  {title:"手続き",tasks:[
-    {id:"jr1",label:"就業規則の内容確認",note:"常時10人以上の事業所は届出義務があります。",warn:"⚠️ 従業員代表の意見書が必要"},
-    {id:"jr2",label:"従業員代表の意見書の添付",note:"従業員代表から意見書に署名をもらいます。",warn:null},
-    {id:"jr3",label:"就業規則届の提出",note:"労働基準監督署へ提出します（2部：1部返却）。",warn:null},
-    {id:"jr4",label:"受付印済み書類の受領",note:"受付印済みの就業規則を受領します。",warn:null},
-    {id:"jr5",label:"ドキュ整理・お客様への送付",note:"受付印済み書類をドキュに保存し、お客様へ送付します。",warn:null},
-    {id:"jr6",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
-"一人親方":{color:"#B45309",icon:"🔨",sections:[
-  {title:"手続き前にやること",tasks:[
-    {id:"hp1",label:"一人親方情報の収集",note:"氏名・生年月日・住所・業務内容等を収集します。",warn:null},
-    {id:"hp2",label:"特別加入の説明",note:"特別加入制度についてご説明します。",warn:null},
-    {id:"hp3",label:"特別加入申請書の準備",note:"SR経営労務センターの申請書を準備します。",warn:null},
-    {id:"hp4",label:"入会申込書の回収",note:"記入済みの入会申込書を回収します。",warn:null},
-    {id:"hp5",label:"入金確認（先生にお願いする）",note:"先生（担当者）に入金確認をお願いします。",warn:null},
-  ]},
-  {title:"手続き",tasks:[
-    {id:"hp6",label:"一人親方内訳明細をSRにFAXする",note:"SRへ一人親方の内訳明細をFAXします。",warn:null},
-    {id:"hp7",label:"一人親方名簿に入力",note:"一人親方名簿に情報を入力します。",warn:null},
-    {id:"hp8",label:"入会申込書をSRに郵送する",note:"入会申込書をSRへ郵送します。",warn:null},
-  ]},
-  {title:"公文書の送付",tasks:[
-    {id:"hp9",label:"一人親方カードを送付",note:"お客様へ一人親方カードを送付します。",warn:null},
-    {id:"hp10",label:"領収証を送付",note:"お客様へ領収証を送付します。",warn:null},
-    {id:"hp11",label:"一人親方名簿に整理番号を入力",note:"名簿に整理番号を入力して管理します。",warn:null},
-    {id:"hp12",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
-  ]},
-]},
 };
 
 const GL = {
@@ -878,7 +1266,8 @@ function allTasks(c) {
   const sections = (p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0)
     ? p.sections.filter(s => !s.rousaiKey || c.rousaiShoshiki.includes(s.rousaiKey))
     : p.sections;
-  return sections.flatMap(s => s.tasks);
+  const hasFuyo = c.hasFuyo !== false; // デフォルトtrue（後方互換）
+  return sections.flatMap(s => s.tasks).filter(t => !t.fuyoOnly || hasFuyo);
 }
 function pct(c) { const a = allTasks(c); return a.length ? Math.round(a.filter(t => c.checks[t.id]).length / a.length * 100) : 0; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -906,6 +1295,7 @@ async function loadData() {
       caseMemo: r.case_memo || '',
       taskMemos: r.task_memos || {},
       round: r.round || '',
+      hasFuyo: r.ha_fuyo !== false,
     }));
     _lastSync = Date.now();
     setSyncStatus('☁️ 同期済');
@@ -928,6 +1318,7 @@ async function saveCase(c) {
     case_memo: c.caseMemo || '',
     task_memos: c.taskMemos || {},
     round: c.round || '',
+    ha_fuyo: c.hasFuyo !== false,
     updated_at: new Date().toISOString(),
   };
   const ok = await sbUpdate(c.id, payload);
@@ -1202,11 +1593,13 @@ function renderChecklist() {
   if (caseMemoEl) caseMemoEl.value = c.caseMemo || '';
   // 第〇回バッジ表示
   const roundBadge = c.round ? `<span style="background:#FEF9C3;color:#B45309;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">${esc(c.round)}</span>` : '';
-  document.getElementById('cl-name').innerHTML = esc(c.name || '') + roundBadge;
+  const fuyoBadge = (gp(c).hasFuyo && c.hasFuyo === false) ? '<span style="background:#F1F5F9;color:#94A3B8;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">扶養なし</span>' : '';
+  document.getElementById('cl-name').innerHTML = esc(c.name || '') + roundBadge + fuyoBadge;
 
   // チェックリスト本体
   let sn = 0, html = '';
   // 労災の場合は選択した様式のセクションのみ表示
+  const hasFuyo = c.hasFuyo !== false;
   const visibleSections = p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0
     ? p.sections.filter(s => !s.rousaiKey || c.rousaiShoshiki.includes(s.rousaiKey))
     : p.sections;
@@ -1217,12 +1610,14 @@ function renderChecklist() {
     </div>`;
   }
   visibleSections.forEach(sec => {
-    const st2 = sec.tasks.length, sd = sec.tasks.filter(t => c.checks[t.id]).length;
+    const filteredTasks = sec.tasks.filter(t => !t.fuyoOnly || hasFuyo);
+    const st2 = filteredTasks.length, sd = filteredTasks.filter(t => c.checks[t.id]).length;
+    if (st2 === 0) return; // 全タスクが非表示なら セクションごとスキップ
     html += `<div class="sec-head" style="background:${p.color}18;border-left:4px solid ${p.color}">
       <span class="sec-title" style="color:${p.color}">${esc(sec.title)}</span>
       <span class="sec-cnt">${sd}/${st2}</span>
     </div>`;
-    sec.tasks.forEach(task => {
+    sec.tasks.filter(t => !t.fuyoOnly || hasFuyo).forEach(task => {
       sn++;
       const ck = !!c.checks[task.id], ex = !!expanded[task.id];
       html += `<div class="task-card${ck?' done':''}">
@@ -1384,7 +1779,27 @@ function selP(idx) {
   } else {
     rArea.style.display = 'none';
   }
+  // 扶養あり/なし選択エリア
+  const fArea = document.getElementById('fuyo-select-area');
+  if (P[selProc] && P[selProc].hasFuyo) {
+    fArea.style.display = '';
+    // ラジオをリセット
+    document.getElementById('fuyo-yes').checked = true;
+    updateFuyoSelect();
+  } else {
+    fArea.style.display = 'none';
+  }
   uNewBtn();
+}
+
+function updateFuyoSelect() {
+  const yes = document.getElementById('fuyo-yes');
+  const noEl = document.getElementById('fuyo-no');
+  if (!yes) return;
+  document.getElementById('fuyo-yes-label').style.borderColor = yes.checked ? '#2563EB' : '#E2E8F0';
+  document.getElementById('fuyo-yes-label').style.color = yes.checked ? '#2563EB' : '';
+  document.getElementById('fuyo-no-label').style.borderColor = noEl.checked ? '#2563EB' : '#E2E8F0';
+  document.getElementById('fuyo-no-label').style.color = noEl.checked ? '#2563EB' : '';
 }
 function toggleShoshiki(key, el) {
   el.classList.toggle('on');
@@ -1395,6 +1810,8 @@ async function createCase() {
   const co = document.getElementById('n-co').value.trim();
   const na = document.getElementById('n-na').value.trim();
   const round = document.getElementById('n-round') ? document.getElementById('n-round').value.trim() : '';
+  const fuyoYes = document.getElementById('fuyo-yes');
+  const hasFuyo = (!fuyoYes || !document.getElementById('fuyo-select-area') || document.getElementById('fuyo-select-area').style.display === 'none') ? true : fuyoYes.checked;
   if (!co || !selProc) return;
   const procKey = selProc;
   // 労災の場合、選択した様式を収集
@@ -1408,6 +1825,8 @@ async function createCase() {
   document.getElementById('n-co').value = '';
   document.getElementById('n-na').value = '';
   if (document.getElementById('n-round')) document.getElementById('n-round').value = '';
+  if (document.getElementById('fuyo-yes')) document.getElementById('fuyo-yes').checked = true;
+  if (document.getElementById('fuyo-select-area')) document.getElementById('fuyo-select-area').style.display = 'none';
   selProc = null;
   document.getElementById('n-submit').disabled = true;
   setSyncStatus('🔄 保存中...');
@@ -1416,7 +1835,7 @@ async function createCase() {
     company: co, name: na, proc: procKey,
     status: 'none', checks: {}, wait_flags: {}, wait_memo: '', tanto_log: [],
     rousai_shoshiki: rousaiShoshiki,
-    case_memo: '', task_memos: {}, round: round,
+    case_memo: '', task_memos: {}, round: round, ha_fuyo: hasFuyo,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   };
   const row = await sbInsert(payload);
@@ -1432,6 +1851,7 @@ async function createCase() {
       caseMemo: row.case_memo || '',
       taskMemos: row.task_memos || {},
       round: row.round || '',
+      hasFuyo: row.ha_fuyo !== false,
     };
     cases.push(c);
     localStorage.setItem('cl-cases', JSON.stringify(cases));
