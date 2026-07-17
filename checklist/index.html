@@ -195,6 +195,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;}
 .toast.show{transform:translateY(0);opacity:1;}
 
+/* フリータスク入力 */
+.free-task-input{width:100%;font-size:12px;font-family:inherit;border:none;background:transparent;outline:none;color:#1E293B;font-weight:500;padding:0;}
+.free-task-input::placeholder{color:#CBD5E1;}
+.free-task-input:focus{background:#F8FAFC;border-radius:3px;padding:0 3px;}
+
 /* 案件メモ */
 #case-memo-panel{padding:8px 18px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;flex-shrink:0;}
 .case-memo-label{font-size:11px;color:#475569;font-weight:600;margin-bottom:4px;display:block;}
@@ -331,6 +336,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
       <label class="fl">使用する様式（複数選択可） <span class="req">*</span></label>
       <div id="rousai-shoshiki-grid" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
     </div>
+    <div id="free-name-area" style="display:none;margin-bottom:12px;">
+      <label class="fl">手続き名 <span class="req">*</span></label>
+      <input class="fi" id="n-free-name" type="text" placeholder="例：〇〇の手続き" oninput="uNewBtn()">
+    </div>
     <div id="fuyo-select-area" style="display:none;margin-bottom:12px;">
       <label class="fl">扶養家族</label>
       <div style="display:flex;gap:8px;margin-top:4px;">
@@ -449,7 +458,7 @@ const ROUSAI_SHOSHIKI = [
   { key: 's22',   label: '様式第22号',    desc: '第三者行為災害届（業務・通勤共通）' },
 ];
 
-const PROC_KEYS = ["入社","入社（健保組合）","退職","退職（健保組合）","同日得喪","同日得喪（健保組合）","扶養","扶養（削除）","氏名変更","住所変更","傷病手当","月変・賃金入力","賞与支払届","36協定","労災","療養費","限度額","70歳","保険証再交付","事業所成立","事業所廃止","所在地変更","名称変更","代表者変更","海外労災","就業規則届","一人親方"];
+const PROC_KEYS = ["入社","入社（健保組合）","退職","退職（健保組合）","同日得喪","同日得喪（健保組合）","扶養","扶養（削除）","氏名変更","住所変更","傷病手当","月変・賃金入力","賞与支払届","36協定","労災","療養費","限度額","70歳","保険証再交付","事業所成立","事業所廃止","所在地変更","名称変更","代表者変更","海外労災","就業規則届","一人親方","フリー"];
 
 const P = {
 
@@ -1232,6 +1241,20 @@ const P = {
     {id:"lc_fin",label:"チェックリストのドキュ",note:"完了したチェックリストをドキュに保存して案件を締めます。",warn:null},
   ]},
 ]},
+"フリー":{color:"#64748B",icon:"📋",isFree:true,sections:[
+  {title:"タスク",tasks:[
+    {id:"fr1",label:"",note:"",warn:null},
+    {id:"fr2",label:"",note:"",warn:null},
+    {id:"fr3",label:"",note:"",warn:null},
+    {id:"fr4",label:"",note:"",warn:null},
+    {id:"fr5",label:"",note:"",warn:null},
+    {id:"fr6",label:"",note:"",warn:null},
+    {id:"fr7",label:"",note:"",warn:null},
+    {id:"fr8",label:"",note:"",warn:null},
+    {id:"fr9",label:"",note:"",warn:null},
+    {id:"fr10",label:"",note:"",warn:null},
+  ]},
+]},
 };
 
 const GL = {
@@ -1295,7 +1318,9 @@ async function loadData() {
       caseMemo: r.case_memo || '',
       taskMemos: r.task_memos || {},
       round: r.round || '',
+      freeName: r.free_name || '',
       hasFuyo: r.ha_fuyo !== false,
+      freeLabels: r.free_labels || {},
     }));
     _lastSync = Date.now();
     setSyncStatus('☁️ 同期済');
@@ -1309,6 +1334,7 @@ async function saveCase(c) {
     company: c.company,
     name: c.name,
     proc: c.proc,
+    free_name: c.freeName || '',
     status: c.status,
     checks: c.checks,
     wait_flags: c.waitFlags || {},
@@ -1319,6 +1345,7 @@ async function saveCase(c) {
     task_memos: c.taskMemos || {},
     round: c.round || '',
     ha_fuyo: c.hasFuyo !== false,
+    free_labels: c.freeLabels || {},
     updated_at: new Date().toISOString(),
   };
   const ok = await sbUpdate(c.id, payload);
@@ -1331,6 +1358,7 @@ async function insertCase(c) {
     company: c.company,
     name: c.name,
     proc: c.proc,
+    free_name: c.freeName || '',
     status: c.status || 'none',
     checks: c.checks || {},
     wait_flags: c.waitFlags || {},
@@ -1420,7 +1448,7 @@ function renderSidebar() {
   el.innerHTML = filtered.map(c => {
     const p = gp(c), pt = pct(c), st = stInfo(c.status||'none');
     return `<div class="si${currentId===c.id&&viewMode==='c'?' on':''}" onclick="openChecklist('${c.id}')">
-      <span class="si-badge" style="background:${p.color}22;color:${p.color}">${p.icon} ${esc(c.proc)}</span>
+      <span class="si-badge" style="background:${p.color}22;color:${p.color}">${p.icon} ${c.freeName ? esc(c.freeName) : esc(c.proc)}</span>
       <div class="si-co">${esc(c.company)}</div>
       ${c.name ? `<div class="si-name">${esc(c.name)}</div>` : ''}
       <div class="si-row">
@@ -1503,7 +1531,7 @@ function renderDash() {
           <div class="dc-sub">${esc(c.name||'')}${c.name?' · ':''}${c.round?`<span style='background:#FEF9C3;color:#B45309;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;margin-right:3px;'>${esc(c.round)}</span>`:''}${esc(c.created_at ? c.created_at.split('T')[0] : '')}</div>
         </div>
         <div class="dc-right">
-          <span class="dc-proc" style="background:${p.color}18;color:${p.color}">${esc(c.proc)}</span>
+          <span class="dc-proc" style="background:${p.color}18;color:${p.color}">${c.freeName ? esc(c.freeName) : esc(c.proc)}</span>
           <span class="dc-pct" style="color:${p.color}">${pt}%</span>
         </div>
       </div>
@@ -1557,7 +1585,8 @@ function renderChecklist() {
   const st = stInfo(c.status||'none');
 
   // ヘッダー
-  document.getElementById('cl-proc-badge').innerHTML = `<span style="background:${p.color}18;color:${p.color};padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">${p.icon} ${esc(c.proc)}</span>`;
+  const procLabel = (p.isFree && c.freeName) ? c.freeName : c.proc;
+  document.getElementById('cl-proc-badge').innerHTML = `<span style="background:${p.color}18;color:${p.color};padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">${p.icon} ${esc(procLabel)}</span>`;
   document.getElementById('cl-co').textContent = c.company;
   document.getElementById('cl-name').textContent = c.name || '';
   document.getElementById('cl-pct').textContent = pt + '%';
@@ -1618,6 +1647,10 @@ function renderChecklist() {
       <span class="sec-cnt">${sd}/${st2}</span>
     </div>`;
     sec.tasks.filter(t => !t.fuyoOnly || hasFuyo).forEach(task => {
+      // フリー手続きの場合はラベルをfreeLabelから復元
+      if (p.isFree && c.freeLabels && c.freeLabels[task.id]) {
+        task = {...task, label: c.freeLabels[task.id]};
+      }
       sn++;
       const ck = !!c.checks[task.id], ex = !!expanded[task.id];
       html += `<div class="task-card${ck?' done':''}">
@@ -1625,7 +1658,10 @@ function renderChecklist() {
           <div class="task-num" style="background:${ck?'#22C55E':p.color+'22'};color:${ck?'#fff':p.color}">${ck?'✓':sn}</div>
           <input type="checkbox" class="task-cb" ${ck?'checked':''} style="accent-color:${p.color}" onchange="toggleTask('${task.id}')">
           <div class="task-info">
-            <div class="task-label${ck?' done':''}">${esc(task.label)}</div>
+            ${p.isFree
+              ? '<input class="free-task-input" type="text" placeholder="タスクを入力..." value="' + esc(task.label) + '" onchange="saveFreeTaskLabel(\'' + task.id + '\',this.value)" onclick="event.stopPropagation()">'
+              : '<div class="task-label' + (ck?' done':'') + '">' + esc(task.label) + '</div>'
+            }
             ${task.warn ? `<div class="task-warn">${esc(task.warn)}</div>` : ''}
           </div>
           <button class="task-toggle" onclick="toggleNote('${task.id}')">${ex?'▲':'▼'}</button>
@@ -1689,6 +1725,16 @@ async function toggleWaitFlag(key, val) {
   await saveCase(c);
 }
 
+// フリータスクラベル保存
+function saveFreeTaskLabel(taskId, val) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  // Pデータのフリータスクラベルをローカルで更新
+  if (!c.freeLabels) c.freeLabels = {};
+  c.freeLabels[taskId] = val;
+  saveCase(c);
+}
+
 // 案件メモ保存
 let _caseMemoTimer = null;
 function saveCaseMemo(val) {
@@ -1743,7 +1789,8 @@ async function saveTanto() {
 // 新規案件作成
 // ============================================================
 function uNewBtn() {
-  document.getElementById('n-submit').disabled = !(document.getElementById('n-co').value.trim() && selProc);
+  const freeNameOk = selProc !== 'フリー' || (document.getElementById('n-free-name') && document.getElementById('n-free-name').value.trim());
+  document.getElementById('n-submit').disabled = !(document.getElementById('n-co').value.trim() && selProc && freeNameOk);
 }
 
 function renderProcGrid() {
@@ -1779,6 +1826,11 @@ function selP(idx) {
   } else {
     rArea.style.display = 'none';
   }
+  // フリー手続き名エリア
+  const fnArea = document.getElementById('free-name-area');
+  if (fnArea) fnArea.style.display = selProc === 'フリー' ? '' : 'none';
+  if (selProc === 'フリー') document.getElementById('n-free-name').value = '';
+
   // 扶養あり/なし選択エリア
   const fArea = document.getElementById('fuyo-select-area');
   if (P[selProc] && P[selProc].hasFuyo) {
@@ -1810,6 +1862,7 @@ async function createCase() {
   const co = document.getElementById('n-co').value.trim();
   const na = document.getElementById('n-na').value.trim();
   const round = document.getElementById('n-round') ? document.getElementById('n-round').value.trim() : '';
+  const freeName = (selProc === 'フリー' && document.getElementById('n-free-name')) ? document.getElementById('n-free-name').value.trim() : '';
   const fuyoYes = document.getElementById('fuyo-yes');
   const hasFuyo = (!fuyoYes || !document.getElementById('fuyo-select-area') || document.getElementById('fuyo-select-area').style.display === 'none') ? true : fuyoYes.checked;
   if (!co || !selProc) return;
@@ -1825,6 +1878,8 @@ async function createCase() {
   document.getElementById('n-co').value = '';
   document.getElementById('n-na').value = '';
   if (document.getElementById('n-round')) document.getElementById('n-round').value = '';
+  if (document.getElementById('n-free-name')) document.getElementById('n-free-name').value = '';
+  if (document.getElementById('free-name-area')) document.getElementById('free-name-area').style.display = 'none';
   if (document.getElementById('fuyo-yes')) document.getElementById('fuyo-yes').checked = true;
   if (document.getElementById('fuyo-select-area')) document.getElementById('fuyo-select-area').style.display = 'none';
   selProc = null;
@@ -1832,10 +1887,11 @@ async function createCase() {
   setSyncStatus('🔄 保存中...');
   // まずSupabaseに保存してIDを確定させる
   const payload = {
-    company: co, name: na, proc: procKey,
+    company: co, name: na, proc: procKey, free_name: freeName,
     status: 'none', checks: {}, wait_flags: {}, wait_memo: '', tanto_log: [],
     rousai_shoshiki: rousaiShoshiki,
     case_memo: '', task_memos: {}, round: round, ha_fuyo: hasFuyo,
+    free_labels: {},
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   };
   const row = await sbInsert(payload);
@@ -1851,7 +1907,9 @@ async function createCase() {
       caseMemo: row.case_memo || '',
       taskMemos: row.task_memos || {},
       round: row.round || '',
+      freeName: row.free_name || '',
       hasFuyo: row.ha_fuyo !== false,
+      freeLabels: row.free_labels || {},
     };
     cases.push(c);
     localStorage.setItem('cl-cases', JSON.stringify(cases));
