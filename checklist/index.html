@@ -303,6 +303,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
       </div>
       <!-- 案件メモパネル -->
       <div id="case-memo-panel">
+        <div id="proc-date-edit-area" style="display:none;margin-bottom:8px;align-items:center;gap:8px;">
+          <label class="case-memo-label" id="proc-date-edit-label" style="margin-bottom:0;white-space:nowrap;min-width:110px;">入社年月日</label>
+          <input type="date" id="proc-date-edit-input" style="font-size:11px;font-family:inherit;border:1px solid #E2E8F0;border-radius:5px;padding:4px 8px;background:#fff;outline:none;color:#334155;" onchange="saveProcDate(this.value)">
+        </div>
         <label class="case-memo-label">📝 案件メモ（全体への備考）</label>
         <textarea class="case-memo-input" id="case-memo-input" placeholder="例：申請期間：4/1〜4/30、担当医：〇〇病院" oninput="saveCaseMemo(this.value)"></textarea>
       </div>
@@ -342,7 +346,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
     </div>
     <div id="proc-date-area" style="display:none;margin-bottom:12px;">
       <label class="fl" id="proc-date-label">入社年月日</label>
-      <input class="fi" id="n-proc-date" type="date" style="max-width:200px;">
+      <input class="fi" id="n-proc-date" type="date" style="max-width:220px;">
     </div>
     <div id="fuyo-select-area" style="display:none;margin-bottom:12px;">
       <label class="fl">扶養家族</label>
@@ -443,23 +447,22 @@ const WAIT_ITEMS = [
   { key: 'docs',    label: '添付書類・情報待ち' },
   { key: 'kintai',  label: '出勤簿待ち' },
   { key: 'chingin', label: '賃金台帳待ち' },
-  { key: 'intorimachi', label: '印取り待ち' },
   { key: 'other',   label: 'その他' },
 ];
-
 // 申請日付が必要な手続き種別の定義
 const PROC_DATE_CONFIG = {
-  '入社':           { label: '入社年月日', type: 'date' },
-  '入社（健保組合）':  { label: '入社年月日', type: 'date' },
-  '退職':           { label: '退職年月日', type: 'date' },
-  '退職（健保組合）':  { label: '退職年月日', type: 'date' },
-  '同日得喪':        { label: '得喪年月日', type: 'date' },
-  '同日得喪（健保組合）': { label: '得喪年月日', type: 'date' },
-  '扶養':           { label: '異動年月日', type: 'date' },
-  '扶養（削除）':     { label: '異動年月日', type: 'date' },
-  '月変・賃金入力':   { label: '賃金支給月・月変月', type: 'month' },
-  '賞与支払届':      { label: '賞与支給日', type: 'date' },
+  '入社':              { label: '入社年月日',       type: 'date' },
+  '入社（健保組合）':    { label: '入社年月日',       type: 'date' },
+  '退職':              { label: '退職年月日',       type: 'date' },
+  '退職（健保組合）':    { label: '退職年月日',       type: 'date' },
+  '同日得喪':           { label: '得喪年月日',       type: 'date' },
+  '同日得喪（健保組合）': { label: '得喪年月日',       type: 'date' },
+  '扶養':              { label: '異動年月日',       type: 'date' },
+  '扶養（削除）':        { label: '異動年月日',       type: 'date' },
+  '月変・賃金入力':      { label: '賃金支給月・月変月', type: 'month' },
+  '賞与支払届':         { label: '賞与支給日',       type: 'date' },
 };
+
 function stInfo(k) { return STATUSES.find(s => s.key === k) || STATUSES[0]; }
 
 // ============================================================
@@ -1339,7 +1342,6 @@ async function loadData() {
       round: r.round || '',
       freeName: r.free_name || '',
       procDate: r.proc_date || '',
-      procDate: r.proc_date || '',
       hasFuyo: r.ha_fuyo !== false,
       freeLabels: r.free_labels || {},
     }));
@@ -1558,7 +1560,7 @@ function renderDash() {
     const tantoLast = c.tantoLog && c.tantoLog.length ? `<div style="font-size:10px;color:#64748B;margin-top:4px;">担当: ${esc(c.tantoLog[c.tantoLog.length-1].name)}</div>` : '';
     return `<div class="dc" onclick="openChecklist('${c.id}')">
       <div class="dc-head">
-        <div class="dc-ico" style="font-size:${c.procDate?'28px':'20px'};line-height:1.2;">
+        <div class="dc-ico" style="font-size:${c.procDate?'26px':'20px'};line-height:1.2;text-align:center;">
         ${p.icon}
         ${c.procDate ? `<div style="font-size:10px;font-weight:700;color:#1E293B;margin-top:2px;white-space:nowrap;">${esc(c.procDate)}</div>` : ''}
       </div>
@@ -1656,6 +1658,19 @@ function renderChecklist() {
   // 案件メモパネル
   const caseMemoEl = document.getElementById('case-memo-input');
   if (caseMemoEl) caseMemoEl.value = c.caseMemo || '';
+  // 日付入力欄の表示
+  const dateEditArea = document.getElementById('proc-date-edit-area');
+  const dateConf = PROC_DATE_CONFIG[c.proc];
+  if (dateEditArea) {
+    if (dateConf) {
+      dateEditArea.style.display = 'flex';
+      document.getElementById('proc-date-edit-label').textContent = dateConf.label;
+      document.getElementById('proc-date-edit-input').type = dateConf.type;
+      document.getElementById('proc-date-edit-input').value = c.procDate || '';
+    } else {
+      dateEditArea.style.display = 'none';
+    }
+  }
   // 第〇回バッジ表示
   const roundBadge = c.round ? `<span style="background:#FEF9C3;color:#B45309;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">${esc(c.round)}</span>` : '';
   const fuyoBadge = (gp(c).hasFuyo && c.hasFuyo === false) ? '<span style="background:#F1F5F9;color:#94A3B8;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">扶養なし</span>' : '';
@@ -1769,6 +1784,15 @@ function saveFreeTaskLabel(taskId, val) {
   if (!c.freeLabels) c.freeLabels = {};
   c.freeLabels[taskId] = val;
   saveCase(c);
+}
+
+// 申請日付保存
+async function saveProcDate(val) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  c.procDate = val;
+  renderSidebar();
+  await saveCase(c);
 }
 
 // 案件メモ保存
@@ -1913,7 +1937,7 @@ async function createCase() {
   const na = document.getElementById('n-na').value.trim();
   const round = document.getElementById('n-round') ? document.getElementById('n-round').value.trim() : '';
   const freeName = (selProc === 'フリー' && document.getElementById('n-free-name')) ? document.getElementById('n-free-name').value.trim() : '';
-  const procDate = document.getElementById('n-proc-date') && PROC_DATE_CONFIG[procKey] ? document.getElementById('n-proc-date').value : '';
+  const procDate = (document.getElementById('n-proc-date') && PROC_DATE_CONFIG[procKey]) ? document.getElementById('n-proc-date').value : '';
   const fuyoYes = document.getElementById('fuyo-yes');
   const hasFuyo = (!fuyoYes || !document.getElementById('fuyo-select-area') || document.getElementById('fuyo-select-area').style.display === 'none') ? true : fuyoYes.checked;
   if (!co || !selProc) return;
