@@ -447,22 +447,21 @@ const WAIT_ITEMS = [
   { key: 'docs',    label: '添付書類・情報待ち' },
   { key: 'kintai',  label: '出勤簿待ち' },
   { key: 'chingin', label: '賃金台帳待ち' },
+  { key: 'intorimachi', label: '印取り待ち' },
   { key: 'other',   label: 'その他' },
 ];
-// 申請日付が必要な手続き種別の定義
 const PROC_DATE_CONFIG = {
-  '入社':              { label: '入社年月日',       type: 'date' },
-  '入社（健保組合）':    { label: '入社年月日',       type: 'date' },
-  '退職':              { label: '退職年月日',       type: 'date' },
-  '退職（健保組合）':    { label: '退職年月日',       type: 'date' },
-  '同日得喪':           { label: '得喪年月日',       type: 'date' },
-  '同日得喪（健保組合）': { label: '得喪年月日',       type: 'date' },
-  '扶養':              { label: '異動年月日',       type: 'date' },
-  '扶養（削除）':        { label: '異動年月日',       type: 'date' },
-  '月変・賃金入力':      { label: '賃金支給月・月変月', type: 'month' },
-  '賞与支払届':         { label: '賞与支給日',       type: 'date' },
+  '入社':               { label: '入社年月日',        type: 'date' },
+  '入社（健保組合）':     { label: '入社年月日',        type: 'date' },
+  '退職':               { label: '退職年月日',        type: 'date' },
+  '退職（健保組合）':     { label: '退職年月日',        type: 'date' },
+  '同日得喪':            { label: '得喪年月日',        type: 'date' },
+  '同日得喪（健保組合）':  { label: '得喪年月日',        type: 'date' },
+  '扶養':               { label: '異動年月日',        type: 'date' },
+  '扶養（削除）':         { label: '異動年月日',        type: 'date' },
+  '月変・賃金入力':       { label: '賃金支給月・月変月', type: 'month' },
+  '賞与支払届':          { label: '賞与支給日',        type: 'date' },
 };
-
 function stInfo(k) { return STATUSES.find(s => s.key === k) || STATUSES[0]; }
 
 // ============================================================
@@ -1489,7 +1488,7 @@ function renderSidebar() {
         <div class="si-pb"><div class="si-pf" style="width:${pt}%;background:${p.color}"></div></div>
         <span class="si-pct">${pt}%</span>
       </div>
-      ${c.procDate ? `<div style="font-size:9px;color:#94A3B8;margin-top:2px;">${esc(c.procDate)}</div>` : ''}
+      ${c.procDate ? '<div style="font-size:9px;color:#94A3B8;margin-top:2px;">' + esc(c.procDate) + '</div>' : ''}
     </div>`;
   }).join('');
 }
@@ -1562,7 +1561,7 @@ function renderDash() {
       <div class="dc-head">
         <div class="dc-ico" style="font-size:${c.procDate?'26px':'20px'};line-height:1.2;text-align:center;">
         ${p.icon}
-        ${c.procDate ? `<div style="font-size:10px;font-weight:700;color:#1E293B;margin-top:2px;white-space:nowrap;">${esc(c.procDate)}</div>` : ''}
+        ${c.procDate ? '<div style="font-size:10px;font-weight:700;color:#1E293B;margin-top:2px;white-space:nowrap;">' + esc(c.procDate) + '</div>' : ''}
       </div>
         <div class="dc-inf">
           <div class="dc-co">${esc(c.company)}</div>
@@ -1658,7 +1657,6 @@ function renderChecklist() {
   // 案件メモパネル
   const caseMemoEl = document.getElementById('case-memo-input');
   if (caseMemoEl) caseMemoEl.value = c.caseMemo || '';
-  // 日付入力欄の表示
   const dateEditArea = document.getElementById('proc-date-edit-area');
   const dateConf = PROC_DATE_CONFIG[c.proc];
   if (dateEditArea) {
@@ -1786,7 +1784,6 @@ function saveFreeTaskLabel(taskId, val) {
   saveCase(c);
 }
 
-// 申請日付保存
 async function saveProcDate(val) {
   const c = cases.find(x => x.id === currentId);
   if (!c) return;
@@ -1954,9 +1951,9 @@ async function createCase() {
   document.getElementById('n-na').value = '';
   if (document.getElementById('n-round')) document.getElementById('n-round').value = '';
   if (document.getElementById('n-free-name')) document.getElementById('n-free-name').value = '';
+  if (document.getElementById('free-name-area')) document.getElementById('free-name-area').style.display = 'none';
   if (document.getElementById('n-proc-date')) document.getElementById('n-proc-date').value = '';
   if (document.getElementById('proc-date-area')) document.getElementById('proc-date-area').style.display = 'none';
-  if (document.getElementById('free-name-area')) document.getElementById('free-name-area').style.display = 'none';
   if (document.getElementById('fuyo-yes')) document.getElementById('fuyo-yes').checked = true;
   if (document.getElementById('fuyo-select-area')) document.getElementById('fuyo-select-area').style.display = 'none';
   selProc = null;
