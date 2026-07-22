@@ -1558,7 +1558,10 @@ function renderDash() {
     const tantoLast = c.tantoLog && c.tantoLog.length ? `<div style="font-size:10px;color:#64748B;margin-top:4px;">担当: ${esc(c.tantoLog[c.tantoLog.length-1].name)}</div>` : '';
     return `<div class="dc" onclick="openChecklist('${c.id}')">
       <div class="dc-head">
-        <div class="dc-ico">${p.icon}</div>
+        <div class="dc-ico" style="text-align:center;">
+          <div style="font-size:20px;line-height:1;">${p.icon}</div>
+          ${c.procDate ? '<div style="font-size:10px;font-weight:700;color:#1E293B;margin-top:3px;white-space:nowrap;">' + esc(c.procDate) + '</div>' : ''}
+        </div>
         <div class="dc-inf">
           <div class="dc-co">${esc(c.company)}</div>
           <div class="dc-sub">${esc(c.name||'')}${c.name?' · ':''}${c.round?`<span style='background:#FEF9C3;color:#B45309;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;margin-right:3px;'>${esc(c.round)}</span>`:''}</div>
