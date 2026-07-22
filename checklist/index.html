@@ -340,6 +340,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
       <label class="fl">手続き名 <span class="req">*</span></label>
       <input class="fi" id="n-free-name" type="text" placeholder="例：〇〇の手続き" oninput="uNewBtn()">
     </div>
+    <div id="proc-date-area" style="display:none;margin-bottom:12px;">
+      <label class="fl" id="proc-date-label">入社年月日</label>
+      <input class="fi" id="n-proc-date" type="date" style="max-width:200px;">
+    </div>
     <div id="fuyo-select-area" style="display:none;margin-bottom:12px;">
       <label class="fl">扶養家族</label>
       <div style="display:flex;gap:8px;margin-top:4px;">
@@ -439,8 +443,23 @@ const WAIT_ITEMS = [
   { key: 'docs',    label: '添付書類・情報待ち' },
   { key: 'kintai',  label: '出勤簿待ち' },
   { key: 'chingin', label: '賃金台帳待ち' },
+  { key: 'intorimachi', label: '印取り待ち' },
   { key: 'other',   label: 'その他' },
 ];
+
+// 申請日付が必要な手続き種別の定義
+const PROC_DATE_CONFIG = {
+  '入社':           { label: '入社年月日', type: 'date' },
+  '入社（健保組合）':  { label: '入社年月日', type: 'date' },
+  '退職':           { label: '退職年月日', type: 'date' },
+  '退職（健保組合）':  { label: '退職年月日', type: 'date' },
+  '同日得喪':        { label: '得喪年月日', type: 'date' },
+  '同日得喪（健保組合）': { label: '得喪年月日', type: 'date' },
+  '扶養':           { label: '異動年月日', type: 'date' },
+  '扶養（削除）':     { label: '異動年月日', type: 'date' },
+  '月変・賃金入力':   { label: '賃金支給月・月変月', type: 'month' },
+  '賞与支払届':      { label: '賞与支給日', type: 'date' },
+};
 function stInfo(k) { return STATUSES.find(s => s.key === k) || STATUSES[0]; }
 
 // ============================================================
@@ -1319,6 +1338,8 @@ async function loadData() {
       taskMemos: r.task_memos || {},
       round: r.round || '',
       freeName: r.free_name || '',
+      procDate: r.proc_date || '',
+      procDate: r.proc_date || '',
       hasFuyo: r.ha_fuyo !== false,
       freeLabels: r.free_labels || {},
     }));
@@ -1335,6 +1356,7 @@ async function saveCase(c) {
     name: c.name,
     proc: c.proc,
     free_name: c.freeName || '',
+    proc_date: c.procDate || '',
     status: c.status,
     checks: c.checks,
     wait_flags: c.waitFlags || {},
@@ -1359,6 +1381,7 @@ async function insertCase(c) {
     name: c.name,
     proc: c.proc,
     free_name: c.freeName || '',
+    proc_date: c.procDate || '',
     status: c.status || 'none',
     checks: c.checks || {},
     wait_flags: c.waitFlags || {},
@@ -1408,6 +1431,7 @@ setInterval(async () => {
       hasFuyo: r.ha_fuyo !== false,
       freeLabels: r.free_labels || {},
       freeName: r.free_name || '',
+      procDate: r.proc_date || '',
     }));
     _lastSync = Date.now();
     setSyncStatus('☁️ 同期済（自動）');
@@ -1463,6 +1487,7 @@ function renderSidebar() {
         <div class="si-pb"><div class="si-pf" style="width:${pt}%;background:${p.color}"></div></div>
         <span class="si-pct">${pt}%</span>
       </div>
+      ${c.procDate ? `<div style="font-size:9px;color:#94A3B8;margin-top:2px;">${esc(c.procDate)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1533,7 +1558,10 @@ function renderDash() {
     const tantoLast = c.tantoLog && c.tantoLog.length ? `<div style="font-size:10px;color:#64748B;margin-top:4px;">担当: ${esc(c.tantoLog[c.tantoLog.length-1].name)}</div>` : '';
     return `<div class="dc" onclick="openChecklist('${c.id}')">
       <div class="dc-head">
-        <div class="dc-ico">${p.icon}</div>
+        <div class="dc-ico" style="font-size:${c.procDate?'28px':'20px'};line-height:1.2;">
+        ${p.icon}
+        ${c.procDate ? `<div style="font-size:10px;font-weight:700;color:#1E293B;margin-top:2px;white-space:nowrap;">${esc(c.procDate)}</div>` : ''}
+      </div>
         <div class="dc-inf">
           <div class="dc-co">${esc(c.company)}</div>
           <div class="dc-sub">${esc(c.name||'')}${c.name?' · ':''}${c.round?`<span style='background:#FEF9C3;color:#B45309;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;margin-right:3px;'>${esc(c.round)}</span>`:''}${esc(c.created_at ? c.created_at.split('T')[0] : '')}</div>
@@ -1834,6 +1862,20 @@ function selP(idx) {
   } else {
     rArea.style.display = 'none';
   }
+  // 申請日付エリア
+  const dateArea = document.getElementById('proc-date-area');
+  const dateConfig = PROC_DATE_CONFIG[selProc];
+  if (dateArea) {
+    if (dateConfig) {
+      dateArea.style.display = '';
+      document.getElementById('proc-date-label').textContent = dateConfig.label;
+      document.getElementById('n-proc-date').type = dateConfig.type;
+      document.getElementById('n-proc-date').value = '';
+    } else {
+      dateArea.style.display = 'none';
+    }
+  }
+
   // フリー手続き名エリア
   const fnArea = document.getElementById('free-name-area');
   if (fnArea) fnArea.style.display = selProc === 'フリー' ? '' : 'none';
@@ -1871,6 +1913,7 @@ async function createCase() {
   const na = document.getElementById('n-na').value.trim();
   const round = document.getElementById('n-round') ? document.getElementById('n-round').value.trim() : '';
   const freeName = (selProc === 'フリー' && document.getElementById('n-free-name')) ? document.getElementById('n-free-name').value.trim() : '';
+  const procDate = document.getElementById('n-proc-date') && PROC_DATE_CONFIG[procKey] ? document.getElementById('n-proc-date').value : '';
   const fuyoYes = document.getElementById('fuyo-yes');
   const hasFuyo = (!fuyoYes || !document.getElementById('fuyo-select-area') || document.getElementById('fuyo-select-area').style.display === 'none') ? true : fuyoYes.checked;
   if (!co || !selProc) return;
@@ -1887,6 +1930,8 @@ async function createCase() {
   document.getElementById('n-na').value = '';
   if (document.getElementById('n-round')) document.getElementById('n-round').value = '';
   if (document.getElementById('n-free-name')) document.getElementById('n-free-name').value = '';
+  if (document.getElementById('n-proc-date')) document.getElementById('n-proc-date').value = '';
+  if (document.getElementById('proc-date-area')) document.getElementById('proc-date-area').style.display = 'none';
   if (document.getElementById('free-name-area')) document.getElementById('free-name-area').style.display = 'none';
   if (document.getElementById('fuyo-yes')) document.getElementById('fuyo-yes').checked = true;
   if (document.getElementById('fuyo-select-area')) document.getElementById('fuyo-select-area').style.display = 'none';
@@ -1896,6 +1941,7 @@ async function createCase() {
   // まずSupabaseに保存してIDを確定させる
   const payload = {
     company: co, name: na, proc: procKey, free_name: freeName,
+    proc_date: procDate,
     status: 'none', checks: {}, wait_flags: {}, wait_memo: '', tanto_log: [],
     rousai_shoshiki: rousaiShoshiki,
     case_memo: '', task_memos: {}, round: round, ha_fuyo: hasFuyo,
@@ -1916,6 +1962,7 @@ async function createCase() {
       taskMemos: row.task_memos || {},
       round: row.round || '',
       freeName: row.free_name || '',
+      procDate: row.proc_date || '',
       hasFuyo: row.ha_fuyo !== false,
       freeLabels: row.free_labels || {},
     };
