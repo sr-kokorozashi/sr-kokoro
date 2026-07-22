@@ -1565,7 +1565,7 @@ function renderDash() {
       </div>
         <div class="dc-inf">
           <div class="dc-co">${esc(c.company)}</div>
-          <div class="dc-sub">${esc(c.name||'')}${c.name?' · ':''}${c.round?`<span style='background:#FEF9C3;color:#B45309;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;margin-right:3px;'>${esc(c.round)}</span>`:''}${esc(c.created_at ? c.created_at.split('T')[0] : '')}</div>
+          <div class="dc-sub">${esc(c.name||'')}${c.name?' · ':''}${c.round?`<span style='background:#FEF9C3;color:#B45309;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;margin-right:3px;'>${esc(c.round)}</span>`:''}</div>
         </div>
         <div class="dc-right">
           <span class="dc-proc" style="background:${p.color}18;color:${p.color}">${c.freeName ? esc(c.freeName) : esc(c.proc)}</span>
