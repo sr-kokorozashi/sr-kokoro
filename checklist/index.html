@@ -1396,10 +1396,18 @@ setInterval(async () => {
   if (rows) {
     cases = rows.map(r => ({
       ...r,
+      id: String(r.id),
       checks: r.checks || {},
       waitFlags: r.wait_flags || {},
       waitMemo: r.wait_memo || '',
       tantoLog: r.tanto_log || [],
+      rousaiShoshiki: r.rousai_shoshiki || [],
+      caseMemo: r.case_memo || '',
+      taskMemos: r.task_memos || {},
+      round: r.round || '',
+      hasFuyo: r.ha_fuyo !== false,
+      freeLabels: r.free_labels || {},
+      freeName: r.free_name || '',
     }));
     _lastSync = Date.now();
     setSyncStatus('☁️ 同期済（自動）');
