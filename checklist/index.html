@@ -225,7 +225,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
   <div class="brand">⚖️ SR Office</div>
   <div class="ntab on" id="tab-cl" onclick="showView('d')">📁 手続きチェックリスト</div>
   <div class="ntab" id="tab-gl" onclick="openModal('ov-gl')">📖 用語集</div>
-  <div id="sync-status" class="sync">🔄 接続中...</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+    <button onclick="backupData()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">💾 データ保存</button>
+    <label style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">
+      🔄 データ復元
+      <input type="file" accept=".json" onchange="restoreData(event)" style="display:none;">
+    </label>
+    <div id="sync-status" class="sync">🔄 接続中...</div>
+  </div>
 </div>
 
 <div id="app">
@@ -2036,6 +2043,80 @@ function toast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// バックアップ・復元
+// ============================================================
+function backupData() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    cases: cases,
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  a.href = url;
+  a.download = `チェックリストバックアップ_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('💾 データを保存しました');
+}
+
+async function restoreData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!confirm('現在のデータをバックアップデータで上書きします。よろしいですか？\n※この操作は元に戻せません。')) {
+    event.target.value = '';
+    return;
+  }
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const importCases = data.cases || data;
+    if (!Array.isArray(importCases)) throw new Error('データ形式が正しくありません');
+
+    setSyncStatus('🔄 復元中...');
+    let successCount = 0;
+    for (const c of importCases) {
+      const payload = {
+        company: c.company || '',
+        name: c.name || '',
+        proc: c.proc || '',
+        free_name: c.freeName || c.free_name || '',
+        proc_date: c.procDate || c.proc_date || '',
+        status: c.status || 'none',
+        checks: c.checks || {},
+        wait_flags: c.waitFlags || c.wait_flags || {},
+        wait_memo: c.waitMemo || c.wait_memo || '',
+        tanto_log: c.tantoLog || c.tanto_log || [],
+        rousai_shoshiki: c.rousaiShoshiki || c.rousai_shoshiki || [],
+        case_memo: c.caseMemo || c.case_memo || '',
+        task_memos: c.taskMemos || c.task_memos || {},
+        round: c.round || '',
+        ha_fuyo: c.hasFuyo !== false,
+        free_labels: c.freeLabels || c.free_labels || {},
+        updated_at: new Date().toISOString(),
+      };
+      // 既存案件はupdate、なければinsert
+      if (c.id) {
+        await sbUpdate(c.id, payload);
+      } else {
+        payload.created_at = new Date().toISOString();
+        await sbInsert(payload);
+      }
+      successCount++;
+    }
+    await loadData();
+    toast(`✅ ${successCount}件のデータを復元しました`);
+  } catch(e) {
+    toast('❌ 復元に失敗しました: ' + e.message);
+    setSyncStatus('⚠️ 復元失敗');
+  }
+  event.target.value = '';
 }
 
 // ============================================================
