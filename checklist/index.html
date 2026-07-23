@@ -244,6 +244,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
     <div id="sb-filter">
       <button class="sf-btn on" id="sf-all" onclick="setSbFilter('all')">すべて</button>
       <button class="sf-btn" id="sf-none" onclick="setSbFilter('none')" style="border-left:3px solid #6B7280;">未手続</button>
+      <button class="sf-btn" id="sf-double" onclick="setSbFilter('double')" style="border-left:3px solid #0891B2;">ダブルチェック</button>
       <button class="sf-btn" id="sf-wait" onclick="setSbFilter('wait')" style="border-left:3px solid #D97706;">待ち中</button>
       <button class="sf-btn" id="sf-kobunsho" onclick="setSbFilter('kobunsho')" style="border-left:3px solid #7C3AED;">公文書待ち</button>
       <button class="sf-btn" id="sf-done" onclick="setSbFilter('done')" style="border-left:3px solid #059669;">完了</button>
@@ -446,6 +447,7 @@ async function sbDelete(id) {
 // ============================================================
 const STATUSES = [
   { key: 'none',     label: '未手続',     color: '#6B7280', bg: '#F3F4F6' },
+  { key: 'double',   label: 'ダブルチェック', color: '#0891B2', bg: '#F0F9FF' },
   { key: 'wait',     label: '待ち中',     color: '#D97706', bg: '#FFFBEB' },
   { key: 'kobunsho', label: '公文書待ち', color: '#7C3AED', bg: '#F5F3FF' },
   { key: 'done',     label: '完了',       color: '#059669', bg: '#F0FDF4' },
@@ -1471,7 +1473,7 @@ function openChecklist(id) {
 // ============================================================
 function setSbFilter(f) {
   sbFilter = f;
-  ['all','none','wait','kobunsho','done'].forEach(k => {
+  ['all','none','double','wait','kobunsho','done'].forEach(k => {
     const el = document.getElementById('sf-'+k);
     if (el) el.classList.toggle('on', k === f);
   });
@@ -1584,7 +1586,7 @@ function renderDash() {
       <div class="dc-bl"><span>${dn} / ${all.length} タスク完了</span></div>
       ${tantoLast}
       <select class="st-sel" onchange="setStatusFromDash('${c.id}',this.value)" onclick="event.stopPropagation()">
-        ${STATUSES.map(s=>`<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('')}
+        ${STATUSES.filter(s => s.key !== 'double' || c.proc === '月変・賃金入力').map(s=>`<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('')}
       </select>
       <div class="dc-acts">
         <button class="dc-btn dc-open" onclick="event.stopPropagation();openChecklist('${c.id}')">☑ チェックリストを開く</button>
@@ -1638,7 +1640,7 @@ function renderChecklist() {
   document.getElementById('cl-bar-fill').style.background = p.color;
   document.getElementById('cl-task-cnt').textContent = `${dn} / ${all.length} タスク完了`;
   document.getElementById('cl-st-badge').innerHTML = `<span style="background:${st.bg};color:${st.color};padding:2px 9px;border-radius:8px;font-size:10px;font-weight:700;">● ${st.label}</span>`;
-  document.getElementById('cl-st-sel').innerHTML = STATUSES.map(s => `<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('');
+  document.getElementById('cl-st-sel').innerHTML = STATUSES.filter(s => s.key !== 'double' || c.proc === '月変・賃金入力').map(s => `<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('');
 
   // 待ち中パネル
   const isWait = (c.status||'none') === 'wait';
@@ -1745,8 +1747,21 @@ async function toggleTask(taskId) {
   renderChecklist();
   renderSidebar();
   await saveCase(c);
-  // 全タスク完了 → 自動で完了提案
+  // 月変・賃金入力：Wチェック前タスクが全部完了→「ダブルチェック」に自動変更
   const all = allTasks(c);
+  if (c.proc === '月変・賃金入力' && (c.status||'none') === 'none') {
+    const WCHECK_TASKS = ['mc20']; // WチェックセクションのタスクID
+    const nonWcheckTasks = all.filter(t => !WCHECK_TASKS.includes(t.id));
+    if (nonWcheckTasks.length > 0 && nonWcheckTasks.every(t => c.checks[t.id])) {
+      c.status = 'double';
+      await saveCase(c);
+      renderChecklist();
+      renderSidebar();
+      toast('🔵 Wチェック前のタスクが完了しました。ステータスを「ダブルチェック」に変更しました');
+      return;
+    }
+  }
+  // 全タスク完了 → 自動で完了提案
   if (all.every(t => c.checks[t.id]) && (c.status||'none') !== 'done') {
     if (confirm('全タスクが完了しました。ステータスを「完了」に変更しますか？')) {
       c.status = 'done';
