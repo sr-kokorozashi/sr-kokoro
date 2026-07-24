@@ -244,8 +244,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
     <div id="sb-filter">
       <button class="sf-btn on" id="sf-all" onclick="setSbFilter('all')">すべて</button>
       <button class="sf-btn" id="sf-none" onclick="setSbFilter('none')" style="border-left:3px solid #6B7280;">未手続</button>
+      <button class="sf-btn" id="sf-shinsei" onclick="setSbFilter('shinsei')" style="border-left:3px solid #EA580C;">申請待ち</button>
       <button class="sf-btn" id="sf-double" onclick="setSbFilter('double')" style="border-left:3px solid #0891B2;">ダブルチェック</button>
-      <button class="sf-btn" id="sf-wait" onclick="setSbFilter('wait')" style="border-left:3px solid #D97706;">待ち中</button>
+      <button class="sf-btn" id="sf-wait" onclick="setSbFilter('wait')" style="border-left:3px solid #D97706;">書類・情報待ち</button>
       <button class="sf-btn" id="sf-kobunsho" onclick="setSbFilter('kobunsho')" style="border-left:3px solid #7C3AED;">公文書待ち</button>
       <button class="sf-btn" id="sf-done" onclick="setSbFilter('done')" style="border-left:3px solid #059669;">完了</button>
     </div>
@@ -311,9 +312,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
       </div>
       <!-- 案件メモパネル -->
       <div id="case-memo-panel">
-        <div id="proc-date-edit-area" style="display:none;margin-bottom:8px;align-items:center;gap:8px;">
+        <div id="proc-date-edit-area" style="display:none;margin-bottom:8px;align-items:center;gap:8px;flex-wrap:wrap;">
           <label class="case-memo-label" id="proc-date-edit-label" style="margin-bottom:0;white-space:nowrap;min-width:110px;">入社年月日</label>
           <input type="date" id="proc-date-edit-input" style="font-size:11px;font-family:inherit;border:1px solid #E2E8F0;border-radius:5px;padding:4px 8px;background:#fff;outline:none;color:#334155;" onchange="saveProcDate(this.value)">
+          <div id="proc-date2-edit-area" style="display:none;align-items:center;gap:8px;">
+            <label class="case-memo-label" id="proc-date2-edit-label" style="margin-bottom:0;white-space:nowrap;min-width:60px;">月変月</label>
+            <input type="month" id="proc-date2-edit-input" style="font-size:11px;font-family:inherit;border:1px solid #E2E8F0;border-radius:5px;padding:4px 8px;background:#fff;outline:none;color:#334155;" onchange="saveProcDate2(this.value)">
+          </div>
         </div>
         <label class="case-memo-label">📝 案件メモ（全体への備考）</label>
         <textarea class="case-memo-input" id="case-memo-input" placeholder="例：申請期間：4/1〜4/30、担当医：〇〇病院" oninput="saveCaseMemo(this.value)"></textarea>
@@ -355,6 +360,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
     <div id="proc-date-area" style="display:none;margin-bottom:12px;">
       <label class="fl" id="proc-date-label">入社年月日</label>
       <input class="fi" id="n-proc-date" type="date" style="max-width:220px;">
+      <div id="proc-date2-area" style="display:none;margin-top:8px;">
+        <label class="fl" id="proc-date2-label">月変月</label>
+        <input class="fi" id="n-proc-date2" type="month" style="max-width:220px;">
+      </div>
     </div>
     <div id="fuyo-select-area" style="display:none;margin-bottom:12px;">
       <label class="fl">扶養家族</label>
@@ -446,10 +455,11 @@ async function sbDelete(id) {
 // ステータス定義
 // ============================================================
 const STATUSES = [
-  { key: 'none',     label: '未手続',     color: '#6B7280', bg: '#F3F4F6' },
+  { key: 'none',     label: '未手続',       color: '#6B7280', bg: '#F3F4F6' },
+  { key: 'shinsei',  label: '申請待ち',     color: '#EA580C', bg: '#FFF7ED' },
   { key: 'double',   label: 'ダブルチェック', color: '#0891B2', bg: '#F0F9FF' },
-  { key: 'wait',     label: '待ち中',     color: '#D97706', bg: '#FFFBEB' },
-  { key: 'kobunsho', label: '公文書待ち', color: '#7C3AED', bg: '#F5F3FF' },
+  { key: 'wait',     label: '書類・情報待ち', color: '#D97706', bg: '#FFFBEB' },
+  { key: 'kobunsho', label: '公文書待ち',   color: '#7C3AED', bg: '#F5F3FF' },
   { key: 'done',     label: '完了',       color: '#059669', bg: '#F0FDF4' },
 ];
 const WAIT_ITEMS = [
@@ -468,7 +478,7 @@ const PROC_DATE_CONFIG = {
   '同日得喪（健保組合）':  { label: '得喪年月日',        type: 'date' },
   '扶養':               { label: '異動年月日',        type: 'date' },
   '扶養（削除）':         { label: '異動年月日',        type: 'date' },
-  '月変・賃金入力':       { label: '賃金支給月・月変月', type: 'month' },
+  '月変・賃金入力':       { label: '賃金支給月', type: 'month', label2: '月変月', type2: 'month' },
   '賞与支払届':          { label: '賞与支給日',        type: 'date' },
 };
 function stInfo(k) { return STATUSES.find(s => s.key === k) || STATUSES[0]; }
@@ -1350,6 +1360,7 @@ async function loadData() {
       round: r.round || '',
       freeName: r.free_name || '',
       procDate: r.proc_date || '',
+      procDate2: r.proc_date2 || '',
       hasFuyo: r.ha_fuyo !== false,
       freeLabels: r.free_labels || {},
     }));
@@ -1367,6 +1378,7 @@ async function saveCase(c) {
     proc: c.proc,
     free_name: c.freeName || '',
     proc_date: c.procDate || '',
+    proc_date2: c.procDate2 || '',
     status: c.status,
     checks: c.checks,
     wait_flags: c.waitFlags || {},
@@ -1392,6 +1404,7 @@ async function insertCase(c) {
     proc: c.proc,
     free_name: c.freeName || '',
     proc_date: c.procDate || '',
+    proc_date2: c.procDate2 || '',
     status: c.status || 'none',
     checks: c.checks || {},
     wait_flags: c.waitFlags || {},
@@ -1442,6 +1455,7 @@ setInterval(async () => {
       freeLabels: r.free_labels || {},
       freeName: r.free_name || '',
       procDate: r.proc_date || '',
+      procDate2: r.proc_date2 || '',
     }));
     _lastSync = Date.now();
     setSyncStatus('☁️ 同期済（自動）');
@@ -1473,7 +1487,7 @@ function openChecklist(id) {
 // ============================================================
 function setSbFilter(f) {
   sbFilter = f;
-  ['all','none','double','wait','kobunsho','done'].forEach(k => {
+  ['all','none','shinsei','double','wait','kobunsho','done'].forEach(k => {
     const el = document.getElementById('sf-'+k);
     if (el) el.classList.toggle('on', k === f);
   });
@@ -1570,6 +1584,7 @@ function renderDash() {
         <div class="dc-ico" style="text-align:center;">
           <div style="font-size:20px;line-height:1;">${p.icon}</div>
           ${c.procDate ? '<div style="font-size:10px;font-weight:700;color:#1E293B;margin-top:3px;white-space:nowrap;">' + esc(c.procDate) + '</div>' : ''}
+          ${c.procDate2 ? '<div style="font-size:10px;font-weight:600;color:#475569;margin-top:1px;white-space:nowrap;">' + esc(c.procDate2) + '</div>' : ''}
         </div>
         <div class="dc-inf">
           <div class="dc-co">${esc(c.company)}</div>
@@ -1585,6 +1600,7 @@ function renderDash() {
       <div class="dc-bar"><div class="dc-bar-fill" style="width:${pt}%;background:${p.color}"></div></div>
       <div class="dc-bl"><span>${dn} / ${all.length} タスク完了</span></div>
       ${tantoLast}
+      ${c.caseMemo ? '<div style="font-size:11px;color:#475569;margin-top:4px;padding:4px 6px;background:#F8FAFC;border-radius:4px;border-left:3px solid #CBD5E1;line-height:1.5;">' + esc(c.caseMemo) + '</div>' : ''}
       <select class="st-sel" onchange="setStatusFromDash('${c.id}',this.value)" onclick="event.stopPropagation()">
         ${STATUSES.filter(s => s.key !== 'double' || c.proc === '月変・賃金入力').map(s=>`<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('')}
       </select>
@@ -1673,8 +1689,22 @@ function renderChecklist() {
       document.getElementById('proc-date-edit-label').textContent = dateConf.label;
       document.getElementById('proc-date-edit-input').type = dateConf.type;
       document.getElementById('proc-date-edit-input').value = c.procDate || '';
+      // 2つ目の日付欄（月変月）
+      const date2EditArea = document.getElementById('proc-date2-edit-area');
+      if (date2EditArea) {
+        if (dateConf.label2) {
+          date2EditArea.style.display = 'flex';
+          document.getElementById('proc-date2-edit-label').textContent = dateConf.label2;
+          document.getElementById('proc-date2-edit-input').type = dateConf.type2 || 'month';
+          document.getElementById('proc-date2-edit-input').value = c.procDate2 || '';
+        } else {
+          date2EditArea.style.display = 'none';
+        }
+      }
     } else {
       dateEditArea.style.display = 'none';
+      const date2EditArea = document.getElementById('proc-date2-edit-area');
+      if (date2EditArea) date2EditArea.style.display = 'none';
     }
   }
   // 第〇回バッジ表示
@@ -1812,6 +1842,13 @@ async function saveProcDate(val) {
   await saveCase(c);
 }
 
+async function saveProcDate2(val) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  c.procDate2 = val;
+  await saveCase(c);
+}
+
 // 案件メモ保存
 let _caseMemoTimer = null;
 function saveCaseMemo(val) {
@@ -1912,8 +1949,22 @@ function selP(idx) {
       document.getElementById('proc-date-label').textContent = dateConfig.label;
       document.getElementById('n-proc-date').type = dateConfig.type;
       document.getElementById('n-proc-date').value = '';
+      // 2つ目の日付欄（月変月）
+      const date2Area = document.getElementById('proc-date2-area');
+      if (date2Area) {
+        if (dateConfig.label2) {
+          date2Area.style.display = '';
+          document.getElementById('proc-date2-label').textContent = dateConfig.label2;
+          document.getElementById('n-proc-date2').type = dateConfig.type2 || 'month';
+          document.getElementById('n-proc-date2').value = '';
+        } else {
+          date2Area.style.display = 'none';
+        }
+      }
     } else {
       dateArea.style.display = 'none';
+      const date2Area = document.getElementById('proc-date2-area');
+      if (date2Area) date2Area.style.display = 'none';
     }
   }
 
@@ -1959,6 +2010,7 @@ async function createCase() {
   if (!co || !selProc) return;
   const procKey = selProc;
   const procDate = (document.getElementById('n-proc-date') && PROC_DATE_CONFIG[procKey]) ? document.getElementById('n-proc-date').value : '';
+  const procDate2 = (document.getElementById('n-proc-date2') && PROC_DATE_CONFIG[procKey] && PROC_DATE_CONFIG[procKey].label2) ? document.getElementById('n-proc-date2').value : '';
   // 労災の場合、選択した様式を収集
   const rousaiShoshiki = procKey === '労災'
     ? ROUSAI_SHOSHIKI.filter(s => {
@@ -1973,7 +2025,9 @@ async function createCase() {
   if (document.getElementById('n-free-name')) document.getElementById('n-free-name').value = '';
   if (document.getElementById('free-name-area')) document.getElementById('free-name-area').style.display = 'none';
   if (document.getElementById('n-proc-date')) document.getElementById('n-proc-date').value = '';
+  if (document.getElementById('n-proc-date2')) document.getElementById('n-proc-date2').value = '';
   if (document.getElementById('proc-date-area')) document.getElementById('proc-date-area').style.display = 'none';
+  if (document.getElementById('proc-date2-area')) document.getElementById('proc-date2-area').style.display = 'none';
   if (document.getElementById('fuyo-yes')) document.getElementById('fuyo-yes').checked = true;
   if (document.getElementById('fuyo-select-area')) document.getElementById('fuyo-select-area').style.display = 'none';
   selProc = null;
@@ -1983,6 +2037,7 @@ async function createCase() {
   const payload = {
     company: co, name: na, proc: procKey, free_name: freeName,
     proc_date: procDate,
+    proc_date2: procDate2,
     status: 'none', checks: {}, wait_flags: {}, wait_memo: '', tanto_log: [],
     rousai_shoshiki: rousaiShoshiki,
     case_memo: '', task_memos: {}, round: round, ha_fuyo: hasFuyo,
@@ -2004,6 +2059,7 @@ async function createCase() {
       round: row.round || '',
       freeName: row.free_name || '',
       procDate: row.proc_date || '',
+      procDate2: row.proc_date2 || '',
       hasFuyo: row.ha_fuyo !== false,
       freeLabels: row.free_labels || {},
     };
