@@ -269,6 +269,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
         <select class="filter-select" id="proc-filter" onchange="renderDash()">
           <option value="">手続き：すべて</option>
         </select>
+        <select class="filter-select" id="tanto-filter" onchange="renderDash()">
+          <option value="">担当者：すべて</option>
+        </select>
         <button class="filter-clear" onclick="clearFilters()">絞り込みをリセット</button>
       </div>
       <div class="proc-summary" id="proc-summary"></div>
@@ -1522,10 +1525,13 @@ function renderDash() {
   // 会社・手続きフィルターの選択肢を更新
   const companyEl = document.getElementById('company-filter');
   const procEl = document.getElementById('proc-filter');
+  const tantoEl = document.getElementById('tanto-filter');
   const companyVal = companyEl ? companyEl.value : '';
   const procVal = procEl ? procEl.value : '';
+  const tantoVal = tantoEl ? tantoEl.value : '';
   const companies = [...new Set(cases.map(c => c.company))].sort();
   const procs = [...new Set(cases.map(c => c.proc))].sort();
+  const tantos = [...new Set(cases.flatMap(c => (c.tantoLog||[]).map(t => t.name)))].filter(Boolean).sort();
   if (companyEl) {
     companyEl.innerHTML = '<option value="">会社：すべて</option>' +
       companies.map(co => `<option value="${esc(co)}" ${co===companyVal?'selected':''}>${esc(co)}</option>`).join('');
@@ -1533,6 +1539,10 @@ function renderDash() {
   if (procEl) {
     procEl.innerHTML = '<option value="">手続き：すべて</option>' +
       procs.map(pr => `<option value="${esc(pr)}" ${pr===procVal?'selected':''}>${esc(pr)}</option>`).join('');
+  }
+  if (tantoEl) {
+    tantoEl.innerHTML = '<option value="">担当者：すべて</option>' +
+      tantos.map(t => `<option value="${esc(t)}" ${t===tantoVal?'selected':''}>${esc(t)}</option>`).join('');
   }
 
   // 手続き別集計
@@ -1568,6 +1578,7 @@ function renderDash() {
   if (dashFilter !== 'all') filtered = filtered.filter(c => (c.status||'none') === dashFilter);
   if (companyVal) filtered = filtered.filter(c => c.company === companyVal);
   if (procVal) filtered = filtered.filter(c => c.proc === procVal);
+  if (tantoVal) filtered = filtered.filter(c => (c.tantoLog||[]).some(t => t.name === tantoVal));
 
   if (!filtered.length) {
     document.getElementById('dash-content').innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">該当する案件がありません</div><div style="font-size:12px;">絞り込み条件を変えてみてください</div></div>`;
@@ -1600,7 +1611,7 @@ function renderDash() {
       <div class="dc-bar"><div class="dc-bar-fill" style="width:${pt}%;background:${p.color}"></div></div>
       <div class="dc-bl"><span>${dn} / ${all.length} タスク完了</span></div>
       ${tantoLast}
-      ${c.caseMemo ? '<div style="font-size:11px;color:#475569;margin-top:4px;padding:4px 6px;background:#F8FAFC;border-radius:4px;border-left:3px solid #CBD5E1;line-height:1.5;">' + esc(c.caseMemo) + '</div>' : ''}
+      ${c.caseMemo ? '<div style="font-size:11px;color:#92400E;font-weight:700;margin-top:4px;padding:5px 8px;background:#FEF3C7;border-radius:4px;border-left:3px solid #F59E0B;line-height:1.5;">' + esc(c.caseMemo) + '</div>' : ''}
       <select class="st-sel" onchange="setStatusFromDash('${c.id}',this.value)" onclick="event.stopPropagation()">
         ${STATUSES.filter(s => s.key !== 'double' || c.proc === '月変・賃金入力').map(s=>`<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('')}
       </select>
@@ -1622,8 +1633,10 @@ function clearFilters() {
   dashFilter = 'all';
   const co = document.getElementById('company-filter');
   const pr = document.getElementById('proc-filter');
+  const ta = document.getElementById('tanto-filter');
   if (co) co.value = '';
   if (pr) pr.value = '';
+  if (ta) ta.value = '';
   renderDash();
 }
 
