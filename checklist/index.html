@@ -284,6 +284,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
       <div id="cl-head">
         <div class="cl-r1">
           <button class="cl-back" onclick="showView('d')">← 一覧へ</button>
+          <button onclick="openPrintWindow()" style="background:#059669;border:none;color:#fff;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;">🖨️ PDF出力</button>
           <span id="cl-proc-badge"></span>
           <span class="cl-co" id="cl-co"></span>
           <span class="cl-name" id="cl-name"></span>
@@ -312,6 +313,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
         <input class="tanto-input" id="tanto-input" type="text" placeholder="氏名を入力" onkeydown="if(event.key==='Enter')saveTanto()">
         <button style="background:#0EA5E9;border:none;color:#fff;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;" onclick="saveTanto()">記録</button>
         <span class="tanto-hist" id="tanto-hist"></span>
+      </div>
+      <!-- 月変あり/なしパネル -->
+      <div id="tsukihen-panel" style="display:none;padding:8px 18px;background:#F0F9FF;border-bottom:1px solid #BAE6FD;flex-shrink:0;align-items:center;gap:10px;">
+        <span style="font-size:11px;color:#0369A1;font-weight:600;">月変該当者：</span>
+        <button id="tsukihen-yes-btn" onclick="setTsukihen(true)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">あり</button>
+        <button id="tsukihen-no-btn" onclick="setTsukihen(false)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">なし（終了）</button>
+        <span id="tsukihen-note" style="font-size:10px;color:#64748B;"></span>
       </div>
       <!-- 案件メモパネル -->
       <div id="case-memo-panel">
@@ -366,6 +374,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
       <div id="proc-date2-area" style="display:none;margin-top:8px;">
         <label class="fl" id="proc-date2-label">月変月</label>
         <input class="fi" id="n-proc-date2" type="month" style="max-width:220px;">
+      </div>
+    </div>
+    <div id="calc-select-area" style="display:none;margin-bottom:12px;">
+      <label class="fl">賞与計算</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="calc-yes-label">
+          <input type="radio" name="calc-radio" id="calc-yes" value="yes" checked onchange="updateCalcSelect()"> 当事務所で計算あり
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="calc-no-label">
+          <input type="radio" name="calc-radio" id="calc-no" value="no" onchange="updateCalcSelect()"> 台帳入力のみ
+        </label>
       </div>
     </div>
     <div id="fuyo-select-area" style="display:none;margin-bottom:12px;">
@@ -839,20 +858,20 @@ const P = {
     {id:"mc6",label:"月変推定者リストの作成",note:"",warn:null},
     {id:"mc7",label:"月変推定者リストのドキュ",note:"",warn:null},
     {id:"mc8",label:"月変該当者のチェック",note:"",warn:null},
-    {id:"mc9",label:"月変該当者のドキュ",note:"",warn:null},
-    {id:"mc10",label:"ドキュの名前の変更",note:"",warn:null},
+    {id:"mc9",label:"月変該当者のドキュ",tsukihenOnly:true,note:"",warn:null},
+    {id:"mc10",label:"ドキュの名前の変更",tsukihenOnly:true,note:"",warn:null},
   ]},
-  {title:"月変手続き",tasks:[
+  {title:"月変手続き",tsukihenOnly:true,tasks:[
     {id:"mc11",label:"月変手続き",note:"",warn:"⚠️ 健保組合　□健保　□厚年  □70歳以上該当者"},
     {id:"mc12",label:"手続き後、ドキュを整理する",note:"",warn:null},
     {id:"mc13",label:"社会保険料控除表をメールで送る",note:"",warn:null},
   ]},
-  {title:"手続き後",tasks:[
+  {title:"手続き後",tsukihenOnly:true,tasks:[
     {id:"mc14",label:"月変公文書取得",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
     {id:"mc15",label:"月変公文書のドキュ",note:"",warn:"⚠️ 健保組合　□健保　□厚年"},
     {id:"mc16",label:"月変ドキュを整理する",note:"",warn:null},
   ]},
-  {title:"公文書の送付",tasks:[
+  {title:"公文書の送付",tsukihenOnly:true,tasks:[
     {id:"mc17",label:"月変公文書の送付",note:"",warn:null},
     {id:"mc18",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
     {id:"mc19",label:"チェックリストのドキュ",note:"",warn:null},
@@ -861,13 +880,13 @@ const P = {
     {id:"mc20",label:"担当者",note:"",warn:null},
   ]},
 ]},
-"賞与支払届":{color:"#B45309",icon:"🎁",sections:[
+"賞与支払届":{color:"#B45309",icon:"🎁",hasCalc:true,sections:[
   {title:"手続き前にやること",tasks:[
     {id:"by1",label:"賞与台帳の回収",note:"",warn:null},
     {id:"by2",label:"賞与台帳のドキュ",note:"",warn:null},
     {id:"by3",label:"賞与台帳の入力",note:"",warn:"⚠️ 産育休社保免除されているか"},
   ]},
-  {title:"当事務所で賞与計算する場合",tasks:[
+  {title:"当事務所で賞与計算する場合",calcOnly:true,tasks:[
     {id:"by4",label:"賞与額の確認",note:"",warn:null},
     {id:"by5",label:"賞与計算",note:"",warn:null},
     {id:"by6",label:"賞与支給控除一覧表のドキュ",note:"",warn:null},
@@ -1329,11 +1348,19 @@ let _lastSync = Date.now();
 function gp(c) { return P[c.proc] || P['入社']; }
 function allTasks(c) {
   const p = gp(c);
-  const sections = (p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0)
+  let sections = (p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0)
     ? p.sections.filter(s => !s.rousaiKey || c.rousaiShoshiki.includes(s.rousaiKey))
     : p.sections;
-  const hasFuyo = c.hasFuyo !== false; // デフォルトtrue（後方互換）
-  return sections.flatMap(s => s.tasks).filter(t => !t.fuyoOnly || hasFuyo);
+  const hasFuyo = c.hasFuyo !== false;
+  // 賞与：計算なしの場合calcOnlyセクションをスキップ
+  if (p.hasCalc && c.hasCalc === false) {
+    sections = sections.filter(s => !s.calcOnly);
+  }
+  // 月変：月変なしの場合tsukihenOnlyセクションをスキップ
+  if (c.hasTsukihen === false) {
+    sections = sections.filter(s => !s.tsukihenOnly);
+  }
+  return sections.flatMap(s => s.tasks).filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false));
 }
 function pct(c) { const a = allTasks(c); return a.length ? Math.round(a.filter(t => c.checks[t.id]).length / a.length * 100) : 0; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1365,6 +1392,8 @@ async function loadData() {
       procDate: r.proc_date || '',
       procDate2: r.proc_date2 || '',
       hasFuyo: r.ha_fuyo !== false,
+      hasCalc: r.has_calc !== null ? r.has_calc : null,
+      hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
       freeLabels: r.free_labels || {},
     }));
     _lastSync = Date.now();
@@ -1392,6 +1421,7 @@ async function saveCase(c) {
     task_memos: c.taskMemos || {},
     round: c.round || '',
     ha_fuyo: c.hasFuyo !== false,
+    has_calc: c.hasCalc !== null ? c.hasCalc : null,
     free_labels: c.freeLabels || {},
     updated_at: new Date().toISOString(),
   };
@@ -1455,6 +1485,8 @@ setInterval(async () => {
       taskMemos: r.task_memos || {},
       round: r.round || '',
       hasFuyo: r.ha_fuyo !== false,
+      hasCalc: r.has_calc !== null ? r.has_calc : null,
+      hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
       freeLabels: r.free_labels || {},
       freeName: r.free_name || '',
       procDate: r.proc_date || '',
@@ -1695,6 +1727,19 @@ function renderChecklist() {
   const caseMemoEl = document.getElementById('case-memo-input');
   if (caseMemoEl) caseMemoEl.value = c.caseMemo || '';
   const dateEditArea = document.getElementById('proc-date-edit-area');
+  // 月変あり/なし選択ボタンの表示
+  const tsukihenPanel = document.getElementById('tsukihen-panel');
+  if (tsukihenPanel) {
+    if (c.proc === '月変・賃金入力') {
+      tsukihenPanel.style.display = '';
+      document.getElementById('tsukihen-yes-btn').style.background = c.hasTsukihen === true ? '#0891B2' : '#E2E8F0';
+      document.getElementById('tsukihen-yes-btn').style.color = c.hasTsukihen === true ? '#fff' : '#475569';
+      document.getElementById('tsukihen-no-btn').style.background = c.hasTsukihen === false ? '#6B7280' : '#E2E8F0';
+      document.getElementById('tsukihen-no-btn').style.color = c.hasTsukihen === false ? '#fff' : '#475569';
+    } else {
+      tsukihenPanel.style.display = 'none';
+    }
+  }
   const dateConf = PROC_DATE_CONFIG[c.proc];
   if (dateEditArea) {
     if (dateConf) {
@@ -1729,9 +1774,17 @@ function renderChecklist() {
   let sn = 0, html = '';
   // 労災の場合は選択した様式のセクションのみ表示
   const hasFuyo = c.hasFuyo !== false;
-  const visibleSections = p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0
+  let visibleSections = p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0
     ? p.sections.filter(s => !s.rousaiKey || c.rousaiShoshiki.includes(s.rousaiKey))
     : p.sections;
+  // 賞与：計算なしの場合calcOnlyセクションをスキップ
+  if (p.hasCalc && c.hasCalc === false) {
+    visibleSections = visibleSections.filter(s => !s.calcOnly);
+  }
+  // 月変：月変なしの場合tsukihenOnlyセクションをスキップ
+  if (c.hasTsukihen === false) {
+    visibleSections = visibleSections.filter(s => !s.tsukihenOnly);
+  }
   // 労災の場合、選択様式のバッジを表示
   if (p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0) {
     html += `<div style="padding:8px 16px 4px;display:flex;gap:6px;flex-wrap:wrap;">
@@ -1746,7 +1799,7 @@ function renderChecklist() {
       <span class="sec-title" style="color:${p.color}">${esc(sec.title)}</span>
       <span class="sec-cnt">${sd}/${st2}</span>
     </div>`;
-    sec.tasks.filter(t => !t.fuyoOnly || hasFuyo).forEach(task => {
+    sec.tasks.filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false)).forEach(task => {
       // フリー手続きの場合はラベルをfreeLabelから復元
       if (p.isFree && c.freeLabels && c.freeLabels[task.id]) {
         task = {...task, label: c.freeLabels[task.id]};
@@ -1846,6 +1899,19 @@ function saveFreeTaskLabel(taskId, val) {
   if (!c.freeLabels) c.freeLabels = {};
   c.freeLabels[taskId] = val;
   saveCase(c);
+}
+
+async function setTsukihen(val) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  c.hasTsukihen = val;
+  // has_tsukihenをSupabaseに保存
+  await sbUpdate(c.id, { has_tsukihen: val, updated_at: new Date().toISOString() });
+  const idx = cases.findIndex(x => x.id === currentId);
+  if (idx >= 0) cases[idx] = c;
+  renderChecklist();
+  renderSidebar();
+  toast(val ? '🔵 月変手続きに進みます' : '✅ 月変なし。以降のタスクをスキップします');
 }
 
 async function saveProcDate(val) {
@@ -1986,6 +2052,18 @@ function selP(idx) {
   if (fnArea) fnArea.style.display = selProc === 'フリー' ? '' : 'none';
   if (selProc === 'フリー') document.getElementById('n-free-name').value = '';
 
+  // 賞与計算あり/なし選択エリア
+  const calcArea = document.getElementById('calc-select-area');
+  if (calcArea) {
+    if (P[selProc] && P[selProc].hasCalc) {
+      calcArea.style.display = '';
+      document.getElementById('calc-yes').checked = true;
+      updateCalcSelect();
+    } else {
+      calcArea.style.display = 'none';
+    }
+  }
+
   // 扶養あり/なし選択エリア
   const fArea = document.getElementById('fuyo-select-area');
   if (P[selProc] && P[selProc].hasFuyo) {
@@ -2008,6 +2086,16 @@ function updateFuyoSelect() {
   document.getElementById('fuyo-no-label').style.borderColor = noEl.checked ? '#2563EB' : '#E2E8F0';
   document.getElementById('fuyo-no-label').style.color = noEl.checked ? '#2563EB' : '';
 }
+
+function updateCalcSelect() {
+  const yes = document.getElementById('calc-yes');
+  const noEl = document.getElementById('calc-no');
+  if (!yes) return;
+  document.getElementById('calc-yes-label').style.borderColor = yes.checked ? '#B45309' : '#E2E8F0';
+  document.getElementById('calc-yes-label').style.color = yes.checked ? '#B45309' : '';
+  document.getElementById('calc-no-label').style.borderColor = noEl.checked ? '#B45309' : '#E2E8F0';
+  document.getElementById('calc-no-label').style.color = noEl.checked ? '#B45309' : '';
+}
 function toggleShoshiki(key, el) {
   el.classList.toggle('on');
   uNewBtn();
@@ -2020,6 +2108,8 @@ async function createCase() {
   const freeName = (selProc === 'フリー' && document.getElementById('n-free-name')) ? document.getElementById('n-free-name').value.trim() : '';
   const fuyoYes = document.getElementById('fuyo-yes');
   const hasFuyo = (!fuyoYes || !document.getElementById('fuyo-select-area') || document.getElementById('fuyo-select-area').style.display === 'none') ? true : fuyoYes.checked;
+  const calcYes = document.getElementById('calc-yes');
+  const hasCalc = (!calcYes || !document.getElementById('calc-select-area') || document.getElementById('calc-select-area').style.display === 'none') ? null : calcYes.checked;
   if (!co || !selProc) return;
   const procKey = selProc;
   const procDate = (document.getElementById('n-proc-date') && PROC_DATE_CONFIG[procKey]) ? document.getElementById('n-proc-date').value : '';
@@ -2038,6 +2128,8 @@ async function createCase() {
   if (document.getElementById('n-free-name')) document.getElementById('n-free-name').value = '';
   if (document.getElementById('free-name-area')) document.getElementById('free-name-area').style.display = 'none';
   if (document.getElementById('n-proc-date')) document.getElementById('n-proc-date').value = '';
+  if (document.getElementById('calc-yes')) document.getElementById('calc-yes').checked = true;
+  if (document.getElementById('calc-select-area')) document.getElementById('calc-select-area').style.display = 'none';
   if (document.getElementById('n-proc-date2')) document.getElementById('n-proc-date2').value = '';
   if (document.getElementById('proc-date-area')) document.getElementById('proc-date-area').style.display = 'none';
   if (document.getElementById('proc-date2-area')) document.getElementById('proc-date2-area').style.display = 'none';
@@ -2054,6 +2146,7 @@ async function createCase() {
     status: 'none', checks: {}, wait_flags: {}, wait_memo: '', tanto_log: [],
     rousai_shoshiki: rousaiShoshiki,
     case_memo: '', task_memos: {}, round: round, ha_fuyo: hasFuyo,
+    has_calc: hasCalc, has_tsukihen: null,
     free_labels: {},
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   };
@@ -2074,6 +2167,8 @@ async function createCase() {
       procDate: row.proc_date || '',
       procDate2: row.proc_date2 || '',
       hasFuyo: row.ha_fuyo !== false,
+      hasCalc: row.has_calc !== null ? row.has_calc : null,
+      hasTsukihen: row.has_tsukihen !== null ? row.has_tsukihen : null,
       freeLabels: row.free_labels || {},
     };
     cases.push(c);
@@ -2182,6 +2277,7 @@ async function restoreData(event) {
         task_memos: c.taskMemos || c.task_memos || {},
         round: c.round || '',
         ha_fuyo: c.hasFuyo !== false,
+    has_calc: c.hasCalc !== null ? c.hasCalc : null,
         free_labels: c.freeLabels || c.free_labels || {},
         updated_at: new Date().toISOString(),
       };
@@ -2201,6 +2297,108 @@ async function restoreData(event) {
     setSyncStatus('⚠️ 復元失敗');
   }
   event.target.value = '';
+}
+
+// ============================================================
+// 印刷用ウィンドウ
+// ============================================================
+function openPrintWindow() {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  const p = gp(c);
+  const hasFuyo = c.hasFuyo !== false;
+
+  // 表示するセクションを決定
+  let visibleSections = p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0
+    ? p.sections.filter(s => !s.rousaiKey || c.rousaiShoshiki.includes(s.rousaiKey))
+    : p.sections;
+  if (p.hasCalc && c.hasCalc === false) visibleSections = visibleSections.filter(s => !s.calcOnly);
+  if (c.hasTsukihen === false) visibleSections = visibleSections.filter(s => !s.tsukihenOnly);
+
+  const all = visibleSections.flatMap(s => s.tasks).filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false));
+  const dn = all.filter(t => c.checks[t.id]).length;
+  const pt = all.length ? Math.round(dn / all.length * 100) : 0;
+
+  // 担当者ログ
+  const tantoLog = (c.tantoLog || []).map(t => `${t.date} ${t.name}`).join('　/　');
+
+  // タスク一覧HTML生成
+  let taskRows = '';
+  let sn = 0;
+  visibleSections.forEach(sec => {
+    const filteredTasks = sec.tasks.filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false));
+    if (filteredTasks.length === 0) return;
+    const sd = filteredTasks.filter(t => c.checks[t.id]).length;
+    taskRows += `<tr class="sec-row"><td colspan="3">${sec.title}　${sd}/${filteredTasks.length}</td></tr>`;
+    filteredTasks.forEach(task => {
+      sn++;
+      const ck = !!c.checks[task.id];
+      const memo = (c.taskMemos && c.taskMemos[task.id]) || '';
+      taskRows += `<tr class="${ck ? 'done-row' : ''}">
+        <td class="num-cell">${sn}</td>
+        <td class="check-cell">${ck ? '✓' : '□'}</td>
+        <td class="label-cell">
+          <div class="task-label">${task.label}</div>
+          ${task.warn ? `<div class="task-warn">${task.warn}</div>` : ''}
+          ${memo ? `<div class="task-memo">${memo}</div>` : ''}
+        </td>
+      </tr>`;
+    });
+  });
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>${c.company}　${c.proc}　チェックリスト</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', 'Meiryo', sans-serif; font-size: 11px; color: #1E293B; padding: 16px; }
+  h1 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .meta { font-size: 10px; color: #64748B; margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .meta span { display: flex; align-items: center; gap: 4px; }
+  .progress { background: #E2E8F0; border-radius: 3px; height: 8px; margin-bottom: 12px; }
+  .progress-fill { height: 100%; border-radius: 3px; background: ${p.color}; width: ${pt}%; }
+  table { width: 100%; border-collapse: collapse; }
+  .sec-row td { background: ${p.color}18; color: ${p.color}; font-weight: 700; padding: 5px 8px; border: 1px solid #E2E8F0; font-size: 11px; }
+  tr td { border: 1px solid #E2E8F0; padding: 4px 6px; vertical-align: top; }
+  .num-cell { width: 28px; text-align: center; color: #94A3B8; font-size: 10px; }
+  .check-cell { width: 22px; text-align: center; font-size: 13px; }
+  .label-cell { }
+  .task-label { font-size: 11px; line-height: 1.4; }
+  .task-warn { font-size: 10px; color: #C2410C; background: #FFF7ED; padding: 2px 5px; border-radius: 2px; margin-top: 2px; }
+  .task-memo { font-size: 10px; color: #475569; background: #F8FAFC; padding: 2px 5px; border-radius: 2px; margin-top: 2px; }
+  .done-row td { background: #F0FDF4; }
+  .done-row .task-label { text-decoration: line-through; color: #166534; }
+  .footer { margin-top: 12px; font-size: 10px; color: #94A3B8; text-align: right; }
+  @media print {
+    body { padding: 8px; }
+    @page { margin: 10mm; }
+  }
+</style>
+</head>
+<body>
+  <h1>${p.icon} ${c.company}　<span style="color:${p.color}">${c.proc}</span>${c.freeName ? '　' + c.freeName : ''}${c.round ? '　' + c.round : ''}</h1>
+  <div class="meta">
+    ${c.name ? `<span>👤 ${c.name}</span>` : ''}
+    ${c.procDate ? `<span>📅 ${c.procDate}</span>` : ''}
+    ${c.procDate2 ? `<span>📅 ${c.procDate2}</span>` : ''}
+    <span>進捗 ${pt}%（${dn}/${all.length} タスク完了）</span>
+    ${tantoLog ? `<span>担当：${tantoLog}</span>` : ''}
+  </div>
+  <div class="progress"><div class="progress-fill"></div></div>
+  ${c.caseMemo ? `<div style="margin-bottom:10px;padding:6px 8px;background:#FEF3C7;border-left:3px solid #F59E0B;font-size:11px;font-weight:700;color:#92400E;">${c.caseMemo}</div>` : ''}
+  <table>
+    ${taskRows}
+  </table>
+  <div class="footer">SR Office 手続きチェックリスト　出力日：${new Date().toLocaleDateString('ja-JP')}</div>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=800,height=900');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
 }
 
 // ============================================================
