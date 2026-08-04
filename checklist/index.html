@@ -99,6 +99,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 .dc-open{background:#EFF6FF;color:#2563EB;}
 .dc-open:hover{background:#DBEAFE;}
 .dc-del{background:#FEF2F2;color:#DC2626;}
+.dc-edit{background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;}
+.dc-edit:hover{background:#E2E8F0;}
 .dc-del:hover{background:#FEE2E2;}
 
 /* チェックリスト */
@@ -405,6 +407,49 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
   </div>
 </div>
 
+<!-- 案件情報の修正モーダル -->
+<div class="ov hidden" id="ov-edit">
+  <div class="mbox">
+    <div class="mt">✏️ 案件情報の修正</div>
+    <div class="fg">
+      <label class="fl">事業所名 <span class="req">*</span></label>
+      <input class="fi" id="e-co" type="text" placeholder="〇〇株式会社" oninput="uEditBtn()">
+    </div>
+    <div class="fg">
+      <label class="fl">対象者氏名</label>
+      <input class="fi" id="e-na" type="text" placeholder="山田 太郎（任意）">
+    </div>
+    <div class="fg">
+      <label class="fl">申請回数（任意）</label>
+      <input class="fi" id="e-round" type="text" placeholder="例：第2回（省略可）" style="max-width:200px;">
+    </div>
+    <div class="fg" id="e-free-area" style="display:none;">
+      <label class="fl">手続き名 <span class="req">*</span></label>
+      <input class="fi" id="e-free-name" type="text" oninput="uEditBtn()">
+    </div>
+    <div class="fg" id="e-date-area" style="display:none;">
+      <label class="fl" id="e-date-label">日付</label>
+      <input class="fi" id="e-proc-date" type="date" style="max-width:220px;">
+    </div>
+    <div class="fg" id="e-date2-area" style="display:none;">
+      <label class="fl" id="e-date2-label">日付2</label>
+      <input class="fi" id="e-proc-date2" type="month" style="max-width:220px;">
+    </div>
+    <div class="fg">
+      <label class="fl">手続き種別</label>
+      <div id="e-proc-view" style="font-size:13px;font-weight:700;color:#334155;padding:8px 12px;background:#F1F5F9;border-radius:7px;"></div>
+      <div style="font-size:11px;color:#64748B;margin-top:6px;line-height:1.6;">
+        手続き種別は変更できません。チェック項目がその種別に対応しているためです。<br>
+        種別を間違えた場合は、この案件を削除して作り直してください。
+      </div>
+    </div>
+    <div class="mbtns">
+      <button class="bcn" onclick="closeModal('ov-edit')">キャンセル</button>
+      <button class="bsb" id="e-submit" onclick="submitEditCase()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <!-- 用語集モーダル -->
 <div class="ov hidden" id="ov-gl">
   <div class="mbox" style="max-width:500px;">
@@ -425,6 +470,194 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 const SB_URL = 'https://mmcgxgzplvtenlyzxhty.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tY2d4Z3pwbHZ0ZW5seXp4aHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODAwMTMsImV4cCI6MjA4OTM1NjAxM30.0qaVx5ymqB63YJ7rHQe0I56sqp3M8CVv4ZwRVmhjHWU';
 const TABLE = 'checklist_cases';
+
+/* ============================================================
+   ログイン機能（こころざし経営労務事務所 共通）
+   - Supabase Auth のメール＋パスワードでログインします
+   - ログイン状態は3つのシステムで共有されます
+   - 既存の fetch を包んで、anonキーの代わりに
+     ログイン後のアクセストークンを送ります
+   ============================================================ */
+const SR_AUTH = (function () {
+  const BASE = SB_URL;
+  const ANON = SB_KEY;
+  const STORE = 'sr_kokoro_auth';
+  const raw = window.fetch.bind(window);
+
+  let sess = null;
+  try { sess = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { sess = null; }
+
+  let waiters = [];
+  const save = s => { sess = s; localStorage.setItem(STORE, JSON.stringify(s)); };
+  const clear = () => { sess = null; localStorage.removeItem(STORE); };
+
+  function store(j) {
+    save({
+      access_token: j.access_token,
+      refresh_token: j.refresh_token,
+      expires_at: Date.now() + (j.expires_in || 3600) * 1000,
+      email: (j.user && j.user.email) || ''
+    });
+  }
+
+  async function signIn(email, password) {
+    const r = await raw(BASE + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error_description || j.msg || j.message || 'ログインできませんでした');
+    store(j);
+    return j;
+  }
+
+  async function refresh() {
+    if (!sess || !sess.refresh_token) { clear(); return null; }
+    const r = await raw(BASE + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { apikey: ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: sess.refresh_token })
+    });
+    if (!r.ok) { clear(); return null; }
+    const j = await r.json();
+    store(j);
+    return j.access_token;
+  }
+
+  async function token() {
+    if (!sess) return null;
+    if (Date.now() > sess.expires_at - 60000) return await refresh();
+    return sess.access_token;
+  }
+
+  function signOut() {
+    const t = sess && sess.access_token;
+    clear();
+    if (t) raw(BASE + '/auth/v1/logout', {
+      method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + t }
+    }).catch(() => {});
+    location.reload();
+  }
+
+  /* ---------- ログイン画面 ---------- */
+  const css = document.createElement('style');
+  css.textContent = `
+  #sr-login{position:fixed;inset:0;z-index:99999;background:#f4f6f8;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    font-family:"Yu Gothic","游ゴシック体",YuGothic,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  #sr-login .card{background:#fff;border:1px solid #dfe4ea;border-radius:8px;
+    padding:30px 28px;width:100%;max-width:340px;box-shadow:0 2px 14px rgba(20,40,70,.07)}
+  #sr-login h2{margin:0 0 4px;font-size:17px;color:#1F4E79;font-weight:600}
+  #sr-login p.lead{margin:0 0 20px;font-size:12px;color:#6b7280}
+  #sr-login label{display:block;font-size:12px;color:#6b7280;margin:12px 0 4px}
+  #sr-login input{width:100%;box-sizing:border-box;padding:9px 11px;font-size:14px;
+    border:1px solid #dfe4ea;border-radius:5px;background:#fff;
+    font-family:inherit;color:#15202b}
+  #sr-login input:focus{outline:none;border-color:#2E75B6;box-shadow:0 0 0 3px rgba(46,117,182,.13)}
+  #sr-login button{width:100%;margin-top:20px;padding:10px;font-size:14px;
+    background:#1F4E79;color:#fff;border:none;border-radius:5px;cursor:pointer;
+    font-family:inherit;font-weight:500}
+  #sr-login button:hover{background:#18395a}
+  #sr-login button:disabled{background:#9fb2c6;cursor:default}
+  #sr-login .err{margin-top:14px;font-size:12px;color:#b45309;
+    background:#fdf3e3;border-radius:4px;padding:8px 10px;display:none;line-height:1.6}
+  #sr-logout{position:fixed;left:10px;bottom:10px;z-index:9998;
+    font-size:11px;color:#6b7280;background:rgba(255,255,255,.92);
+    border:1px solid #dfe4ea;border-radius:13px;padding:4px 11px;cursor:pointer;
+    font-family:"Yu Gothic",YuGothic,Meiryo,sans-serif;line-height:1.6}
+  #sr-logout:hover{color:#1F4E79;border-color:#2E75B6}
+  @media print{#sr-logout{display:none}}`;
+  document.head.appendChild(css);
+
+  function showLogin() {
+    if (document.getElementById('sr-login')) return;
+    const el = document.createElement('div');
+    el.id = 'sr-login';
+    el.innerHTML =
+      '<div class="card">' +
+      '<h2>こころざし経営労務事務所</h2>' +
+      '<p class="lead">事務所のアカウントでログインしてください。</p>' +
+      '<label for="sr-id">ログインID</label>' +
+      '<input id="sr-id" type="text" autocomplete="username" autocapitalize="off" spellcheck="false">' +
+      '<label for="sr-pw">パスワード</label>' +
+      '<input id="sr-pw" type="password" autocomplete="current-password">' +
+      '<button id="sr-go">ログイン</button>' +
+      '<div class="err" id="sr-err"></div>' +
+      '</div>';
+    document.body.appendChild(el);
+    const idEl = el.querySelector('#sr-id'), pwEl = el.querySelector('#sr-pw');
+    const btn = el.querySelector('#sr-go'), err = el.querySelector('#sr-err');
+    idEl.focus();
+
+    async function go() {
+      const id = idEl.value.trim(), pw = pwEl.value;
+      if (!id || !pw) { err.textContent = 'ログインIDとパスワードを入力してください。'; err.style.display = 'block'; return; }
+      btn.disabled = true; btn.textContent = '確認中…'; err.style.display = 'none';
+      try {
+        await signIn(id, pw);
+        el.remove();
+        mountLogout();
+        const ws = waiters; waiters = [];
+        ws.forEach(fn => fn(sess.access_token));
+      } catch (e) {
+        err.textContent = String(e.message || e).indexOf('Invalid') >= 0
+          ? 'ログインIDまたはパスワードが違います。'
+          : ('ログインできませんでした：' + (e.message || e));
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'ログイン';
+        pwEl.value = ''; pwEl.focus();
+      }
+    }
+    btn.onclick = go;
+    [idEl, pwEl].forEach(x => x.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+  }
+
+  function mountLogout() {
+    if (document.getElementById('sr-logout') || !sess) return;
+    const b = document.createElement('button');
+    b.id = 'sr-logout';
+    b.textContent = (sess.email ? sess.email.split('@')[0] + ' ・ ' : '') + 'ログアウト';
+    b.onclick = () => { if (confirm('ログアウトしますか？')) signOut(); };
+    document.body.appendChild(b);
+  }
+
+  /* 有効なトークンを返す。未ログインならログイン画面を出して待つ */
+  async function ready() {
+    const t = await token();
+    if (t) return t;
+    showLogin();
+    return new Promise(res => waiters.push(res));
+  }
+
+  /* ---------- fetch を包む ---------- */
+  window.fetch = async function (input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (!url.startsWith(BASE) || url.indexOf('/auth/v1/') >= 0) return raw(input, init);
+
+    init = Object.assign({}, init);
+    const t = await ready();
+    const h = new Headers((init && init.headers) || (typeof input !== 'string' && input.headers) || {});
+    h.set('apikey', ANON);
+    h.set('Authorization', 'Bearer ' + t);
+    init.headers = h;
+
+    let res = await raw(url, init);
+    if (res.status === 401) {
+      const t2 = await refresh();
+      if (t2) { h.set('Authorization', 'Bearer ' + t2); res = await raw(url, init); }
+      else { showLogin(); }
+    }
+    return res;
+  };
+
+  document.addEventListener('DOMContentLoaded', () => { sess ? mountLogout() : showLogin(); });
+  if (document.readyState !== 'loading') { sess ? mountLogout() : showLogin(); }
+
+  return { signIn, signOut, token, ready, get email() { return sess && sess.email; } };
+})();
+
+
 
 const SB_HEADERS = {
   'apikey': SB_KEY,
@@ -1649,6 +1882,7 @@ function renderDash() {
       </select>
       <div class="dc-acts">
         <button class="dc-btn dc-open" onclick="event.stopPropagation();openChecklist('${c.id}')">☑ チェックリストを開く</button>
+        <button class="dc-btn dc-edit" onclick="event.stopPropagation();openEditCase('${c.id}')">✏️ 修正</button>
         <button class="dc-btn dc-del" onclick="event.stopPropagation();deleteCase('${c.id}')">🗑 削除</button>
       </div>
     </div>`;
@@ -2099,6 +2333,82 @@ function updateCalcSelect() {
 function toggleShoshiki(key, el) {
   el.classList.toggle('on');
   uNewBtn();
+}
+
+// ============================================================
+// 案件情報の修正（事業所名・氏名・回数・日付）
+// ============================================================
+let editingCaseId = null;
+
+function openEditCase(id) {
+  const c = cases.find(x => String(x.id) === String(id));
+  if (!c) return;
+  editingCaseId = c.id;
+
+  document.getElementById('e-co').value = c.company || '';
+  document.getElementById('e-na').value = c.name || '';
+  document.getElementById('e-round').value = c.round || '';
+  document.getElementById('e-proc-view').textContent =
+    (c.freeName ? c.freeName + '（フリー）' : (c.proc || ''));
+
+  const freeArea = document.getElementById('e-free-area');
+  freeArea.style.display = (c.proc === 'フリー') ? '' : 'none';
+  document.getElementById('e-free-name').value = c.freeName || '';
+
+  const conf = PROC_DATE_CONFIG[c.proc];
+  const da = document.getElementById('e-date-area');
+  const db = document.getElementById('e-date2-area');
+  if (conf) {
+    da.style.display = '';
+    document.getElementById('e-date-label').textContent = conf.label;
+    const inp = document.getElementById('e-proc-date');
+    inp.type = conf.type || 'date';
+    inp.value = c.procDate || '';
+    if (conf.label2) {
+      db.style.display = '';
+      document.getElementById('e-date2-label').textContent = conf.label2;
+      const inp2 = document.getElementById('e-proc-date2');
+      inp2.type = conf.type2 || 'month';
+      inp2.value = c.procDate2 || '';
+    } else { db.style.display = 'none'; }
+  } else {
+    da.style.display = 'none';
+    db.style.display = 'none';
+  }
+
+  uEditBtn();
+  openModal('ov-edit');
+  setTimeout(() => { const el = document.getElementById('e-co'); if (el) el.focus(); }, 60);
+}
+
+function uEditBtn() {
+  const co = document.getElementById('e-co').value.trim();
+  const needFree = document.getElementById('e-free-area').style.display !== 'none';
+  const fn = document.getElementById('e-free-name').value.trim();
+  document.getElementById('e-submit').disabled = !co || (needFree && !fn);
+}
+
+async function submitEditCase() {
+  const c = cases.find(x => String(x.id) === String(editingCaseId));
+  if (!c) return;
+  const co = document.getElementById('e-co').value.trim();
+  if (!co) return;
+
+  c.company = co;
+  c.name = document.getElementById('e-na').value.trim();
+  c.round = document.getElementById('e-round').value.trim();
+  if (document.getElementById('e-free-area').style.display !== 'none')
+    c.freeName = document.getElementById('e-free-name').value.trim();
+  if (document.getElementById('e-date-area').style.display !== 'none')
+    c.procDate = document.getElementById('e-proc-date').value;
+  if (document.getElementById('e-date2-area').style.display !== 'none')
+    c.procDate2 = document.getElementById('e-proc-date2').value;
+
+  closeModal('ov-edit');
+  setSyncStatus('🔄 保存中...');
+  await saveCase(c);
+  editingCaseId = null;
+  renderAll();
 }
 
 async function createCase() {
