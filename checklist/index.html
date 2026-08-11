@@ -323,6 +323,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
         <button id="tsukihen-no-btn" onclick="setTsukihen(false)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">なし（終了）</button>
         <span id="tsukihen-note" style="font-size:10px;color:#64748B;"></span>
       </div>
+      <!-- 社会保険加入あり/なしパネル -->
+      <div id="shaho-panel" style="display:none;padding:8px 18px;background:#ECFEFF;border-bottom:1px solid #A5F3FC;flex-shrink:0;align-items:center;gap:10px;">
+        <span style="font-size:11px;color:#0E7490;font-weight:600;">保険加入：</span>
+        <button id="shaho-yes-btn" onclick="setShaho(true)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">社会保険＋雇用保険</button>
+        <button id="shaho-no-btn" onclick="setShaho(false)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">雇用保険のみ</button>
+        <span style="font-size:10px;color:#64748B;">※雇用保険のみの場合、社会保険関連のタスクを非表示にします</span>
+      </div>
       <!-- 案件メモパネル -->
       <div id="case-memo-panel">
         <div id="proc-date-edit-area" style="display:none;margin-bottom:8px;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -386,6 +393,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
         </label>
         <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="calc-no-label">
           <input type="radio" name="calc-radio" id="calc-no" value="no" onchange="updateCalcSelect()"> 台帳入力のみ
+        </label>
+      </div>
+    </div>
+    <div id="shaho-select-area" style="display:none;margin-bottom:12px;">
+      <label class="fl">保険加入</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="shaho-yes-label">
+          <input type="radio" name="shaho-radio" id="shaho-yes" value="yes" checked onchange="updateShahoSelect()"> 社会保険＋雇用保険
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="shaho-no-label">
+          <input type="radio" name="shaho-radio" id="shaho-no" value="no" onchange="updateShahoSelect()"> 雇用保険のみ
         </label>
       </div>
     </div>
@@ -757,35 +775,35 @@ const PROC_KEYS = ["入社","入社（健保組合）","退職","退職（健保
 
 const P = {
 
-"入社":{color:"#2563EB",icon:"👤",hasFuyo:true,sections:[
+"入社":{color:"#2563EB",icon:"👤",hasFuyo:true,hasShaho:true,sections:[
   {title:"入社手続き前にやること",tasks:[
     {id:"n1",label:"お客様へ入社連絡票受領の連絡",note:"",warn:null},
     {id:"n2",label:"入社連絡票のドキュ",note:"",warn:null},
     {id:"n3",label:"ドキュの名前の変更",note:"",warn:null},
     {id:"n4",label:"入社連絡票の内容を確認",note:"",warn:null},
     {id:"n5",label:"個人マスタの入力",note:"",warn:"⚠️ 社会保険に加入しない場合は健保番号、厚年番号を消去　※会社名(所属先）確認　こりすorクルミ　ショウ企画"},
-    {id:"n6",label:"社会保険料控除表をメールで送る",note:"",warn:null},
+    {id:"n6",label:"社会保険料控除表をメールで送る",note:"",warn:null,shahoOnly:true},
   ]},
   {title:"手続き",tasks:[
     {id:"n7",label:"雇用保険資格取得手続き",note:"",warn:"⚠️ 入社後に取得した場合、個マスタの労保画面に✓を入れる"},
-    {id:"n8",label:"社会保険資格取得手続き",note:"",warn:"⚠️ 70歳以上該当者"},
-    {id:"n9",label:"被扶養者手続き",note:"",warn:"⚠️ 個マスタ登録する(扶養手続きを紙で提出する時、要注意）",fuyoOnly:true},
+    {id:"n8",label:"社会保険資格取得手続き",note:"",warn:"⚠️ 70歳以上該当者",shahoOnly:true},
+    {id:"n9",label:"被扶養者手続き",note:"",warn:"⚠️ 個マスタ登録する(扶養手続きを紙で提出する時、要注意）",fuyoOnly:true,shahoOnly:true},
     {id:"n10",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書取得・整理",tasks:[
     {id:"n11",label:"雇用保険公文書取得",note:"",warn:null},
     {id:"n12",label:"雇用保険公文書のドキュ",note:"",warn:null},
-    {id:"n13",label:"社会保険公文書取得",note:"",warn:null},
-    {id:"n14",label:"社会保険公文書のドキュ",note:"",warn:null},
-    {id:"n15",label:"被扶養者公文書取得",note:"",warn:null,fuyoOnly:true},
-    {id:"n16",label:"被扶養者公文書のドキュ",note:"",warn:null,fuyoOnly:true},
-    {id:"n17",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
+    {id:"n13",label:"社会保険公文書取得",note:"",warn:null,shahoOnly:true},
+    {id:"n14",label:"社会保険公文書のドキュ",note:"",warn:null,shahoOnly:true},
+    {id:"n15",label:"被扶養者公文書取得",note:"",warn:null,fuyoOnly:true,shahoOnly:true},
+    {id:"n16",label:"被扶養者公文書のドキュ",note:"",warn:null,fuyoOnly:true,shahoOnly:true},
+    {id:"n17",label:"社会保険料控除表送付済みか確認",note:"",warn:null,shahoOnly:true},
     {id:"n18",label:"入社ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
     {id:"n19",label:"雇用保険公文書の送付",note:"",warn:null},
-    {id:"n20",label:"社会保険公文書の送付",note:"",warn:null},
-    {id:"n21",label:"被扶養者公文書の送付",note:"",warn:null,fuyoOnly:true},
+    {id:"n20",label:"社会保険公文書の送付",note:"",warn:null,shahoOnly:true},
+    {id:"n21",label:"被扶養者公文書の送付",note:"",warn:null,fuyoOnly:true,shahoOnly:true},
     {id:"n22",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
@@ -828,7 +846,7 @@ const P = {
     {id:"nk29",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
-"退職":{color:"#DC2626",icon:"🚪",sections:[
+"退職":{color:"#DC2626",icon:"🚪",hasShaho:true,sections:[
   {title:"退職手続き前にやること",tasks:[
     {id:"t1",label:"お客様へ退職連絡票受領の連絡",note:"",warn:null},
     {id:"t2",label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分",warn:"⚠️ 離職票急ぎの場合は、賃金台帳を依頼してください"},
@@ -837,24 +855,24 @@ const P = {
     {id:"t5",label:"ドキュの名前の変更",note:"",warn:null},
     {id:"t6",label:"退職連絡票の内容を確認",note:"",warn:null},
     {id:"t7",label:"個人マスタに退職内容を入力",note:"",warn:null},
-    {id:"t8",label:"健康保険資格喪失証明書と退職後の健康保険のお知らせを送る",note:"",warn:null},
-    {id:"t9",label:"保険証回収の依頼",note:"",warn:null},
+    {id:"t8",label:"健康保険資格喪失証明書と退職後の健康保険のお知らせを送る",note:"",warn:null,shahoOnly:true},
+    {id:"t9",label:"保険証回収の依頼",note:"",warn:null,shahoOnly:true},
   ]},
   {title:"退職手続き",tasks:[
     {id:"t10",label:"雇用保険喪失手続き or 離職票発行手続き",note:"",warn:"⚠️ 退職ではないのに喪失した場合、個マスタの労保画面の✓を外す　□ショウ企画は、退職時現在の所属を確認し、違っていたら転勤届を出す"},
-    {id:"t11",label:"社会保険資格喪失手続き",note:"",warn:null},
+    {id:"t11",label:"社会保険資格喪失手続き",note:"",warn:null,shahoOnly:true},
     {id:"t12",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"手続き後",tasks:[
     {id:"t13",label:"離職票or雇喪確認通知書　公文書取得",note:"",warn:null},
     {id:"t14",label:"離職票or雇喪認通知書公文書ドキュ",note:"",warn:null},
-    {id:"t15",label:"社会保険公文書取得",note:"",warn:null},
-    {id:"t16",label:"社会保険公文書のドキュ",note:"",warn:null},
+    {id:"t15",label:"社会保険公文書取得",note:"",warn:null,shahoOnly:true},
+    {id:"t16",label:"社会保険公文書のドキュ",note:"",warn:null,shahoOnly:true},
     {id:"t17",label:"退職ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
     {id:"t18",label:"離職票or雇喪認通知書公文書の送付",note:"",warn:null},
-    {id:"t19",label:"社会保険公文書の送付orアップ",note:"",warn:null},
+    {id:"t19",label:"社会保険公文書の送付orアップ",note:"",warn:null,shahoOnly:true},
     {id:"t20",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
@@ -1579,6 +1597,12 @@ let selProc = null;
 let _lastSync = Date.now();
 
 function gp(c) { return P[c.proc] || P['入社']; }
+// タスク表示判定：扶養／月変／社保の各フラグを一元管理
+function taskVisible(t, c) {
+  return (!t.fuyoOnly     || c.hasFuyo     !== false)
+      && (!t.tsukihenOnly || c.hasTsukihen !== false)
+      && (!t.shahoOnly    || c.hasShaho    !== false);
+}
 function allTasks(c) {
   const p = gp(c);
   let sections = (p.isRousai && c.rousaiShoshiki && c.rousaiShoshiki.length > 0)
@@ -1593,7 +1617,7 @@ function allTasks(c) {
   if (c.hasTsukihen === false) {
     sections = sections.filter(s => !s.tsukihenOnly);
   }
-  return sections.flatMap(s => s.tasks).filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false));
+  return sections.flatMap(s => s.tasks).filter(t => taskVisible(t, c));
 }
 function pct(c) { const a = allTasks(c); return a.length ? Math.round(a.filter(t => c.checks[t.id]).length / a.length * 100) : 0; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1627,6 +1651,7 @@ async function loadData() {
       hasFuyo: r.ha_fuyo !== false,
       hasCalc: r.has_calc !== null ? r.has_calc : null,
       hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
+      hasShaho: r.has_shaho !== false,
       freeLabels: r.free_labels || {},
     }));
     _lastSync = Date.now();
@@ -1655,6 +1680,7 @@ async function saveCase(c) {
     round: c.round || '',
     ha_fuyo: c.hasFuyo !== false,
     has_calc: c.hasCalc !== null ? c.hasCalc : null,
+    has_shaho: c.hasShaho !== false,
     free_labels: c.freeLabels || {},
     updated_at: new Date().toISOString(),
   };
@@ -1720,6 +1746,7 @@ setInterval(async () => {
       hasFuyo: r.ha_fuyo !== false,
       hasCalc: r.has_calc !== null ? r.has_calc : null,
       hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
+      hasShaho: r.has_shaho !== false,
       freeLabels: r.free_labels || {},
       freeName: r.free_name || '',
       procDate: r.proc_date || '',
@@ -1974,6 +2001,20 @@ function renderChecklist() {
       tsukihenPanel.style.display = 'none';
     }
   }
+  // 社会保険あり/なし選択ボタンの表示
+  const shahoPanel = document.getElementById('shaho-panel');
+  if (shahoPanel) {
+    if (gp(c).hasShaho) {
+      shahoPanel.style.display = 'flex';
+      const on = c.hasShaho !== false;
+      document.getElementById('shaho-yes-btn').style.background = on ? '#0891B2' : '#E2E8F0';
+      document.getElementById('shaho-yes-btn').style.color = on ? '#fff' : '#475569';
+      document.getElementById('shaho-no-btn').style.background = !on ? '#6B7280' : '#E2E8F0';
+      document.getElementById('shaho-no-btn').style.color = !on ? '#fff' : '#475569';
+    } else {
+      shahoPanel.style.display = 'none';
+    }
+  }
   const dateConf = PROC_DATE_CONFIG[c.proc];
   if (dateEditArea) {
     if (dateConf) {
@@ -2001,8 +2042,9 @@ function renderChecklist() {
   }
   // 第〇回バッジ表示
   const roundBadge = c.round ? `<span style="background:#FEF9C3;color:#B45309;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">${esc(c.round)}</span>` : '';
-  const fuyoBadge = (gp(c).hasFuyo && c.hasFuyo === false) ? '<span style="background:#F1F5F9;color:#94A3B8;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">扶養なし</span>' : '';
-  document.getElementById('cl-name').innerHTML = esc(c.name || '') + roundBadge + fuyoBadge;
+  const fuyoBadge = (gp(c).hasFuyo && c.hasFuyo === false && c.hasShaho !== false) ? '<span style="background:#F1F5F9;color:#94A3B8;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">扶養なし</span>' : '';
+  const shahoBadge = (gp(c).hasShaho && c.hasShaho === false) ? '<span style="background:#ECFEFF;color:#0E7490;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">雇用保険のみ</span>' : '';
+  document.getElementById('cl-name').innerHTML = esc(c.name || '') + roundBadge + shahoBadge + fuyoBadge;
 
   // チェックリスト本体
   let sn = 0, html = '';
@@ -2026,14 +2068,14 @@ function renderChecklist() {
     </div>`;
   }
   visibleSections.forEach(sec => {
-    const filteredTasks = sec.tasks.filter(t => !t.fuyoOnly || hasFuyo);
+    const filteredTasks = sec.tasks.filter(t => taskVisible(t, c));
     const st2 = filteredTasks.length, sd = filteredTasks.filter(t => c.checks[t.id]).length;
     if (st2 === 0) return; // 全タスクが非表示なら セクションごとスキップ
     html += `<div class="sec-head" style="background:${p.color}18;border-left:4px solid ${p.color}">
       <span class="sec-title" style="color:${p.color}">${esc(sec.title)}</span>
       <span class="sec-cnt">${sd}/${st2}</span>
     </div>`;
-    sec.tasks.filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false)).forEach(task => {
+    filteredTasks.forEach(task => {
       // フリー手続きの場合はラベルをfreeLabelから復元
       if (p.isFree && c.freeLabels && c.freeLabels[task.id]) {
         task = {...task, label: c.freeLabels[task.id]};
@@ -2133,6 +2175,19 @@ function saveFreeTaskLabel(taskId, val) {
   if (!c.freeLabels) c.freeLabels = {};
   c.freeLabels[taskId] = val;
   saveCase(c);
+}
+
+async function setShaho(val) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  if (c.hasShaho !== false === val) return;
+  if (!val && !confirm('雇用保険のみに切り替えます。\n社会保険関連のタスクがチェックリストから非表示になります。\n（チェック状態は保持され、社会保険ありに戻せば復元されます）\n\nよろしいですか？')) return;
+  c.hasShaho = val;
+  await sbUpdate(c.id, { has_shaho: val, updated_at: new Date().toISOString() });
+  localStorage.setItem('cl-cases', JSON.stringify(cases));
+  renderChecklist();
+  renderSidebar();
+  toast(val ? '🔵 社会保険＋雇用保険に切り替えました' : '✅ 雇用保険のみ。社会保険のタスクを非表示にします');
 }
 
 async function setTsukihen(val) {
@@ -2298,6 +2353,17 @@ function selP(idx) {
     }
   }
 
+  // 保険加入（社保あり/雇用保険のみ）選択エリア
+  const sArea = document.getElementById('shaho-select-area');
+  if (sArea) {
+    if (P[selProc] && P[selProc].hasShaho) {
+      sArea.style.display = '';
+      document.getElementById('shaho-yes').checked = true;
+    } else {
+      sArea.style.display = 'none';
+    }
+  }
+
   // 扶養あり/なし選択エリア
   const fArea = document.getElementById('fuyo-select-area');
   if (P[selProc] && P[selProc].hasFuyo) {
@@ -2308,7 +2374,26 @@ function selP(idx) {
   } else {
     fArea.style.display = 'none';
   }
+  updateShahoSelect();
   uNewBtn();
+}
+
+function updateShahoSelect() {
+  const yes = document.getElementById('shaho-yes');
+  const noEl = document.getElementById('shaho-no');
+  if (!yes || !noEl) return;
+  document.getElementById('shaho-yes-label').style.borderColor = yes.checked ? '#0891B2' : '#E2E8F0';
+  document.getElementById('shaho-yes-label').style.color = yes.checked ? '#0891B2' : '';
+  document.getElementById('shaho-no-label').style.borderColor = noEl.checked ? '#0891B2' : '#E2E8F0';
+  document.getElementById('shaho-no-label').style.color = noEl.checked ? '#0891B2' : '';
+  // 雇用保険のみの場合、扶養の選択は不要なので隠す
+  const sArea = document.getElementById('shaho-select-area');
+  const fArea = document.getElementById('fuyo-select-area');
+  if (fArea && sArea && sArea.style.display !== 'none' && noEl.checked) {
+    fArea.style.display = 'none';
+  } else if (fArea && P[selProc] && P[selProc].hasFuyo) {
+    fArea.style.display = '';
+  }
 }
 
 function updateFuyoSelect() {
@@ -2418,6 +2503,8 @@ async function createCase() {
   const freeName = (selProc === 'フリー' && document.getElementById('n-free-name')) ? document.getElementById('n-free-name').value.trim() : '';
   const fuyoYes = document.getElementById('fuyo-yes');
   const hasFuyo = (!fuyoYes || !document.getElementById('fuyo-select-area') || document.getElementById('fuyo-select-area').style.display === 'none') ? true : fuyoYes.checked;
+  const shahoYes = document.getElementById('shaho-yes');
+  const hasShaho = (!shahoYes || !document.getElementById('shaho-select-area') || document.getElementById('shaho-select-area').style.display === 'none') ? true : shahoYes.checked;
   const calcYes = document.getElementById('calc-yes');
   const hasCalc = (!calcYes || !document.getElementById('calc-select-area') || document.getElementById('calc-select-area').style.display === 'none') ? null : calcYes.checked;
   if (!co || !selProc) return;
@@ -2445,6 +2532,8 @@ async function createCase() {
   if (document.getElementById('proc-date2-area')) document.getElementById('proc-date2-area').style.display = 'none';
   if (document.getElementById('fuyo-yes')) document.getElementById('fuyo-yes').checked = true;
   if (document.getElementById('fuyo-select-area')) document.getElementById('fuyo-select-area').style.display = 'none';
+  if (document.getElementById('shaho-yes')) document.getElementById('shaho-yes').checked = true;
+  if (document.getElementById('shaho-select-area')) document.getElementById('shaho-select-area').style.display = 'none';
   selProc = null;
   document.getElementById('n-submit').disabled = true;
   setSyncStatus('🔄 保存中...');
@@ -2456,7 +2545,7 @@ async function createCase() {
     status: 'none', checks: {}, wait_flags: {}, wait_memo: '', tanto_log: [],
     rousai_shoshiki: rousaiShoshiki,
     case_memo: '', task_memos: {}, round: round, ha_fuyo: hasFuyo,
-    has_calc: hasCalc, has_tsukihen: null,
+    has_calc: hasCalc, has_tsukihen: null, has_shaho: hasShaho,
     free_labels: {},
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   };
@@ -2479,6 +2568,7 @@ async function createCase() {
       hasFuyo: row.ha_fuyo !== false,
       hasCalc: row.has_calc !== null ? row.has_calc : null,
       hasTsukihen: row.has_tsukihen !== null ? row.has_tsukihen : null,
+      hasShaho: row.has_shaho !== false,
       freeLabels: row.free_labels || {},
     };
     cases.push(c);
@@ -2588,6 +2678,7 @@ async function restoreData(event) {
         round: c.round || '',
         ha_fuyo: c.hasFuyo !== false,
     has_calc: c.hasCalc !== null ? c.hasCalc : null,
+        has_shaho: c.hasShaho !== false,
         free_labels: c.freeLabels || c.free_labels || {},
         updated_at: new Date().toISOString(),
       };
@@ -2625,7 +2716,7 @@ function openPrintWindow() {
   if (p.hasCalc && c.hasCalc === false) visibleSections = visibleSections.filter(s => !s.calcOnly);
   if (c.hasTsukihen === false) visibleSections = visibleSections.filter(s => !s.tsukihenOnly);
 
-  const all = visibleSections.flatMap(s => s.tasks).filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false));
+  const all = visibleSections.flatMap(s => s.tasks).filter(t => taskVisible(t, c));
   const dn = all.filter(t => c.checks[t.id]).length;
   const pt = all.length ? Math.round(dn / all.length * 100) : 0;
 
@@ -2636,7 +2727,7 @@ function openPrintWindow() {
   let taskRows = '';
   let sn = 0;
   visibleSections.forEach(sec => {
-    const filteredTasks = sec.tasks.filter(t => (!t.fuyoOnly || hasFuyo) && (!t.tsukihenOnly || c.hasTsukihen !== false));
+    const filteredTasks = sec.tasks.filter(t => taskVisible(t, c));
     if (filteredTasks.length === 0) return;
     const sd = filteredTasks.filter(t => c.checks[t.id]).length;
     taskRows += `<tr class="sec-row"><td colspan="3">${sec.title}　${sd}/${filteredTasks.length}</td></tr>`;
