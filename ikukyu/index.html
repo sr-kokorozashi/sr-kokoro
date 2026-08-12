@@ -128,6 +128,7 @@ td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align:
 .badge.時短中 { background: var(--purple-bg); color: var(--purple); }
 .badge.期限超過 { background: var(--red-bg); color: var(--red); }
 .badge.未 { background: #f5f5f5; color: #888; }
+.ins-badge { display: inline-block; padding: 2px 7px; border-radius: 9px; font-size: 10px; font-weight: 700; background: #fff3e0; color: #b06000; border: 1px solid #f0d0a0; white-space: nowrap; margin-left: 5px; }
 
 /* ALERT */
 .alert-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -588,6 +589,12 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
       <div class="form-grid">
         <div class="form-group"><label>事業所名 *</label><input class="form-input" id="ff-company" type="text" placeholder="〇〇株式会社"></div>
         <div class="form-group"><label>対象者氏名 *</label><input class="form-input" id="ff-name" type="text" placeholder="山田 花子"></div>
+        <div class="form-group"><label>加入保険 *</label>
+          <select class="form-select" id="ff-ins-type">
+            <option value="">社会保険＋雇用保険（両方加入）</option>
+            <option value="koyo">雇用保険のみ（社会保険なし）</option>
+          </select>
+        </div>
         <div class="form-group"><label>子の氏名</label><input class="form-input" id="ff-child-name" type="text"></div>
         <div class="form-group"><label>子の扶養</label>
           <select class="form-select" id="ff-dependent">
@@ -650,6 +657,12 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
       <div class="form-grid">
         <div class="form-group"><label>事業所名 *</label><input class="form-input" id="fm-company" type="text" placeholder="〇〇株式会社"></div>
         <div class="form-group"><label>対象者氏名 *</label><input class="form-input" id="fm-name" type="text" placeholder="山田 太郎"></div>
+        <div class="form-group"><label>加入保険 *</label>
+          <select class="form-select" id="fm-ins-type">
+            <option value="">社会保険＋雇用保険（両方加入）</option>
+            <option value="koyo">雇用保険のみ（社会保険なし）</option>
+          </select>
+        </div>
         <div class="form-group"><label>子の氏名</label><input class="form-input" id="fm-child-name" type="text"></div>
         <div class="form-group"><label>子の扶養</label>
           <select class="form-select" id="fm-dependent">
@@ -1957,8 +1970,96 @@ function getMaleProcedures(c) {
   return procs;
 }
 
+// ===== 加入保険区分によるフィルタ =====
+// 手続きIDごとの保険区分
+//   'shaho' = 社会保険（健保・厚年）の手続き → 雇用保険のみの人は不要
+//   'koyo'  = 雇用保険の手続き               → 常に必要
+//   'both'  = 案内系など区分に関係なく行うもの
+const PROC_INS = {
+  // ---- 女性 ----
+  'f-gentei':            'shaho', // 限度額認定証のご案内（けんぽ）
+  'f-doui':              'both',  // 本人同意書・休業証明書ご案内
+  'f-sanzen-shinsei':    'shaho', // 産前産後休業取得者申出書
+  'f-fuyo':              'shaho', // 扶養異動届
+  'f-ikkatsu':           'shaho', // 出産育児一時金
+  'f-shuttokin':         'shaho', // 出産手当金
+  'f-henko':             'shaho', // 産前産後休業取得者申出書 変更届
+  'f-sanzen-shuryo':     'shaho', // 産前産後休業取得者申出書 終了届
+  'f-sankyu-tsuki':      'shaho', // 産休終了時月変
+  'f-chingin-shomei':    'koyo',  // 育児休業等賃金証明書
+  'f-ikukyu-shinsei':    'shaho', // 育児休業等取得者申出書（社保免除）
+  'f-jukyushikaku':      'koyo',  // 受給資格確認・第1回支給申請
+  'f-shien-kyufu':       'koyo',  // 出生後休業支援給付金
+  'f-guide-extend-1y':   'both',  // 延長ご案内
+  'f-guide-return-18m':  'both',  // 復帰・時短ご案内
+  'f-guide-extend-18m':  'both',  // 2歳延長ご案内
+  'f-ikukyu-extend-18m': 'shaho', // 育児休業等取得者申出書（1歳6か月延長）
+  'f-ikukyu-extend-2y':  'shaho', // 育児休業等取得者申出書（2歳延長）
+  'f-ikukyu-end':        'shaho', // 育児休業等取得者申出書 終了届
+  'f-yoiku':             'shaho', // 養育期間標準報酬月額特例申出書
+  'f-gekkan':            'shaho', // 育休終了時報酬月額変更届
+  'f-jitan-chingin':     'koyo',  // 育児時短就業開始時賃金証明書
+  'f-jitan-shikaku':     'koyo',  // 育児時短就業給付 受給資格確認
+  // ---- 男性 ----
+  'm-chingin-shomei':    'koyo',
+  'm-shahoMenjo-papa1':  'shaho',
+  'm-papa-kyufu':        'koyo',
+  'm-shien-papa':        'koyo',
+  'm-papa-end-shinsei':  'shaho',
+  'm-chingin-shomei2':   'koyo',
+  'm-shahoMenjo-ikukyu1':'shaho',
+  'm-ikukyu1-kyufu1':    'koyo',
+  'm-shahoMenjo-ikukyu2':'shaho',
+  'm-ikukyu2-kyufu1':    'koyo',
+  'm-ikukyu-end':        'shaho',
+  'm-yoiku':             'shaho',
+  'm-gekkan':            'shaho',
+  'm-jitan-chingin':     'koyo',
+  'm-jitan-shikaku':     'koyo',
+};
+// 連番で生成されるID（f-kyufu3, m-ikukyu1-kyufu2, f-jitan-kyufu2 など）は
+// すべて雇用保険の給付金なので前方一致で判定する
+const INS_PREFIX = [
+  ['f-kyufu',         'koyo'],
+  ['f-jitan-kyufu',   'koyo'],
+  ['m-ikukyu1-kyufu', 'koyo'],
+  ['m-ikukyu2-kyufu', 'koyo'],
+  ['m-jitan-kyufu',   'koyo'],
+];
+function procIns(id) {
+  if (PROC_INS[id]) return PROC_INS[id];
+  for (const [pre, v] of INS_PREFIX) if (id && id.indexOf(pre) === 0) return v;
+  return 'both'; // 未定義は安全側（常に表示）
+}
+
+const CIRCLED_NO = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮';
+
+// 加入区分でフィルタし、空セクションを除去し、①②③を振り直す
+function applyInsFilter(procs, insType) {
+  if (insType !== 'koyo') return procs;
+  // 1) 社保専用の手続きを除外
+  let out = procs.filter(p => p.isSectionHeader || procIns(p.id) !== 'shaho');
+  // 2) 中身が0件になったセクションヘッダーを除去
+  out = out.filter((p, i) => {
+    if (!p.isSectionHeader) return true;
+    for (let j = i + 1; j < out.length; j++) {
+      if (out[j].isSectionHeader) return false;
+      return true;
+    }
+    return false;
+  });
+  // 3) ①②③ をセクション単位で振り直す（第N回・📢はそのまま）
+  let n = 0;
+  out.forEach(p => {
+    if (p.isSectionHeader) { n = 0; return; }
+    if (p.no && CIRCLED_NO.indexOf(p.no) >= 0) { p.no = CIRCLED_NO[n] || ('(' + (n + 1) + ')'); n++; }
+  });
+  return out;
+}
+
 function getProcedures(c) {
-  return c.gender === 'male' ? getMaleProcedures(c) : getFemaleProcedures(c);
+  const procs = c.gender === 'male' ? getMaleProcedures(c) : getFemaleProcedures(c);
+  return applyInsFilter(procs, c.insType);
 }
 
 function getStatus(c) {
@@ -2029,6 +2130,7 @@ async function saveNewCase(gender) {
     const c = {
       id: Date.now().toString(), gender: 'female',
       company, name,
+      insType: document.getElementById('ff-ins-type').value,
       childName: document.getElementById('ff-child-name').value.trim(),
       dependent: document.getElementById('ff-dependent').value,
       dueDate: document.getElementById('ff-due-date').value,
@@ -2047,6 +2149,7 @@ async function saveNewCase(gender) {
     cases.push(c); await save();
     closeModal('modal-new-female');
     ['ff-company','ff-name','ff-child-name','ff-due-date','ff-birth-date','ff-return-date','ff-jitan-start-date','ff-shimbi','ff-shiharai','ff-hikitsugi','ff-memo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ff-ins-type').value = '';
     document.getElementById('ff-dates-preview').style.display = 'none';
   } else {
     const company = document.getElementById('fm-company').value.trim();
@@ -2055,6 +2158,7 @@ async function saveNewCase(gender) {
     const c = {
       id: Date.now().toString(), gender: 'male',
       company, name,
+      insType: document.getElementById('fm-ins-type').value,
       childName: document.getElementById('fm-child-name').value.trim(),
       dependent: document.getElementById('fm-dependent').value,
       dueDate: document.getElementById('fm-due-date').value,
@@ -2079,6 +2183,7 @@ async function saveNewCase(gender) {
     };
     cases.push(c); await save();
     closeModal('modal-new-male');
+    document.getElementById('fm-ins-type').value = '';
     ['fm-company','fm-name','fm-child-name','fm-due-date','fm-birth-date','fm-return-date','fm-papa1-start','fm-papa1-end','fm-papa2-start','fm-papa2-end','fm-ikukyu1-start','fm-ikukyu1-end','fm-ikukyu2-start','fm-ikukyu2-end','fm-shimbi','fm-shiharai','fm-hikitsugi','fm-memo'].forEach(id => document.getElementById(id).value = '');
   }
   renderAll();
@@ -2151,7 +2256,7 @@ function renderCaseTable() {
     return `<tr class="row-link" onclick="openCaseDetail('${c.id}')">
       <td>${gLabel}</td>
       <td><strong>${c.company}</strong></td>
-      <td>${c.name}</td>
+      <td>${c.name}${c.insType === 'koyo' ? '<span class="ins-badge">雇のみ</span>' : ''}</td>
       <td><span class="badge ${status}">${status}</span></td>
       <td class="date-display">${fmtDate(c.dueDate)}</td>
       <td class="date-display">${fmtDate(c.birthDate)}</td>
@@ -2180,7 +2285,7 @@ function openCaseDetail(id) {
   const procs = getProcedures(c);
   const t = today();
   const gLabel = c.gender === 'male' ? '♂ 男性' : '♀ 女性';
-  document.getElementById('detail-title').innerHTML = `${gLabel} ／ ${c.company}　${c.name}`;
+  document.getElementById('detail-title').innerHTML = `${gLabel} ／ ${c.company}　${c.name}${c.insType === 'koyo' ? '<span class="ins-badge">雇用保険のみ</span>' : ''}`;
   document.getElementById('detail-sub').textContent = `登録日: ${fmtDate(c.createdAt?.split('T')[0])} | ステータス: ${status} | ${c.childName ? '子: '+c.childName : ''} | 扶養: ${c.dependent || '未'}`;
 
   const rows = procs.map(p => {
@@ -2321,6 +2426,7 @@ function openEditModal() {
       <div class="form-grid">
         <div class="form-group"><label>事業所名</label><input class="form-input" id="e-company" value="${c.company}"></div>
         <div class="form-group"><label>氏名</label><input class="form-input" id="e-name" value="${c.name}"></div>
+        <div class="form-group"><label>加入保険</label><select class="form-select" id="e-ins-type"><option value="" ${!c.insType?'selected':''}>社会保険＋雇用保険（両方加入）</option><option value="koyo" ${c.insType==='koyo'?'selected':''}>雇用保険のみ（社会保険なし）</option></select></div>
         <div class="form-group"><label>子の氏名</label><input class="form-input" id="e-child-name" value="${c.childName||''}"></div>
         <div class="form-group"><label>子の扶養</label><select class="form-select" id="e-dependent"><option value="">未定</option><option value="○" ${c.dependent==='○'?'selected':''}>○</option><option value="×" ${c.dependent==='×'?'selected':''}>×</option></select></div>
         <div class="form-group"><label>出産予定日</label><input class="form-input" type="date" id="e-due-date" value="${c.dueDate||''}"></div>
@@ -2340,6 +2446,7 @@ function openEditModal() {
       <div class="form-grid">
         <div class="form-group"><label>事業所名</label><input class="form-input" id="e-company" value="${c.company}"></div>
         <div class="form-group"><label>氏名</label><input class="form-input" id="e-name" value="${c.name}"></div>
+        <div class="form-group"><label>加入保険</label><select class="form-select" id="e-ins-type"><option value="" ${!c.insType?'selected':''}>社会保険＋雇用保険（両方加入）</option><option value="koyo" ${c.insType==='koyo'?'selected':''}>雇用保険のみ（社会保険なし）</option></select></div>
         <div class="form-group"><label>子の氏名</label><input class="form-input" id="e-child-name" value="${c.childName||''}"></div>
         <div class="form-group"><label>子の扶養</label><select class="form-select" id="e-dependent"><option value="">未定</option><option value="○" ${c.dependent==='○'?'selected':''}>○</option><option value="×" ${c.dependent==='×'?'selected':''}>×</option></select></div>
         <div class="form-group"><label>出産予定日</label><input class="form-input" type="date" id="e-due-date" value="${c.dueDate||''}"></div>
@@ -2372,6 +2479,7 @@ async function saveEdit() {
   c.company = document.getElementById('e-company').value.trim();
   c.name = document.getElementById('e-name').value.trim();
   c.childName = document.getElementById('e-child-name').value.trim();
+  if (document.getElementById('e-ins-type')) c.insType = document.getElementById('e-ins-type').value;
   c.dependent = document.getElementById('e-dependent').value;
   c.dueDate = document.getElementById('e-due-date').value;
   c.birthDate = document.getElementById('e-birth-date').value;
@@ -2593,7 +2701,7 @@ function switchMailTab(tab) {
 }
 
 function renderMailTemplateBtns(c) {
-  var templates = c.gender === 'female' ? getFemaleMailTemplates(c) : getMaleMailTemplates(c);
+  var templates = getMailTemplates(c);
   document._mailAutoTemplates = templates;
   var btns = templates.map(function(t, i) {
     return '<button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="selectAutoTemplate(' + i + ')">' + t.label + '</button>';
@@ -2637,6 +2745,70 @@ function copyMailText() {
 }
 
 function buildMailBody(lines) { return lines.join('\n'); }
+
+// 雇用保険のみ加入の場合、メール文面から社会保険関連のブロックを除去する
+// 「■ 見出し」から次の空行までを1ブロックとして扱う
+const MAIL_SHAHO_KEYWORDS = [
+  '\u7523\u524d\u7523\u5f8c\u4f11\u696d\u53d6\u5f97\u8005\u7533\u51fa\u66f8',
+  '\u80b2\u5150\u4f11\u696d\u7b49\u53d6\u5f97\u8005\u7533\u51fa\u66f8',
+  '\u9650\u5ea6\u984d\u9069\u7528\u8a8d\u5b9a\u8a3c',
+  '\u793e\u4f1a\u4fdd\u967a\u6599',
+  '\u51fa\u7523\u624b\u5f53\u91d1',
+  '\u51fa\u7523\u80b2\u5150\u4e00\u6642\u91d1',
+  '\u990a\u80b2\u671f\u9593\u6a19\u6e96\u5831\u916c',
+  '\u5831\u916c\u6708\u984d\u5909\u66f4\u5c4a',
+  '\u6708\u984d\u5909\u66f4\u5c4a',
+  '\u6276\u990a\u7570\u52d5\u5c4a',
+];
+function stripShahoFromMail(body) {
+  const blocks = body.split('\n\n');
+  const kept = blocks.filter(bl => {
+    const head = bl.split('\n').find(l => l.indexOf('\u25a0') === 0);
+    if (!head) return true;
+    return !MAIL_SHAHO_KEYWORDS.some(k => head.indexOf(k) >= 0);
+  });
+  return kept.join('\n\n');
+}
+// 雇用保険のみの女性は産休開始前の文面が全て社保ブロックで空になるため、専用文面に差し替える
+function koyoSankyuMailBody(c) {
+  const d = getFemaleDates(c);
+  return buildMailBody([
+    '》産前休業の開始にあたって》',
+    '', c.company, c.name + '様', '',
+    '平素より大変お世話になっております。',
+    '社労士事務所○○です。',
+    '',
+    '産前休業の開始時期が近づきました。',
+    '下記のとおり手続きを進めてまいりますので、ご確認のほどよろしくお願いいたします。',
+    '',
+    '■ ご加入状況について',
+    '　' + c.name + '様は雇用保険のみのご加入となりますので、',
+    '　産前産後休業に伴う社会保険（健康保険・厚生年金）の手続きはございません。',
+    '　出産手当金・出産育児一時金についても、健康保険からの給付はございません。',
+    '　（国民健康保険にご加入の場合、出産育児一時金はご本人様から市区町村へお手続きください）',
+    '',
+    '■ 本人同意書・休業証明書のご案内',
+    '　育児休業給付金の申請に必要となりますので、別途書式をお送りいたします。',
+    '',
+    '■ 今後の手続きについて',
+    '　育児休業の開始（' + fmtDate(d.ikukyuStart) + '・産後57日目）に合わせて、',
+    '　雇用保険の育児休業給付金の手続きを行います。',
+    '',
+    'ご不明な点はお気軽にご連絡ください。どうぞよろしくお願いいたします。'
+  ]);
+}
+function getMailTemplates(c) {
+  const tpls = (c.gender === 'male' ? getMaleMailTemplates(c) : getFemaleMailTemplates(c));
+  if (c.insType !== 'koyo') return tpls;
+  return tpls.map(t => {
+    const body = stripShahoFromMail(t.body);
+    // 社保ブロックを抜いた結果、中身が無くなった文面は差し替える
+    if (c.gender === 'female' && body.indexOf('■') < 0) {
+      return Object.assign({}, t, { body: koyoSankyuMailBody(c) });
+    }
+    return Object.assign({}, t, { body: body });
+  });
+}
 
 // ===== CUSTOM TEMPLATE MANAGER =====
 function openCustomTemplateManager() {
