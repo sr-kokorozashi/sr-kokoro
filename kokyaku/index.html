@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>顧客マスタ｜こころざし経営労務事務所</title>
+<style>
+:root{
+  --navy:#1F4E79; --blue:#2E75B6; --ink:#15202b; --muted:#6b7280;
+  --paper:#fff; --bg:#f4f6f8; --rule:#dfe4ea; --tint:#eef3f9;
+  --warn:#b45309; --warnbg:#fdf3e3; --ok:#1d6e56; --okbg:#e6f4ef;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Yu Gothic","游ゴシック体",YuGothic,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:14px; line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--blue)}
+
+/* ---- header ---- */
+header{
+  background:var(--navy); color:#fff; padding:10px 16px;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  position:sticky; top:0; z-index:30;
+}
+header h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.04em}
+header .count{font-size:12px;opacity:.8;font-variant-numeric:tabular-nums}
+header .spacer{flex:1}
+header button{
+  background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.28);
+  border-radius:4px; padding:5px 11px; font-size:12px;
+}
+header button:hover{background:rgba(255,255,255,.22)}
+#status{font-size:11px;opacity:.75}
+
+/* ---- filter bar ---- */
+.filters{
+  background:var(--paper); border-bottom:1px solid var(--rule);
+  padding:9px 16px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  position:sticky; top:44px; z-index:20;
+}
+.filters input[type=search]{
+  flex:1; min-width:190px; padding:6px 10px;
+  border:1px solid var(--rule); border-radius:4px; background:#fff;
+}
+.filters select{padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:#fff}
+.chip{
+  border:1px solid var(--rule); background:#fff; border-radius:14px;
+  padding:4px 12px; font-size:12px; color:var(--muted);
+}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ---- layout ---- */
+.wrap{display:flex; align-items:flex-start; gap:0}
+#list{
+  width:290px; flex:none; border-right:1px solid var(--rule);
+  background:var(--paper); height:calc(100vh - 88px); overflow-y:auto;
+  position:sticky; top:88px;
+}
+.row{
+  padding:9px 14px; border-bottom:1px solid #eef1f4; cursor:pointer;
+  display:flex; align-items:baseline; gap:8px;
+}
+.row:hover{background:var(--tint)}
+.row.sel{background:var(--tint); box-shadow:inset 3px 0 0 var(--blue)}
+.row .nm{font-weight:500; flex:1; line-height:1.4}
+.row .kb{font-size:10px;color:var(--muted);white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--warn);flex:none;margin-top:6px}
+.row .tm{font-size:10px;color:#fff;background:var(--blue);border-radius:9px;padding:1px 7px;white-space:nowrap}
+.row .tm.none{background:#fff;color:var(--muted);border:1px solid var(--rule)}
+.ghead{
+  padding:5px 14px;background:#eef3f9;border-bottom:1px solid var(--rule);
+  font-size:11px;font-weight:600;color:var(--navy);letter-spacing:.04em;
+  position:sticky;top:0;z-index:2;
+}
+.row .ck{width:14px;height:14px;border:1.5px solid #c3ccd6;border-radius:3px;flex:none;margin-top:3px}
+.row .ck.on{background:var(--blue);border-color:var(--blue);position:relative}
+.row .ck.on::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(43deg)}
+.bulkbar{
+  background:var(--tint);border-bottom:1px solid var(--rule);padding:8px 16px;
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:88px;z-index:19;
+}
+.bulkbar select{padding:5px 8px;border:1px solid var(--rule);border-radius:4px;background:#fff}
+.bulkbar .go{background:var(--navy);color:#fff;border:none;border-radius:4px;padding:6px 13px;font-size:12px}
+.bulkbar .go:disabled{background:#a9b6c4}
+.bulkbar .lnk{background:none;border:none;color:var(--blue);font-size:12px;text-decoration:underline;padding:0}
+.bulkbar .n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ---- modal ---- */
+.modal{position:fixed;inset:0;background:rgba(20,32,43,.38);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:8px;width:100%;max-width:420px;
+  max-height:82vh;overflow-y:auto;box-shadow:0 6px 30px rgba(20,40,70,.22)}
+.modal h3{margin:0;padding:13px 18px;font-size:14px;color:var(--navy);
+  background:var(--tint);border-bottom:1px solid var(--rule);border-radius:8px 8px 0 0}
+.modal .in{padding:16px 18px}
+.modal .in p.note{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.7}
+.modal label{display:block;font-size:12px;color:var(--muted);margin:11px 0 4px}
+.modal label input[type=checkbox]{margin-right:7px;vertical-align:-1px}
+.modal .slist .cnt{font-variant-numeric:tabular-nums;text-align:right}
+.modal input[type=text],.modal select{width:100%;padding:8px 10px;
+  border:1px solid var(--rule);border-radius:4px;background:#fff}
+.modal .foot{padding:12px 18px;border-top:1px solid var(--rule);display:flex;gap:8px;justify-content:flex-end}
+.modal .foot button{border-radius:4px;padding:7px 15px;font-size:13px;border:1px solid var(--rule);background:#fff}
+.modal .foot button.pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.modal .foot button.dan{background:#fff;color:#b4231f;border-color:#e6c3c1}
+.slist{border:1px solid var(--rule);border-radius:5px;margin-bottom:4px}
+.slist .it{display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid #f0f2f5}
+.slist .it:last-child{border-bottom:none}
+.slist .it .nm{flex:1;font-weight:500}
+.slist .it .cnt{font-size:11px;color:var(--muted)}
+.slist .it button{border:none;background:none;color:#b4231f;font-size:12px;padding:2px 4px}
+.addrow{display:flex;gap:7px;margin-top:10px}
+.addrow input{flex:1}
+.addrow button{border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:4px;padding:0 14px;font-size:13px}
+.dz{margin-top:20px;padding-top:14px;border-top:1px solid var(--rule)}
+.dz button{background:#fff;color:#b4231f;border:1px solid #e6c3c1;border-radius:4px;padding:6px 13px;font-size:12px}
+.dot.hidden{visibility:hidden}
+
+#detail{flex:1; min-width:0; padding:20px 26px 60px; height:calc(100vh - 88px); overflow-y:auto}
+body.bulking #list,body.bulking #detail{height:calc(100vh - 129px)}
+body.bulking #list{top:129px}
+#detail h2{font-size:20px;margin:0 0 2px;color:var(--navy);font-weight:600;
+  outline:none;border-radius:4px;padding:1px 5px;margin-left:-5px}
+#detail h2[contenteditable]:hover{background:#fafbfc;box-shadow:inset 0 0 0 1px var(--rule)}
+#detail h2[contenteditable]:focus{background:#fff;box-shadow:0 0 0 2px rgba(46,117,182,.3)}
+.sub{color:var(--muted);font-size:12px;margin-bottom:18px}
+.badge{
+  display:inline-block;font-size:11px;padding:1px 7px;border-radius:3px;
+  background:var(--tint);color:var(--navy);margin-right:5px;
+}
+.badge.w{background:var(--warnbg);color:var(--warn)}
+.badge.o{background:var(--okbg);color:var(--ok)}
+
+section{background:var(--paper);border:1px solid var(--rule);border-radius:6px;margin-bottom:16px}
+section > h3{
+  margin:0; padding:9px 15px; font-size:12px; font-weight:600; letter-spacing:.08em;
+  color:var(--navy); background:var(--tint); border-bottom:1px solid var(--rule);
+  border-radius:6px 6px 0 0;
+}
+.grid{display:grid;grid-template-columns:150px 1fr;gap:0}
+.grid > div{padding:7px 15px;border-bottom:1px solid #f0f2f5}
+.grid > div.k{color:var(--muted);font-size:12px;background:#fbfcfd}
+.grid > div:nth-last-child(-n+2){border-bottom:none}
+.v[contenteditable]{outline:none;min-height:1.7em;border-radius:3px}
+.v[contenteditable]:hover{background:#fafbfc;box-shadow:inset 0 0 0 1px var(--rule)}
+.v[contenteditable]:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--blue)}
+.v.empty:not(:focus):before{content:"未入力";color:#b9c0c8}
+.v.req.empty:not(:focus):before{content:"要記入";color:var(--warn)}
+.v select{border:1px solid var(--rule);border-radius:3px;padding:2px 6px;background:#fff}
+
+/* ---- notes ---- */
+.note{padding:11px 15px;border-bottom:1px solid #f0f2f5;display:flex;gap:11px;align-items:flex-start}
+.note:last-of-type{border-bottom:none}
+.cat{
+  font-size:11px;padding:2px 8px;border-radius:3px;background:var(--tint);
+  color:var(--navy);white-space:nowrap;flex:none;margin-top:2px;
+}
+.cat.a{background:var(--warnbg);color:var(--warn)}
+.note .body{flex:1;white-space:pre-wrap;word-break:break-word;outline:none;border-radius:3px}
+.note .body:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--blue)}
+.note .del{background:none;border:none;color:#c3cad2;font-size:15px;line-height:1;padding:2px 4px}
+.note .del:hover{color:var(--warn)}
+.addnote{padding:11px 15px;display:flex;gap:8px;border-top:1px solid var(--rule);background:#fbfcfd}
+.addnote select{border:1px solid var(--rule);border-radius:4px;padding:5px 7px;background:#fff}
+.addnote input{flex:1;border:1px solid var(--rule);border-radius:4px;padding:5px 9px}
+.addnote button{border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:4px;padding:5px 14px;font-size:12px}
+
+.empty-state{padding:70px 20px;text-align:center;color:var(--muted)}
+#toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  background:var(--navy);color:#fff;padding:9px 20px;border-radius:5px;font-size:13px;
+  opacity:0;pointer-events:none;transition:opacity .22s;z-index:60;
+}
+#toast.show{opacity:1}
+
+@media(max-width:820px){
+  .wrap{display:block}
+  #list{width:100%;height:auto;position:static;border-right:none;border-bottom:1px solid var(--rule)}
+  #detail{height:auto;padding:16px}
+  .grid{grid-template-columns:1fr}
+  .grid > div.k{padding-bottom:0;border-bottom:none}
+  body.viewing #list{display:none}
+  body.viewing #back{display:inline-block}
+}
+#back{display:none;margin-bottom:12px;border:1px solid var(--rule);background:#fff;border-radius:4px;padding:5px 12px;font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>顧客マスタ</h1>
+  <span class="count" id="count"></span>
+  <span class="spacer"></span>
+  <span id="status"></span>
+  <button id="addClient">＋顧問先を追加</button>
+  <button id="staffCfg">担当者設定</button>
+  <button id="importBtn">データ取込</button>
+  <button id="csv">CSV出力</button>
+</header>
+
+<div class="filters">
+  <input type="search" id="q" placeholder="社名・担当・特記事項で検索">
+  <select id="fKubun"><option value="">顧問区分：すべて</option></select>
+  <select id="fHoken"><option value="">保険者：すべて</option></select>
+  <select id="fJimu"><option value="">事務組合：すべて</option></select>
+  <select id="fTeam"><option value="">担当：すべて</option></select>
+  <select id="sortBy">
+    <option value="name">並び：会社名</option>
+    <option value="team">並び：担当①</option>
+    <option value="kubun">並び：顧問区分</option>
+  </select>
+  <button class="chip" id="cWage">賃金対象のみ</button>
+  <button class="chip" id="cGap">未入力あり</button>
+  <button class="chip" id="cNote">特記事項あり</button>
+  <button class="chip" id="cBulk">担当を一括割当</button>
+</div>
+
+<div class="bulkbar" id="bulkbar" style="display:none">
+  <select id="bulk1"></select>
+  <select id="bulk2"></select>
+  <button class="go" id="bulkGo" disabled>選択した0社に反映</button>
+  <span class="n" id="bulkN">左の一覧をクリックして選びます</span>
+  <span class="spacer" style="flex:1"></span>
+  <button class="lnk" id="bulkAll">表示中をすべて選択</button>
+  <button class="lnk" id="bulkNone">選択を解除</button>
+</div>
+
+<div class="wrap">
+  <div id="list"></div>
+  <div id="detail"><div class="empty-state">左の一覧から顧問先を選んでください。</div></div>
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
+<div id="toast"></div>
+
+<script>
+/* ===========================================================
+   設定：Supabaseを使う場合は下の2行を埋めてください。
+   空のままだとブラウザのローカル保存（この端末のみ）で動きます。
+   =========================================================== */
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+
+/* ===========================================================
+   担当者の初期値。画面の「担当者設定」から追加・削除できます。
+   （ここは、いちばん最初の1回だけ使われます）
+   =========================================================== */
+const STAFF_DEFAULT = ['志田','武田','大江','石山','嵯峨山'];
+let STAFF = STAFF_DEFAULT.slice();
+/* =========================================================== */
+
+/* ============================================================
+   ログイン機能（こころざし経営労務事務所 共通）
+   - Supabase Auth のメール＋パスワードでログインします
+   - ログイン状態は3つのシステムで共有されます
+   - 既存の fetch を包んで、anonキーの代わりに
+     ログイン後のアクセストークンを送ります
+   ============================================================ */
+const SR_AUTH = (SUPABASE_URL && SUPABASE_ANON_KEY) ? (function () {
+  const BASE = SUPABASE_URL;
+  const ANON = SUPABASE_ANON_KEY;
+  const STORE = 'sr_kokoro_auth';
+  const raw = window.fetch.bind(window);
+
+  let sess = null;
+  try { sess = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { sess = null; }
+
+  let waiters = [];
+  const save = s => { sess = s; localStorage.setItem(STORE, JSON.stringify(s)); };
+  const clear = () => { sess = null; localStorage.removeItem(STORE); };
+
+  function store(j) {
+    save({
+      access_token: j.access_token,
+      refresh_token: j.refresh_token,
+      expires_at: Date.now() + (j.expires_in || 3600) * 1000,
+      email: (j.user && j.user.email) || ''
+    });
+  }
+
+  async function signIn(email, password) {
+    const r = await raw(BASE + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error_description || j.msg || j.message || 'ログインできませんでした');
+    store(j);
+    return j;
+  }
+
+  async function refresh() {
+    if (!sess || !sess.refresh_token) { clear(); return null; }
+    const r = await raw(BASE + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { apikey: ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: sess.refresh_token })
+    });
+    if (!r.ok) { clear(); return null; }
+    const j = await r.json();
+    store(j);
+    return j.access_token;
+  }
+
+  async function token() {
+    if (!sess) return null;
+    if (Date.now() > sess.expires_at - 60000) return await refresh();
+    return sess.access_token;
+  }
+
+  function signOut() {
+    const t = sess && sess.access_token;
+    clear();
+    if (t) raw(BASE + '/auth/v1/logout', {
+      method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + t }
+    }).catch(() => {});
+    location.reload();
+  }
+
+  /* ---------- ログイン画面 ---------- */
+  const css = document.createElement('style');
+  css.textContent = `
+  #sr-login{position:fixed;inset:0;z-index:99999;background:#f4f6f8;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    font-family:"Yu Gothic","游ゴシック体",YuGothic,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+  #sr-login .card{background:#fff;border:1px solid #dfe4ea;border-radius:8px;
+    padding:30px 28px;width:100%;max-width:340px;box-shadow:0 2px 14px rgba(20,40,70,.07)}
+  #sr-login h2{margin:0 0 4px;font-size:17px;color:#1F4E79;font-weight:600}
+  #sr-login p.lead{margin:0 0 20px;font-size:12px;color:#6b7280}
+  #sr-login label{display:block;font-size:12px;color:#6b7280;margin:12px 0 4px}
+  #sr-login input{width:100%;box-sizing:border-box;padding:9px 11px;font-size:14px;
+    border:1px solid #dfe4ea;border-radius:5px;background:#fff;
+    font-family:inherit;color:#15202b}
+  #sr-login input:focus{outline:none;border-color:#2E75B6;box-shadow:0 0 0 3px rgba(46,117,182,.13)}
+  #sr-login button{width:100%;margin-top:20px;padding:10px;font-size:14px;
+    background:#1F4E79;color:#fff;border:none;border-radius:5px;cursor:pointer;
+    font-family:inherit;font-weight:500}
+  #sr-login button:hover{background:#18395a}
+  #sr-login button:disabled{background:#9fb2c6;cursor:default}
+  #sr-login .err{margin-top:14px;font-size:12px;color:#b45309;
+    background:#fdf3e3;border-radius:4px;padding:8px 10px;display:none;line-height:1.6}
+  #sr-logout{position:fixed;left:10px;bottom:10px;z-index:9998;
+    font-size:11px;color:#6b7280;background:rgba(255,255,255,.92);
+    border:1px solid #dfe4ea;border-radius:13px;padding:4px 11px;cursor:pointer;
+    font-family:"Yu Gothic",YuGothic,Meiryo,sans-serif;line-height:1.6}
+  #sr-logout:hover{color:#1F4E79;border-color:#2E75B6}
+  @media print{#sr-logout{display:none}}`;
+  document.head.appendChild(css);
+
+  function showLogin() {
+    if (document.getElementById('sr-login')) return;
+    const el = document.createElement('div');
+    el.id = 'sr-login';
+    el.innerHTML =
+      '<div class="card">' +
+      '<h2>こころざし経営労務事務所</h2>' +
+      '<p class="lead">事務所のアカウントでログインしてください。</p>' +
+      '<label for="sr-id">ログインID</label>' +
+      '<input id="sr-id" type="text" autocomplete="username" autocapitalize="off" spellcheck="false">' +
+      '<label for="sr-pw">パスワード</label>' +
+      '<input id="sr-pw" type="password" autocomplete="current-password">' +
+      '<button id="sr-go">ログイン</button>' +
+      '<div class="err" id="sr-err"></div>' +
+      '</div>';
+    document.body.appendChild(el);
+    const idEl = el.querySelector('#sr-id'), pwEl = el.querySelector('#sr-pw');
+    const btn = el.querySelector('#sr-go'), err = el.querySelector('#sr-err');
+    idEl.focus();
+
+    async function go() {
+      const id = idEl.value.trim(), pw = pwEl.value;
+      if (!id || !pw) { err.textContent = 'ログインIDとパスワードを入力してください。'; err.style.display = 'block'; return; }
+      btn.disabled = true; btn.textContent = '確認中…'; err.style.display = 'none';
+      try {
+        await signIn(id, pw);
+        el.remove();
+        mountLogout();
+        const ws = waiters; waiters = [];
+        ws.forEach(fn => fn(sess.access_token));
+      } catch (e) {
+        err.textContent = String(e.message || e).indexOf('Invalid') >= 0
+          ? 'ログインIDまたはパスワードが違います。'
+          : ('ログインできませんでした：' + (e.message || e));
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'ログイン';
+        pwEl.value = ''; pwEl.focus();
+      }
+    }
+    btn.onclick = go;
+    [idEl, pwEl].forEach(x => x.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+  }
+
+  function mountLogout() {
+    if (document.getElementById('sr-logout') || !sess) return;
+    const b = document.createElement('button');
+    b.id = 'sr-logout';
+    b.textContent = (sess.email ? sess.email.split('@')[0] + ' ・ ' : '') + 'ログアウト';
+    b.onclick = () => { if (confirm('ログアウトしますか？')) signOut(); };
+    document.body.appendChild(b);
+  }
+
+  /* 有効なトークンを返す。未ログインならログイン画面を出して待つ */
+  async function ready() {
+    const t = await token();
+    if (t) return t;
+    showLogin();
+    return new Promise(res => waiters.push(res));
+  }
+
+  /* ---------- fetch を包む ---------- */
+  window.fetch = async function (input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (!url.startsWith(BASE) || url.indexOf('/auth/v1/') >= 0) return raw(input, init);
+
+    init = Object.assign({}, init);
+    const t = await ready();
+    const h = new Headers((init && init.headers) || (typeof input !== 'string' && input.headers) || {});
+    h.set('apikey', ANON);
+    h.set('Authorization', 'Bearer ' + t);
+    init.headers = h;
+
+    let res = await raw(url, init);
+    if (res.status === 401) {
+      const t2 = await refresh();
+      if (t2) { h.set('Authorization', 'Bearer ' + t2); res = await raw(url, init); }
+      else { showLogin(); }
+    }
+    return res;
+  };
+
+  document.addEventListener('DOMContentLoaded', () => { sess ? mountLogout() : showLogin(); });
+  if (document.readyState !== 'loading') { sess ? mountLogout() : showLogin(); }
+
+  return { signIn, signOut, token, ready, get email() { return sess && sess.email; } };
+})() : null;
+
+const SEED = {"clients": [{"id": "ADCREATE", "name": "ad create", "wage_no": "52", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "", "renraku": "", "sho": "", "koyo": "", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "", "shime": "末", "harai": "翌5", "shime_raw": "末締 翌5払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["賃金"]}, {"id": "AXIS", "name": "AXIS", "wage_no": "69", "kubun": "手続き", "shutan": "志田", "fukutan": "石山", "madoguchi": "知念社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "知念社長", "k_how": "メール", "d_to": "知念社長", "d_how": "メール", "bikou": "手続きはスポット", "sources": ["カルテ", "ルーティング"]}, {"id": "BICフォワーディング", "name": "BICフォワーディング", "wage_no": "23", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "井手社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締 当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□合計 「食事手当」・「通勤費」算入 □役員は6か月定期", "keiro": "メール添付", "dare": "井出社長", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "井出社長、星田先生", "k_how": "メール", "d_to": "井出社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "CPI", "name": "CPI", "wage_no": "2", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "堀口社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「総支給額」から出張手当、確定拠出額を除く □生涯設計手当は算入 □時給者の通勤費は毎月算入 □月給者は「3か月定期」=支給月は、定期代全額を非)通勤費として加算入力", "keiro": "メール添付", "dare": "渡邉リーゼンバーグ 須山さん", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "渡邉リーゼンバーグ 須山さん", "k_how": "メール", "d_to": "堀口社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "I-BAN", "name": "I-BAN", "wage_no": "48", "kubun": "手続き・給与計算", "shutan": "武田", "fukutan": "石山", "madoguchi": "石田社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌25", "shime_raw": "末締 翌25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "会社のinfoメール", "k_how": "メール", "d_to": "会社のinfoメール", "d_how": "メール", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ICS", "name": "ICS", "wage_no": "61", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "池田社長", "renraku": "チャットワーク", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締 当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月", "sokyu": "□「社保対象合計(金銭)」を入力 □出勤日数は有給とリモート含み、支払基礎日数に使用。 ※出張手当を含めるか/否かは、出たときに雇保料で確認", "keiro": "MoneyForwardからDL", "dare": "MFからDL", "keishiki": "", "hozon": "OneDrive", "k_to": "池田社長", "k_how": "チャットワーク", "d_to": "池田社長", "d_how": "チャットワーク", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "KDDIケーブルシップ", "name": "KDDIケーブルシップ", "wage_no": "72", "kubun": "手続き", "shutan": "志田", "fukutan": "", "madoguchi": "小川さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "健保組合", "kenpo_name": "KDDI健康保険組合", "kenpo_denshi": true, "jimu": "なし", "shime": "末", "harai": "当25", "shime_raw": "末締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□持株奨励金・健保給付・団保給付は含めない □残業・交通費は翌月支払□藤澤さん勝田さん永井さん奥様の介護保険料がかかる □6か月定期(電車)と3か月定期(バス)が混在・・・月変対象者と固定的賃金変動者で6か月定期支給者は按分して再計算し、等級を確認すること。(月変推定者リストに出てこないこともあります。) □離職票作成時は、残業代の手計算が必要なので注意(翌月に支払われる残業代を当月に移し替える)", "keiro": "メール添付", "dare": "KDDIクラウド", "keishiki": "csv", "hozon": "OneDrive", "k_to": "担当者", "k_how": "KDDIクラウド+メール", "d_to": "担当者", "d_how": "KDDIクラウド+メール", "bikou": "健保組合", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "KKテクノ", "name": "KKテクノ", "wage_no": "63", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "松本さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌17", "shime_raw": "末締 翌17払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」を入力", "keiro": "メール添付", "dare": "柴田税理士事務所", "keishiki": "csv", "hozon": "OneDrive", "k_to": "柴田税理士事務所", "k_how": "メール", "d_to": "松本さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "MO-GREEN", "name": "Mo-Green", "wage_no": "34", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "藤原さん", "renraku": "マイコモン", "sho": "対象外", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "20", "harai": "当末", "shime_raw": "20締 当末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「総支給額」 □不就労にてマイナス支給の場合は、0円入力", "keiro": "マイコモン", "dare": "マイコモン", "keishiki": "csv", "hozon": "OneDrive", "k_to": "マイコモンにUP", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "NARI", "name": "NaRi", "wage_no": "65", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "", "renraku": "", "sho": "", "koyo": "", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "", "shime": "末", "harai": "翌5", "shime_raw": "末締 翌5払", "nyuryoku": "1か月前", "roudou": "", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["賃金"]}, {"id": "PBMC", "name": "PBMC", "wage_no": "43", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "櫻井さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌25", "shime_raw": "末締 翌25払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「総支給額」から「立替費」除く", "keiro": "メール添付", "dare": "長坂会計 久永さん", "keishiki": "csv", "hozon": "OneDriveとドキュ", "k_to": "長坂会計 久永さん", "k_how": "メール", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "PLACE-IN", "name": "Place-in", "wage_no": "87", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "加賀さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締 当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月", "sokyu": "□「社保対象合計(金銭)」を入力", "keiro": "MoneyForwardからDL", "dare": "MFからDL", "keishiki": "", "hozon": "OneDrive", "k_to": "", "k_how": "チャットワーク", "d_to": "チャットワークにUP", "d_how": "チャットワーク", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "PRM", "name": "PRM", "wage_no": "88", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "南さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌末", "shime_raw": "末締翌末払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□兼務役員寺澤さんは6か月定期", "keiro": "MoneyForwardからDL", "dare": "MFからDL", "keishiki": "", "hozon": "OneDrive", "k_to": "", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "SKILL-POOL", "name": "SKILL-POOL", "wage_no": "77", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "加賀社長", "renraku": "チャットワーク", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月", "sokyu": "□「社保対象合計(金銭)」を入力", "keiro": "MoneyForwardからDL", "dare": "MFからDL", "keishiki": "", "hozon": "OneDrive", "k_to": "加賀さんに", "k_how": "チャットワーク", "d_to": "チャットワークにUP", "d_how": "チャットワーク", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "STARZBURST", "name": "STARZ BURST", "wage_no": "18", "kubun": "手続き・給与計算", "shutan": "武田", "fukutan": "石山", "madoguchi": "舩橋社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "中企団", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "会社のinfoメール", "k_how": "", "d_to": "会社のinfoメール", "d_how": "メール", "bikou": "中企団(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "WAD", "name": "WAD", "wage_no": "79", "kubun": "手続き・給与計算", "shutan": "武田", "fukutan": "石山", "madoguchi": "山田社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "当25", "shime_raw": "末締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月", "sokyu": "□離職票作成時は、残業代の手計算が必要なので注意(翌月に支払われる残業代を当月に移し替える)", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "山田社長", "k_how": "メール", "d_to": "山田社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "WMH", "name": "WMH", "wage_no": "169", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "本田さん", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "", "harai": "", "shime_raw": "", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "アイメイト協会", "name": "アイメイト協会", "wage_no": "35", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "鷲野さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "当25", "shime_raw": "末締 当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「宿直手当」算入 □総支給額から「立替金」除く(前月分の経費であるため、抜く) □宿直手当・残業手当は翌月支払 □堀内さん7時間勤務 □離職票作成時は、残業代の手計算が必要なので注意(翌月に支払われる残業代を当月に移し替える)", "keiro": "メール添付", "dare": "担当者", "keishiki": "csv", "hozon": "OneDrive", "k_to": "担当者", "k_how": "メール", "d_to": "担当者", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "アクティブギア", "name": "アクティブギア", "wage_no": "161", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "平田社長", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌10", "shime_raw": "末締 翌10払", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "アシスト", "name": "アシスト", "wage_no": "62", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "吉池社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "25", "harai": "当末", "shime_raw": "25締 当末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」を入力", "keiro": "メール添付", "dare": "吉池社長", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "柴田先生", "k_how": "メール", "d_to": "吉池社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "アミズ", "name": "アミズ", "wage_no": "50", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "安西さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌5", "shime_raw": "末締 翌5払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」 □1か月平均所定労働日数は21.5日(欠勤時)", "keiro": "メール添付", "dare": "安西さん", "keishiki": "csv", "hozon": "OneDrive", "k_to": "安西さん", "k_how": "メール", "d_to": "安西さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "アムルック", "name": "アムルック", "wage_no": "22", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "吉田さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌25", "shime_raw": "末締 翌25払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計額」 □「所定就労日」は無視", "keiro": "メール添付", "dare": "吉田さん", "keishiki": "csv", "hozon": "OneDrive", "k_to": "吉田さん", "k_how": "メール", "d_to": "吉田さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ウォンツ", "name": "ウォンツ", "wage_no": "32", "kubun": "手続き・給与計算", "shutan": "武田", "fukutan": "石山", "madoguchi": "徳留さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "健保組合", "kenpo_name": "関東ITソフトウェア健康保険組合", "kenpo_denshi": true, "jimu": "なし", "shime": "末", "harai": "翌25", "shime_raw": "末締 翌25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "□「立替経費精算」除く :(総支給額-立替経費精算)=課税合計額入力 □固定給が多いため賃金台帳を出して月変を確認すること", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "健保組合", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "エムズラボ", "name": "エムズラボ", "wage_no": "81", "kubun": "給与計算", "shutan": "石山", "fukutan": "嵯峨山", "madoguchi": "市川さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "対象外", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "25", "harai": "翌5", "shime_raw": "25締翌5払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "市川さん", "k_how": "メール", "d_to": "市川さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "オルトフォンジャパン", "name": "オルトフォンジャパン", "wage_no": "83", "kubun": "手続き・給与計算", "shutan": "志田", "fukutan": "", "madoguchi": "坂田社長", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "20", "harai": "当25", "shime_raw": "20締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "カウンタック", "name": "カウンタック", "wage_no": "27", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "工藤社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "20", "harai": "当末", "shime_raw": "20締 当末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月", "sokyu": "□「支給合計」から「出張手当」除く", "keiro": "メール添付", "dare": "工藤社長", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "工藤社長と成田先生", "k_how": "メール", "d_to": "工藤社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "キタジマ", "name": "キタジマ", "wage_no": "13", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "落さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "25", "harai": "翌5", "shime_raw": "25締 翌5払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「総支給金額」 ※15日までに月変チェック", "keiro": "マイコモン", "dare": "マイコモン", "keishiki": "csv", "hozon": "OneDrive", "k_to": "マイコモンにUP", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "キャンディーボックス", "name": "キャンディーボックス", "wage_no": "29", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "斉藤さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌10", "shime_raw": "末締 翌10払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "□合計 □福利厚生費含", "keiro": "メール添付", "dare": "Gemstone税理士法人小川さん", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "Gemstone税理士法人小川さん", "k_how": "メール", "d_to": "斉藤さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "グリーンナッツ", "name": "グリーンナッツ", "wage_no": "85", "kubun": "手続き・給与計算", "shutan": "志田", "fukutan": "嵯峨山", "madoguchi": "鹿妻さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌20", "shime_raw": "末締翌20払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "鹿妻さん", "k_how": "メール", "d_to": "鹿妻さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "クルミ保育園", "name": "クルミ保育園", "wage_no": "80", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "手嶋先生", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌10", "shime_raw": "末締翌10払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□旧クルミの賃金台帳は手嶋先生に依頼、出勤簿は福嶋さんに依頼 □給与関係は、福嶋さんと手嶋先生のみに送る → ai@korisu.ed.jp / teshima@teshima-office.jp", "keiro": "メール添付", "dare": "手嶋先生", "keishiki": "csv", "hozon": "OneDrive", "k_to": "手嶋先生", "k_how": "メール", "d_to": "手嶋先生", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "クロスリンク", "name": "クロスリンク", "wage_no": "38", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "登内さん", "renraku": "チャットワーク", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌20", "shime_raw": "末締 翌20払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「社保対象合計(金銭)」を入力 □年度更新に賃金集計にときにはNISA奨励金」除く", "keiro": "MoneyForwardからDL", "dare": "MFからDL", "keishiki": "", "hozon": "OneDrive", "k_to": "登内さん", "k_how": "チャットワーク", "d_to": "登内さん", "d_how": "メール", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "こもれび", "name": "こもれび", "wage_no": "71", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "國分さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」", "keiro": "メール添付", "dare": "國分さん", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "國分さん", "k_how": "メール", "d_to": "國分さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "保育園こりす", "name": "保育園こりす", "wage_no": "57", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "手嶋先生", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌10", "shime_raw": "末締 翌10払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」 □理事会があった月は理事に謝金が支給されます(1~2万円) その方達も賃金台帳に記載されますがロウムインワンに入力は不要", "keiro": "メール添付", "dare": "手嶋先生", "keishiki": "csv", "hozon": "OneDrive", "k_to": "手嶋先生", "k_how": "メール", "d_to": "手嶋先生", "d_how": "メール", "bikou": "", "sources": ["カルテ"]}, {"id": "サンク", "name": "サンク", "wage_no": "33", "kubun": "手続き", "shutan": "志田", "fukutan": "", "madoguchi": "兼康社長", "renraku": "", "sho": "自社で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌25", "shime_raw": "末締 翌25払", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "兼康社長", "d_how": "メール", "bikou": "SR(事務組合)", "sources": ["カルテ", "ルーティング"]}, {"id": "シフティーン", "name": "シフティーン", "wage_no": "60", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "粟野さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌20", "shime_raw": "末締 翌20払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「総支給額」 ※←支給控除表一覧表のエクセル参照 □ 賃台表示名「藤本」s=旧姓小川s □202208(09支払分~)コロナ感染対応手当(非)(課)新設 社保対象", "keiro": "マイコモン", "dare": "マイコモン", "keishiki": "csv", "hozon": "OneDrive", "k_to": "マイコモンにUP", "k_how": "マイコモン", "d_to": "マイコモンへUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "しむら", "name": "しむら", "wage_no": "66", "kubun": "手続き・給与計算", "shutan": "武田", "fukutan": "大江", "madoguchi": "川崎社長、塩田さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌末", "shime_raw": "末締 翌末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "塩田さん", "k_how": "メール", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ショウ企画", "name": "ショウ企画", "wage_no": "5", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "中村社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「合計」 外出交通費を除く", "keiro": "メール添付", "dare": "中村社長", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "中村社長", "k_how": "メール", "d_to": "中村社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ズームティー", "name": "ズームティー", "wage_no": "41", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "河合社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締 当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」 適用表記:「1月分」給与各人明細=1月支給分(12/16-1/15〆)より適用", "keiro": "メール添付", "dare": "杉野さん", "keishiki": "csv", "hozon": "OneDrive", "k_to": "杉野さん", "k_how": "メール", "d_to": "杉野さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "デルミド", "name": "デルミド", "wage_no": "56", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "相澤さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌25", "shime_raw": "末締 翌25払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「社保対象合計(金銭)」を入力", "keiro": "MoneyForwardからDL", "dare": "MFからDL", "keishiki": "", "hozon": "OneDrive", "k_to": "マイコモンにUP", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ナインジー", "name": "ナインジー", "wage_no": "86", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "藤原さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「総支給額」", "keiro": "マイコモン", "dare": "マイコモン", "keishiki": "csv", "hozon": "OneDrive", "k_to": "マイコモンにUP", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ネクストワン", "name": "ネクストワン", "wage_no": "55", "kubun": "手続き・給与計算", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "伊澤さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌5", "shime_raw": "末締 翌5払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "伊澤さん", "k_how": "メール", "d_to": "伊澤さん", "d_how": "", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "フラッフィー", "name": "フラッフィー", "wage_no": "64", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "國分さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締 当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」 □ 嘱託医師:蔵元、堀田 年に数回賃金発生 入力しない", "keiro": "メール添付", "dare": "國分さん", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "國分さん", "k_how": "メール", "d_to": "國分さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ふれあいドットコム", "name": "ふれあいドットコム", "wage_no": "67", "kubun": "手続き・給与計算", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "伊藤さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "伊藤さん", "k_how": "メール", "d_to": "伊藤さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "プロスパー", "name": "プロスパー", "wage_no": "4", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "染谷専務", "renraku": "", "sho": "当事務所で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "20", "harai": "当末", "shime_raw": "20締 当末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支払給与総額」", "keiro": "メール添付", "dare": "染谷専務", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "染谷専務", "k_how": "メール", "d_to": "染谷専務", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ホエールテック", "name": "ホエールテック", "wage_no": "68", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "別府社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□支給合計を入力 支給合計から年調還付金は除外する", "keiro": "MoneyForwardからDL", "dare": "MFからDL", "keishiki": "", "hozon": "OneDrive", "k_to": "別府社長", "k_how": "メール", "d_to": "別府社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "マタハリーホールディングス", "name": "マタハリーホールディングス", "wage_no": "176", "kubun": "相談顧問", "shutan": "武田", "fukutan": "大江", "madoguchi": "牧野さん", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "健保組合", "kenpo_name": "東京電子機械工業健康保険組合", "kenpo_denshi": false, "jimu": "なし", "shime": "", "harai": "", "shime_raw": "", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "産休・育休は当事務所", "sources": ["カルテ", "ルーティング"]}, {"id": "ムゲン", "name": "ムゲン", "wage_no": "31", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "池上社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "対象外", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌10", "shime_raw": "末締 翌10払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「c) 支給金額合計」を入力", "keiro": "郵送", "dare": "郵送", "keishiki": "紙", "hozon": "ドキュ", "k_to": "池上社長", "k_how": "メール", "d_to": "池上社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ユアハウス", "name": "ユアハウス", "wage_no": "30", "kubun": "給与計算", "shutan": "石山", "fukutan": "嵯峨山", "madoguchi": "河部社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌末", "shime_raw": "末締 翌末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "河部社長", "k_how": "メール", "d_to": "河部社長", "d_how": "メール", "bikou": "手続きはスポット", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "ヨウコウ技研", "name": "ヨウコウ技研", "wage_no": "59", "kubun": "給与計算", "shutan": "武田", "fukutan": "石山", "madoguchi": "温井社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "温井社長", "k_how": "メール", "d_to": "温井社長", "d_how": "メール", "bikou": "手続きはスポット", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "リカザイ", "name": "リカザイ", "wage_no": "89", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "小室さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "健保組合", "kenpo_name": "神奈川鉄鋼産業健康保険組合", "kenpo_denshi": false, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月", "sokyu": "6か月定期", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "マイコモンにUP", "k_how": "", "d_to": "マイコモンにUP", "d_how": "", "bikou": "健保組合", "sources": ["カルテ", "賃金"]}, {"id": "リフレ", "name": "リフレ", "wage_no": "49", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "菊池社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌20", "shime_raw": "末締 翌20払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「雇保・社保加入者のみ」※社保のみor雇保のみ加入者も入力 月別賃金入力へコンバートする 支給合計から年調還付金は除外する", "keiro": "メール添付", "dare": "菊池社長", "keishiki": "csv", "hozon": "OneDrive", "k_to": "菊池社長", "k_how": "メール", "d_to": "菊池社長", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "リュミエール保育園", "name": "リュミエール保育園", "wage_no": "", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "平井園長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "", "harai": "", "shime_raw": "", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "メール添付", "dare": "國分さん", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "國分さん", "k_how": "メール", "d_to": "國分さん", "d_how": "メール", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "栄光", "name": "栄光", "wage_no": "136", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "倉橋社長", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "20", "harai": "当末", "shime_raw": "20締 当末払", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "横浜平和プラザホテル", "name": "横浜平和プラザホテル", "wage_no": "", "kubun": "給与計算", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "八橋社長", "renraku": "マイコモン", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "", "harai": "", "shime_raw": "", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "マイコモンにUP", "d_how": "", "bikou": "神奈川食品衛生国保", "sources": ["カルテ", "ルーティング"]}, {"id": "丸秀工業", "name": "丸秀工業", "wage_no": "44", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "金城さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「課税支給合計」を入力(「出張手当」除く ) 課税支給合計に出張手当は含まれてない cf.ドキュor個マスタ備考欄", "keiro": "メール添付", "dare": "金城さん", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "金城さん", "k_how": "メール", "d_to": "金城さん", "d_how": "メール", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "興信商事", "name": "興信商事", "wage_no": "28", "kubun": "手続き・給与計算", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "目取眞社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌々5", "shime_raw": "末締 翌々5払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "2か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "目取眞社長", "k_how": "メール", "d_to": "目取眞社長", "d_how": "メール", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "研空社", "name": "研空社", "wage_no": "181", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "田中さん", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "", "harai": "", "shime_raw": "", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "SGX", "name": "行政書士法人SGX", "wage_no": "73", "kubun": "手続き・給与計算", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "杉森さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌25", "shime_raw": "末締翌25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "高篤輸送", "name": "高篤輸送", "wage_no": "45", "kubun": "手続き", "shutan": "武田", "fukutan": "石山", "madoguchi": "柿澤社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□・総支給額合計を入力 ・合計 =(小計1+小計2) ・総合計=(合計+柿澤裕一+柿澤かおり) □欠勤控除 その月の土日を抜いた日数で割る", "keiro": "メール添付", "dare": "柿澤社長", "keishiki": "PDF", "hozon": "ドキュ", "k_to": "柿澤社長", "k_how": "メール", "d_to": "会社のinfoメール", "d_how": "メール", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "松原プラント工業所", "name": "松原プラント工業所", "wage_no": "36", "kubun": "手続き・給与計算", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "松原社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "", "k_how": "郵送", "d_to": "郵送", "d_how": "郵送", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "図南鍛工", "name": "図南鍛工", "wage_no": "70", "kubun": "手続き", "shutan": "志田", "fukutan": "", "madoguchi": "秀島さん、小市さん", "renraku": "", "sho": "当事務所で手続き", "koyo": "自社で手続き", "hokensha": "健保組合", "kenpo_name": "神奈川鉄鋼産業健康保険組合", "kenpo_denshi": true, "jimu": "なし", "shime": "末", "harai": "当20", "shime_raw": "末締当20払(社員) 末締翌20払(パート)", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月(社員) 翌月(パート)", "sokyu": "□「総支給額・現(給与)」を入力 □残業分は翌月支払 ・ 欠勤分は翌月控除 □月変があったらCSVを作成し秀島様にメール", "keiro": "メール添付", "dare": "秀島さん", "keishiki": "csv", "hozon": "OneDrive", "k_to": "秀島さん 標準報酬のcsvを送る", "k_how": "メール", "d_to": "秀島さん", "d_how": "メール", "bikou": "健保組合", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "成工", "name": "成工", "wage_no": "39", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "中釜社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌20", "shime_raw": "末締 翌20払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給合計」を入力", "keiro": "郵送", "dare": "郵送", "keishiki": "紙", "hozon": "ドキュ", "k_to": "石丸先生", "k_how": "メール", "d_to": "中釜社長", "d_how": "メール", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "赤塚防災設備", "name": "赤塚防災設備", "wage_no": "74", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "工藤さん", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌10", "shime_raw": "末締翌10払", "nyuryoku": "1か月前", "roudou": "前月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "□「支給額合計」 □お客様からの送られるファイル名〇〇年〇月度となっています。〇月度は労働月となっています。EX:24年9月度csv→10月10日支給の給与 □振替休日→欠勤日数のこと□振替休日控除→欠勤控除のこと", "keiro": "マイコモン", "dare": "マイコモン", "keishiki": "csv", "hozon": "OneDrive", "k_to": "マイコモンにUP", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "川崎地区貨協", "name": "川崎地区貨協", "wage_no": "170", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "前田さん", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "", "harai": "", "shime_raw": "", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "大視", "name": "大視", "wage_no": "145", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "古谷社長", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "島田商店なかよし保育園", "name": "島田商店なかよし保育園", "wage_no": "6", "kubun": "手続き・給与計算", "shutan": "武田", "fukutan": "石山", "madoguchi": "島田社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "20", "harai": "当末", "shime_raw": "20締 当末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "", "keishiki": "", "hozon": "", "k_to": "島田社長", "k_how": "メール", "d_to": "島田社長", "d_how": "メール", "bikou": "", "sources": ["賃金"]}, {"id": "島田電設工業", "name": "島田電設工業", "wage_no": "76", "kubun": "手続き", "shutan": "大江", "fukutan": "嵯峨山", "madoguchi": "島田社長", "renraku": "マイコモン", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "健保組合", "kenpo_name": "神奈川県電設健康保険組合", "kenpo_denshi": true, "jimu": "なし", "shime": "15", "harai": "当25", "shime_raw": "15締当25払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "調整なし", "kojo": "当月", "sokyu": "□「総支給額」 □賞与時は、DM列近辺の「総支給額」の金額を引用する", "keiro": "マイコモン", "dare": "マイコモン", "keishiki": "csv", "hozon": "OneDrive", "k_to": "マイコモンにUP", "k_how": "マイコモン", "d_to": "マイコモンにUP", "d_how": "マイコモン", "bikou": "健保組合", "sources": ["カルテ", "賃金", "ルーティング"]}, {"id": "日本エンジニアリング", "name": "日本エンジニアリング", "wage_no": "186", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "樋口さん", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "なし", "shime": "", "harai": "", "shime_raw": "", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "明希工業", "name": "明希工業", "wage_no": "166", "kubun": "相談顧問", "shutan": "志田", "fukutan": "", "madoguchi": "橘本さん", "renraku": "", "sho": "自社で手続き", "koyo": "自社で手続き", "hokensha": "健保組合", "kenpo_name": "神奈川県鉄鋼業健康保険組合", "kenpo_denshi": false, "jimu": "なし", "shime": "末", "harai": "翌15", "shime_raw": "末締 翌15払", "nyuryoku": "", "roudou": "", "shikyu": "", "kojo": "", "sokyu": "", "keiro": "", "dare": "", "keishiki": "", "hozon": "", "k_to": "", "k_how": "", "d_to": "", "d_how": "", "bikou": "", "sources": ["カルテ", "ルーティング"]}, {"id": "和なごみ", "name": "和なごみ", "wage_no": "75", "kubun": "手続き・給与計算", "shutan": "武田", "fukutan": "石山", "madoguchi": "中山社長", "renraku": "", "sho": "当事務所で手続き", "koyo": "当事務所で手続き", "hokensha": "協会けんぽ", "kenpo_name": "", "kenpo_denshi": false, "jimu": "SR", "shime": "末", "harai": "翌末", "shime_raw": "末締翌末払", "nyuryoku": "賃金 支払月", "roudou": "支払月分", "shikyu": "1か月後", "kojo": "翌月", "sokyu": "", "keiro": "当事務所で給与計算", "dare": "給与計算", "keishiki": "", "hozon": "", "k_to": "中山社長", "k_how": "メール", "d_to": "中山社長", "d_how": "メール", "bikou": "SR(事務組合)", "sources": ["カルテ", "賃金", "ルーティング"]}], "notes": [{"id": 1, "client": "BICフォワーディング", "cat": "進行中の課題", "body": "外からの採用経験がない"}, {"id": 2, "client": "I-BAN", "cat": "進行中の課題", "body": "人材定着、長時間労働"}, {"id": 3, "client": "KDDIケーブルシップ", "cat": "進行中の課題", "body": "法令よりも親会社"}, {"id": 4, "client": "KDDIケーブルシップ", "cat": "手続き注意", "body": "健保組合の電子申請が可能"}, {"id": 5, "client": "MO-GREEN", "cat": "独自ルール", "body": "Mo-Greenとナインジーは同じ社長、同じ労務担当者であるため、 2つの会社をMo-Greenのマイコモンで管理しています。フォルダをMo-Greenとナインジーで分けています。"}, {"id": 6, "client": "PBMC", "cat": "進行中の課題", "body": "管理職の給与差に不満。評価に対して給与額を決めてほしいとの要望あり。"}, {"id": 7, "client": "STARZBURST", "cat": "独自ルール", "body": "労働保険、雇用保険は中企団という事務組合に加入 雇用保険の得喪手続きは書面で提出します。 当事務所で作成→中企団に印取→ハローワークへ提出"}, {"id": 8, "client": "STARZBURST", "cat": "進行中の課題", "body": "ベトナム人の労務管理"}, {"id": 9, "client": "アイメイト協会", "cat": "進行中の課題", "body": "定着率が悪い、労働時間管理と残業代の問題"}, {"id": 10, "client": "アシスト", "cat": "進行中の課題", "body": "節税対策"}, {"id": 11, "client": "アミズ", "cat": "進行中の課題", "body": "雇用保険未加入者、社会保険未加入者あり"}, {"id": 12, "client": "アムルック", "cat": "独自ルール", "body": "年に3回賞与(歩合給)が支給され、賞与計算の依頼がきます。(3月、8月、12月) ろうむinOneで賞与計算をしますが、所得税は0にして計算結果を送ります。 当事務所では社会保険料の算出までをして、所得税は自社で計算してもらうことになっています。"}, {"id": 13, "client": "ウォンツ", "cat": "進行中の課題", "body": "管理監督者問題"}, {"id": 14, "client": "ウォンツ", "cat": "手続き注意", "body": "健保組合の電子申請が可能"}, {"id": 15, "client": "カウンタック", "cat": "進行中の課題", "body": "人材定着 経験を積むと独立してしまう傾向"}, {"id": 16, "client": "キタジマ", "cat": "進行中の課題", "body": "従業員の平均年齢が高め、女性不足、若者の定着率が低い、パワハラ体質"}, {"id": 17, "client": "キャンディーボックス", "cat": "進行中の課題", "body": "労働時間管理と残業代問題"}, {"id": 18, "client": "クロスリンク", "cat": "進行中の課題", "body": "長時間労働"}, {"id": 19, "client": "こもれび", "cat": "進行中の課題", "body": "残業代支払い問題"}, {"id": 20, "client": "サンク", "cat": "独自ルール", "body": "労働保険関係の手続きのみ。社会保険は自社で手続きしています。"}, {"id": 21, "client": "シフティーン", "cat": "進行中の課題", "body": "特別給の扱い (固定残業としながら処遇改善加算に計上している)"}, {"id": 22, "client": "しむら", "cat": "進行中の課題", "body": "管理者が負担大きい"}, {"id": 23, "client": "ショウ企画", "cat": "独自ルール", "body": "東神奈川ひかり保育園と反町ひかり保育園の2園あるが、事業所マスタはショウ企画で1つで管理 入社時にどちらの保育園か確認 個人マスタの労働保険番号で保育園を設定する。 https://1drv.ms/w/c/08c14e4d70fec0f0/IQDwwP5wTU7BIIAIa3cCAAAAASxYlD-t8jWPu5k4DDHtagQ?e=92QyhP"}, {"id": 24, "client": "ズームティー", "cat": "進行中の課題", "body": "売り上げ減少、ここ1年で退職者が続出"}, {"id": 25, "client": "フラッフィー", "cat": "進行中の課題", "body": "残業代支払い問題"}, {"id": 26, "client": "ふれあいドットコム", "cat": "進行中の課題", "body": "長時間労働 残業100時間超え"}, {"id": 27, "client": "ユアハウス", "cat": "独自ルール", "body": "給与計算のみ受託。 手続きが発生したら、スポットで受けます。手続き発生ごとに請求書を発行します。"}, {"id": 28, "client": "ヨウコウ技研", "cat": "進行中の課題", "body": "人材定着"}, {"id": 29, "client": "リュミエール保育園", "cat": "進行中の課題", "body": "平井園長の負担が大きい"}, {"id": 30, "client": "丸秀工業", "cat": "進行中の課題", "body": "残業代計算"}, {"id": 31, "client": "興信商事", "cat": "独自ルール", "body": "給与計算はしますが、給与一覧表のみお送りします。給与明細は作成しません。"}, {"id": 32, "client": "高篤輸送", "cat": "進行中の課題", "body": "賃金体系(実質歩合給の残業代割り振り)"}, {"id": 33, "client": "松原プラント工業所", "cat": "進行中の課題", "body": "日給制、元請から料金問題で残業代が出せない"}, {"id": 34, "client": "図南鍛工", "cat": "進行中の課題", "body": "若手不足、利益がなかなか出ない、人事制度が進まない"}, {"id": 35, "client": "図南鍛工", "cat": "手続き注意", "body": "健保組合の電子申請が可能"}, {"id": 36, "client": "赤塚防災設備", "cat": "進行中の課題", "body": "労働時間管理と残業代問題"}, {"id": 37, "client": "川崎地区貨協", "cat": "進行中の課題", "body": "退職金、人事制度の構築"}, {"id": 38, "client": "大視", "cat": "進行中の課題", "body": "賃金体系(実質日給を月給制に割り振り)"}, {"id": 39, "client": "島田商店なかよし保育園", "cat": "進行中の課題", "body": "園児不足、建て替えにより資金不足、相続問題"}, {"id": 40, "client": "島田電設工業", "cat": "手続き注意", "body": "健保組合の電子申請が可能"}, {"id": 41, "client": "明希工業", "cat": "進行中の課題", "body": "橘本さんの後任がいない"}, {"id": 42, "client": "和なごみ", "cat": "進行中の課題", "body": "人材定着 請負依存が大きい"}]};
+
+const REQUIRED = ['shutan','kojo','shime','keiro','hokensha'];
+const CATS = ['独自ルール','手続き注意','進行中の課題','過去の案件','志田確認','引継ぎ'];
+const ALERT_CATS = ['進行中の課題','志田確認'];
+
+const OPTS = {
+  kubun:['','手続き','給与計算','手続き・給与計算','相談顧問'],
+  hokensha:['','協会けんぽ','健保組合'],
+  jimu:['','SR','中企団','なし'],
+  kojo:['','当月','翌月','区分により異なる'],
+  keiro:['','マイコモン','MoneyForwardからDL','メール添付','税理士事務所経由','郵送','当事務所で給与計算'],
+  hozon:['','OneDrive','ドキュ','OneDriveとドキュ'],
+  k_how:['','メール','マイコモン','チャットワーク','郵送'],
+  d_how:['','メール','マイコモン','チャットワーク','郵送'],
+  nyuryoku:['','1か月前','賃金支払月'],
+  tetsuzuki:['','当事務所で手続き','自社で手続き','対象外'],
+};
+/* 担当のプルダウン（一覧にない名前が入っていても消えないようにする） */
+const staffOpts = v => [...new Set(['', ...STAFF, v||''])];
+const staffOf = c => [c.shutan, c.fukutan].filter(Boolean);
+const hasStaff = (c,n) => staffOf(c).includes(n);
+
+let clients = [], notes = [], sel = null, remote = false;
+const state = {q:'',kubun:'',hoken:'',jimu:'',staff:'',sort:'name',wage:false,gap:false,note:false};
+let bulk = false, picked = new Set();
+
+/* ---------- storage ---------- */
+const local = {
+  load(){
+    const c = localStorage.getItem('km_clients_v2'), n = localStorage.getItem('km_notes_v2');
+    if(c){ clients = JSON.parse(c); notes = JSON.parse(n||'[]'); }
+    else { clients = structuredClone(SEED.clients); notes = structuredClone(SEED.notes); local.flush(); }
+    try{
+      const s = JSON.parse(localStorage.getItem('km_settings_v2')||'null');
+      if(s && Array.isArray(s.staff)) STAFF = s.staff;
+    }catch(e){}
+  },
+  flush(){
+    localStorage.setItem('km_clients_v2', JSON.stringify(clients));
+    localStorage.setItem('km_notes_v2', JSON.stringify(notes));
+    localStorage.setItem('km_settings_v2', JSON.stringify({staff:STAFF}));
+  },
+};
+
+const SETTINGS_ID = '__settings__';
+async function saveSettings(){
+  if(remote){
+    try{
+      await rest('clients', {method:'POST',
+        headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+        body: JSON.stringify({id:SETTINGS_ID, data:{staff:STAFF}})});
+    }catch(e){ console.error(e); toast('担当者の保存に失敗しました'); return false; }
+  } else local.flush();
+  return true;
+}
+
+async function rest(path, opts){
+  opts = Object.assign({}, opts);
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
+  if(!r.ok) throw new Error(await r.text());
+  if(r.status === 204) return null;
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+
+async function boot(){
+  if(SUPABASE_URL && SUPABASE_ANON_KEY){
+    try{
+      let cs = await rest('clients?select=id,data');
+      const st0 = (cs||[]).find(r=>r.id===SETTINGS_ID);
+      if(st0 && st0.data && Array.isArray(st0.data.staff)) STAFF = st0.data.staff;
+      if(!cs || !cs.filter(r=>r.id!==SETTINGS_ID).length){
+        await rest('clients', {method:'POST', headers:{Prefer:'return=minimal'},
+          body: JSON.stringify(SEED.clients.map(c=>({id:c.id, data:c})))});
+        await rest('client_notes', {method:'POST', headers:{Prefer:'return=minimal'},
+          body: JSON.stringify(SEED.notes.map(n=>({client_id:n.client, data:{cat:n.cat, body:n.body}})))});
+        toast('初期データを投入しました');
+        cs = await rest('clients?select=id,data');
+      }
+      clients = cs.filter(r=>r.id!==SETTINGS_ID).map(r=>Object.assign({}, r.data, {id:r.id}));
+      const ns = await rest('client_notes?select=id,client_id,data') || [];
+      notes = ns.map(r=>({id:r.id, client:r.client_id, cat:r.data.cat, body:r.data.body}));
+      remote = true;
+      st('Supabase接続中');
+    }catch(err){
+      console.error(err); st('Supabase接続失敗 — ローカル保存で動作中'); local.load();
+    }
+  } else { st('ローカル保存（この端末のみ）'); local.load(); }
+  initFilters(); render();
+}
+
+async function saveClient(c, quiet){
+  if(remote){
+    try{ await rest('clients?id=eq.'+encodeURIComponent(c.id), {method:'PATCH', body:JSON.stringify({data:c})}); }
+    catch(e){ console.error(e); toast('保存できませんでした'); return false; }
+  } else local.flush();
+  if(!quiet) toast('保存しました');
+  return true;
+}
+async function createClient(c){
+  if(remote){
+    try{ await rest('clients', {method:'POST', headers:{Prefer:'return=minimal'},
+      body: JSON.stringify({id:c.id, data:c})}); }
+    catch(e){ console.error(e); toast('追加できませんでした'); return false; }
+  }
+  clients.push(c);
+  if(!remote) local.flush();
+  return true;
+}
+
+async function deleteClient(c){
+  if(remote){
+    try{
+      await rest('client_notes?client_id=eq.'+encodeURIComponent(c.id), {method:'DELETE'});
+      await rest('clients?id=eq.'+encodeURIComponent(c.id), {method:'DELETE'});
+    }catch(e){ console.error(e); toast('削除できませんでした'); return false; }
+  }
+  clients = clients.filter(x=>x.id!==c.id);
+  notes = notes.filter(n=>n.client!==c.id);
+  if(!remote) local.flush();
+  return true;
+}
+
+async function addNote(clientId,cat,body){
+  if(remote){
+    try{
+      const rows = await rest('client_notes', {method:'POST', headers:{Prefer:'return=representation'},
+        body: JSON.stringify({client_id:clientId, data:{cat:cat, body:body}})});
+      notes.push({id:rows[0].id, client:clientId, cat:cat, body:body});
+    }catch(e){ console.error(e); toast('追加できませんでした'); return; }
+  } else {
+    notes.push({id:Date.now(),client:clientId,cat:cat,body:body}); local.flush();
+  }
+  toast('特記事項を追加しました');
+}
+async function updateNote(n){
+  if(remote){
+    try{ await rest('client_notes?id=eq.'+n.id, {method:'PATCH', body:JSON.stringify({data:{cat:n.cat, body:n.body}})}); }
+    catch(e){ console.error(e); toast('保存できませんでした'); return; }
+  } else local.flush();
+  toast('保存しました');
+}
+async function removeNote(n){
+  if(remote){
+    try{ await rest('client_notes?id=eq.'+n.id, {method:'DELETE'}); }
+    catch(e){ console.error(e); toast('削除できませんでした'); return; }
+  }
+  notes = notes.filter(x=>x!==n);
+  if(!remote) local.flush();
+  toast('削除しました');
+}
+
+/* ---------- helpers ---------- */
+const st = t => document.getElementById('status').textContent = t;
+let tt;
+function toast(t){
+  const el=document.getElementById('toast'); el.textContent=t; el.classList.add('show');
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),1700);
+}
+const notesOf = id => notes.filter(n=>n.client===id);
+const gapsOf = c => REQUIRED.filter(f=>!c[f]);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+function initFilters(){
+  const fill=(id,vals,label)=>{
+    const el=document.getElementById(id);
+    vals.forEach(v=>{ if(v){const o=document.createElement('option');o.value=v;o.textContent=label+'：'+v;el.appendChild(o);} });
+  };
+  fill('fKubun',[...new Set(clients.map(c=>c.kubun))].filter(Boolean).sort(),'顧問区分');
+  fill('fHoken',['協会けんぽ','健保組合'],'保険者');
+  fill('fJimu',['SR','中企団','なし'],'事務組合');
+  refreshStaffSelects();
+}
+
+/* 担当者を追加・削除したあと、プルダウンを作り直す */
+function refreshStaffSelects(){
+  const names=[...new Set([...STAFF, ...clients.flatMap(staffOf)])].filter(Boolean);
+  const ft=document.getElementById('fTeam'), keep=ft.value;
+  ft.innerHTML = '<option value="">担当：すべて</option>'
+    + names.map(n=>`<option value="${esc(n)}">担当：${esc(n)}</option>`).join('')
+    + '<option value="__none__">担当：未設定</option>';
+  ft.value = [...ft.options].some(o=>o.value===keep) ? keep : '';
+  state.staff = ft.value;
+  const opt=(sel,keepLabel)=>{
+    sel.innerHTML = `<option value="__keep__">${keepLabel}</option><option value="">（空にする）</option>`
+      + names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  };
+  opt(document.getElementById('bulk1'),'（担当①はそのまま）');
+  opt(document.getElementById('bulk2'),'（担当②はそのまま）');
+}
+
+/* ---------- モーダル ---------- */
+const modal = {
+  open(html){
+    const m=document.getElementById('modal');
+    document.getElementById('modalBox').innerHTML=html;
+    m.classList.add('on');
+    m.onclick=e=>{ if(e.target===m) modal.close(); };
+    document.onkeydown=e=>{ if(e.key==='Escape') modal.close(); };
+    return document.getElementById('modalBox');
+  },
+  close(){ document.getElementById('modal').classList.remove('on'); document.onkeydown=null; }
+};
+
+/* 担当者設定 */
+function staffDialog(){
+  const draw=()=>{
+    const box = modal.open(`
+      <h3>担当者設定</h3>
+      <div class="in">
+        <p class="note">ここで追加・削除した担当者は、事務所の全員の画面に反映されます。<br>
+        退職した方を削除しても、その方が担当のままの顧問先からは名前は消えません。付け替えてから削除してください。</p>
+        <div class="slist">${STAFF.map((n,i)=>{
+          const cnt = clients.filter(c=>hasStaff(c,n)).length;
+          return `<div class="it"><span class="nm">${esc(n)}</span>
+            <span class="cnt">${cnt}社</span>
+            <button data-del="${i}">削除</button></div>`;
+        }).join('') || '<div class="it"><span class="cnt">担当者が登録されていません</span></div>'}</div>
+        <div class="addrow">
+          <input type="text" id="sfNew" placeholder="追加する担当者名">
+          <button id="sfAdd">追加</button>
+        </div>
+      </div>
+      <div class="foot"><button id="sfClose">閉じる</button></div>`);
+
+    box.querySelectorAll('[data-del]').forEach(b=>{
+      b.onclick=async ()=>{
+        const n = STAFF[+b.dataset.del];
+        const cnt = clients.filter(c=>hasStaff(c,n)).length;
+        if(cnt && !confirm(n+'さんは'+cnt+'社の担当になっています。\n一覧から削除しますか？（顧問先側の担当名はそのまま残ります）')) return;
+        STAFF = STAFF.filter(x=>x!==n);
+        await saveSettings(); refreshStaffSelects(); render(); draw(); toast('担当者を削除しました');
+      };
+    });
+    const add=async ()=>{
+      const v=box.querySelector('#sfNew').value.trim();
+      if(!v) return;
+      if(STAFF.includes(v)){ toast('すでに登録されています'); return; }
+      STAFF.push(v);
+      await saveSettings(); refreshStaffSelects(); render(); draw(); toast('担当者を追加しました');
+    };
+    box.querySelector('#sfAdd').onclick=add;
+    box.querySelector('#sfNew').addEventListener('keydown',e=>{ if(e.key==='Enter') add(); });
+    box.querySelector('#sfClose').onclick=modal.close;
+    box.querySelector('#sfNew').focus();
+  };
+  draw();
+}
+
+/* このファイルに埋め込まれたデータを、いま動いているデータへ取り込む */
+function diffSeed(){
+  const fill=[], over=[], add=[];
+  const skip = new Set(['id','sources','kenpo_denshi']);
+  SEED.clients.forEach(s=>{
+    const c = clients.find(x=>x.id===s.id) || clients.find(x=>x.name===s.name);
+    if(!c){ add.push(s); return; }
+    Object.keys(s).forEach(k=>{
+      if(skip.has(k) || typeof s[k]!=='string' || !s[k]) return;
+      const cur = c[k]||'';
+      if(!cur) fill.push({c,k,v:s[k]});
+      else if(cur!==s[k]) over.push({c,k,v:s[k],cur});
+    });
+  });
+  const newNotes = SEED.notes.filter(n=>{
+    const c = clients.find(x=>x.id===n.client);
+    if(!c) return false;
+    return !notes.some(o=>o.client===n.client && o.cat===n.cat && o.body===n.body);
+  });
+  return {fill,over,add,newNotes};
+}
+
+function importDialog(){
+  const D = diffSeed();
+  const list = D.over.slice(0,12).map(o=>
+    `<div class="it"><span class="nm">${esc(o.c.name)}</span><span class="cnt">${esc(o.k)}：${esc(o.cur)} → ${esc(o.v)}</span></div>`).join('');
+  const box = modal.open(`
+    <h3>データ取込</h3>
+    <div class="in">
+      <p class="note">このファイルに入っているデータを、いま使っているデータへ反映します。<br>
+      空欄を埋めるだけなら、入力済みの内容が消えることはありません。</p>
+      <div class="slist">
+        <div class="it"><span class="nm">空欄を埋める</span><span class="cnt">${D.fill.length}項目</span></div>
+        <div class="it"><span class="nm">値が食い違う</span><span class="cnt">${D.over.length}項目</span></div>
+        <div class="it"><span class="nm">こちらにない会社</span><span class="cnt">${D.add.length}社</span></div>
+        <div class="it"><span class="nm">追加される特記事項</span><span class="cnt">${D.newNotes.length}件</span></div>
+      </div>
+      ${D.over.length?`<label>食い違いの例</label><div class="slist">${list}
+        ${D.over.length>12?`<div class="it"><span class="cnt">ほか${D.over.length-12}項目</span></div>`:''}</div>`:''}
+      <label><input type="checkbox" id="imOver" style="width:auto"> 食い違う値も上書きする</label>
+      <label><input type="checkbox" id="imAdd" style="width:auto"> こちらにない会社を追加する</label>
+    </div>
+    <div class="foot">
+      <button id="imCancel">キャンセル</button>
+      <button class="pri" id="imGo">取り込む</button>
+    </div>`);
+  box.querySelector('#imCancel').onclick = modal.close;
+  box.querySelector('#imGo').onclick = async ()=>{
+    const doOver = box.querySelector('#imOver').checked;
+    const doAdd  = box.querySelector('#imAdd').checked;
+    const touched = new Set();
+    D.fill.forEach(f=>{ f.c[f.k]=f.v; touched.add(f.c); });
+    if(doOver) D.over.forEach(o=>{ o.c[o.k]=o.v; touched.add(o.c); });
+    box.querySelector('#imGo').disabled = true;
+    box.querySelector('#imGo').textContent = '取り込み中…';
+    for(const c of touched) await saveClient(c, true);
+    if(doAdd) for(const s of D.add) await createClient(structuredClone(s));
+    for(const n of D.newNotes) await addNote(n.client, n.cat, n.body);
+    modal.close();
+    refreshStaffSelects(); render();
+    toast(touched.size + '社を更新しました');
+  };
+}
+
+/* 顧問先の追加 */
+function addClientDialog(){
+  const sOpts = v => ['',...STAFF].map(n=>`<option value="${esc(n)}"${n===v?' selected':''}>${esc(n||'—')}</option>`).join('');
+  const box = modal.open(`
+    <h3>顧問先を追加</h3>
+    <div class="in">
+      <p class="note">会社名だけ入れれば登録できます。残りの項目はあとから詳細画面で埋められます。</p>
+      <label>会社名（必須）</label>
+      <input type="text" id="acName" placeholder="株式会社◯◯">
+      <label>顧問区分</label>
+      <select id="acKubun">${OPTS.kubun.map(o=>`<option value="${esc(o)}">${esc(o||'—')}</option>`).join('')}</select>
+      <label>担当①</label><select id="acS1">${sOpts('')}</select>
+      <label>担当②</label><select id="acS2">${sOpts('')}</select>
+    </div>
+    <div class="foot">
+      <button id="acCancel">キャンセル</button>
+      <button class="pri" id="acGo">追加する</button>
+    </div>`);
+  const go=async ()=>{
+    const name = box.querySelector('#acName').value.trim();
+    if(!name){ toast('会社名を入れてください'); box.querySelector('#acName').focus(); return; }
+    if(clients.some(c=>c.name===name) && !confirm('同じ名前の顧問先がすでにあります。追加しますか？')) return;
+    let id = name, i = 2;
+    while(clients.some(c=>c.id===id)) id = name + '_' + (i++);
+    const c = {};
+    ['id','name','wage_no','kubun','shutan','fukutan','madoguchi','renraku','sho','koyo',
+     'hokensha','kenpo_name','jimu','shime','harai','shime_raw','nyuryoku','roudou','shikyu','kojo',
+     'sokyu','keiro','dare','keishiki','hozon','k_to','k_how','d_to','d_how','bikou'].forEach(k=>c[k]='');
+    c.id=id; c.name=name; c.kenpo_denshi=false; c.sources=[];
+    c.kubun = box.querySelector('#acKubun').value;
+    c.shutan = box.querySelector('#acS1').value;
+    c.fukutan = box.querySelector('#acS2').value;
+    if(!await createClient(c)) return;
+    modal.close();
+    sel = c; document.body.classList.add('viewing');
+    refreshStaffSelects(); render();
+    toast(name + ' を追加しました');
+  };
+  box.querySelector('#acGo').onclick=go;
+  box.querySelector('#acCancel').onclick=modal.close;
+  box.querySelector('#acName').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  box.querySelector('#acName').focus();
+}
+
+const KUBUN_ORDER = ['手続き・給与計算','給与計算','手続き','相談顧問'];
+function sortRows(rows){
+  const byName=(a,b)=>a.name.localeCompare(b.name,'ja');
+  if(state.sort==='team'){
+    const rank=c=>{const i=STAFF.indexOf(c.shutan||''); return i<0?(c.shutan?900:999):i;};
+    return rows.slice().sort((a,b)=>rank(a)-rank(b) || (a.shutan||'').localeCompare(b.shutan||'','ja') || byName(a,b));
+  }
+  if(state.sort==='kubun'){
+    const rank=c=>{const i=KUBUN_ORDER.indexOf(c.kubun||''); return i<0?99:i;};
+    return rows.slice().sort((a,b)=>rank(a)-rank(b) || byName(a,b));
+  }
+  return rows.slice().sort(byName);
+}
+
+function filtered(){
+  const q = state.q.trim().toLowerCase();
+  return clients.filter(c=>{
+    if(state.kubun && c.kubun!==state.kubun) return false;
+    if(state.hoken && c.hokensha!==state.hoken) return false;
+    if(state.jimu && c.jimu!==state.jimu) return false;
+    if(state.staff==='__none__' && staffOf(c).length) return false;
+    if(state.staff && state.staff!=='__none__' && !hasStaff(c,state.staff)) return false;
+    if(state.wage && !c.wage_no) return false;
+    if(state.gap && !gapsOf(c).length) return false;
+    if(state.note && !notesOf(c.id).length) return false;
+    if(q){
+      const hay = [c.name,c.wage_no,c.shutan,c.fukutan,c.madoguchi,c.dare,c.k_to,c.d_to,c.sokyu,c.bikou]
+        .concat(notesOf(c.id).map(n=>n.body)).join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+/* ---------- render ---------- */
+function render(){
+  const rows = sortRows(filtered());
+  document.getElementById('count').textContent = rows.length + ' / ' + clients.length + ' 社';
+
+  let html = '', last = null;
+  rows.forEach(c=>{
+    if(state.sort==='team' && !state.staff){
+      const g = c.shutan || '担当 未設定';
+      if(g!==last){ html += `<div class="ghead">${esc(g)}（${rows.filter(x=>(x.shutan||'担当 未設定')===g).length}社）</div>`; last=g; }
+    } else if(state.sort==='kubun'){
+      const g = c.kubun || '区分なし';
+      if(g!==last){ html += `<div class="ghead">${esc(g)}（${rows.filter(x=>(x.kubun||'区分なし')===g).length}社）</div>`; last=g; }
+    }
+    const tm = staffOf(c).join('・');
+    html += `
+    <div class="row ${!bulk&&sel&&sel.id===c.id?'sel':''}" data-id="${esc(c.id)}">
+      ${bulk ? `<span class="ck ${picked.has(c.id)?'on':''}"></span>`
+             : `<span class="dot ${gapsOf(c).length?'':'hidden'}"></span>`}
+      <span class="nm">${esc(c.name)}</span>
+      <span class="tm ${tm?'':'none'}">${esc(tm||'未設定')}</span>
+      <span class="kb">${esc(c.kubun||'—')}</span>
+    </div>`;
+  });
+  document.getElementById('list').innerHTML = html || '<div class="empty-state">該当する顧問先がありません。</div>';
+
+  document.querySelectorAll('.row').forEach(r=>{
+    r.onclick=()=>{
+      if(bulk){
+        const id=r.dataset.id;
+        picked.has(id) ? picked.delete(id) : picked.add(id);
+        render(); return;
+      }
+      sel = clients.find(c=>c.id===r.dataset.id); document.body.classList.add('viewing'); render();
+    };
+  });
+  if(bulk) syncBulk();
+  renderDetail();
+}
+
+function syncBulk(){
+  const n = picked.size;
+  const go = document.getElementById('bulkGo');
+  go.textContent = '選択した' + n + '社に反映';
+  go.disabled = !n;
+  document.getElementById('bulkN').textContent = n ? '' : '左の一覧をクリックして選びます';
+}
+
+async function applyBulk(){
+  const v1 = document.getElementById('bulk1').value;
+  const v2 = document.getElementById('bulk2').value;
+  if(v1==='__keep__' && v2==='__keep__'){ toast('割り当てる担当を選んでください'); return; }
+  const ids = [...picked];
+  let ok = 0;
+  for(const id of ids){
+    const c = clients.find(x=>x.id===id);
+    if(!c) continue;
+    if(v1!=='__keep__') c.shutan = v1;
+    if(v2!=='__keep__') c.fukutan = v2;
+    if(await saveClient(c, true)) ok++;
+  }
+  picked.clear();
+  toast(ok + '社の担当を更新しました');
+  render();
+}
+
+function field(c,key,label,opts,req){
+  const val = c[key]||'';
+  if(opts){
+    return `<div class="k">${label}</div><div class="v"><select data-k="${key}">`+
+      opts.map(o=>`<option value="${esc(o)}"${o===val?' selected':''}>${esc(o||'—')}</option>`).join('')+
+      `</select></div>`;
+  }
+  return `<div class="k">${label}</div>`+
+    `<div class="v${val?'':' empty'}${req?' req':''}" contenteditable data-k="${key}">${esc(val)}</div>`;
+}
+
+function renderDetail(){
+  const d = document.getElementById('detail');
+  if(!sel){ d.innerHTML='<div class="empty-state">左の一覧から顧問先を選んでください。</div>'; return; }
+  const c = sel, gaps = gapsOf(c), ns = notesOf(c.id);
+  const srcMissing = ['カルテ','賃金','ルーティング'].filter(s=>!(c.sources||[]).includes(s));
+
+  d.innerHTML = `
+  <button id="back">← 一覧へ</button>
+  <h2 contenteditable data-k="name" spellcheck="false">${esc(c.name)}</h2>
+  <div class="sub">
+    ${(c.sources||[]).map(s=>`<span class="badge o">${esc(s)}に登録</span>`).join('')}
+    ${srcMissing.map(s=>`<span class="badge w">${esc(s)}に未登録</span>`).join('')}
+    ${gaps.length?`<span class="badge w">要記入 ${gaps.length}項目</span>`:''}
+  </div>
+
+  <section><h3>基本情報</h3><div class="grid">
+    ${field(c,'wage_no','事業所No（ろうむinOne）')}
+    ${field(c,'kubun','顧問区分',OPTS.kubun)}
+    ${field(c,'shutan','担当①',staffOpts(c.shutan),true)}
+    ${field(c,'fukutan','担当②',staffOpts(c.fukutan))}
+    ${field(c,'madoguchi','連絡窓口')}
+    ${field(c,'renraku','連絡方法')}
+    ${field(c,'sho','社保手続き',[...new Set([...OPTS.tetsuzuki, c.sho||''])])}
+    ${field(c,'koyo','雇保手続き',[...new Set([...OPTS.tetsuzuki, c.koyo||''])])}
+  </div></section>
+
+  <section><h3>社会保険</h3><div class="grid">
+    ${field(c,'hokensha','保険者',OPTS.hokensha)}
+    ${field(c,'kenpo_name','健保組合名',null,c.hokensha==='健保組合')}
+    ${field(c,'jimu','事務組合',OPTS.jimu)}
+    ${field(c,'kojo','社保料控除月',OPTS.kojo)}
+  </div></section>
+
+  <section><h3>賃金入力</h3><div class="grid">
+    ${field(c,'shime','締日',null,true)}
+    ${field(c,'harai','支払日')}
+    ${field(c,'shime_raw','〆・支払（原文）')}
+    ${field(c,'nyuryoku','入力する月',OPTS.nyuryoku)}
+    ${field(c,'roudou','労働月表示')}
+    ${field(c,'shikyu','支給月表示')}
+    ${field(c,'sokyu','総支給額の定義')}
+  </div></section>
+
+  <section><h3>回収と送付</h3><div class="grid">
+    ${field(c,'keiro','回収経路',OPTS.keiro,true)}
+    ${field(c,'dare','回収先（誰から）')}
+    ${field(c,'keishiki','データ形式')}
+    ${field(c,'hozon','保存先',OPTS.hozon)}
+    ${field(c,'k_to','社保控除表の送付先')}
+    ${field(c,'k_how','社保控除表の送付方法',OPTS.k_how)}
+    ${field(c,'d_to','公文書の送付先')}
+    ${field(c,'d_how','公文書の送付方法',OPTS.d_how)}
+    ${field(c,'bikou','備考')}
+  </div></section>
+
+  <section><h3>特記事項・イレギュラー（${ns.length}件）</h3>
+    ${ns.map((n,i)=>`
+      <div class="note" data-i="${i}">
+        <span class="cat ${ALERT_CATS.includes(n.cat)?'a':''}">${esc(n.cat)}</span>
+        <div class="body" contenteditable>${esc(n.body)}</div>
+        <button class="del" title="削除">×</button>
+      </div>`).join('') || '<div style="padding:14px 15px;color:#8a93a0">まだ登録がありません。</div>'}
+    <div class="addnote">
+      <select id="nc">${CATS.map(x=>`<option>${x}</option>`).join('')}</select>
+      <input id="nb" placeholder="例：入社時にどちらの保育園か確認する">
+      <button id="na">追加</button>
+    </div>
+  </section>
+
+  <div class="dz"><button id="delClient">この顧問先を削除</button></div>`;
+
+  d.querySelector('#delClient').onclick = async ()=>{
+    if(!confirm(c.name + ' を削除します。\n特記事項もまとめて消え、元に戻せません。よろしいですか？')) return;
+    if(!await deleteClient(c)) return;
+    sel = null; document.body.classList.remove('viewing');
+    refreshStaffSelects(); render(); toast(c.name + ' を削除しました');
+  };
+
+  d.querySelector('#back').onclick=()=>{document.body.classList.remove('viewing');sel=null;render();};
+
+  d.querySelectorAll('[contenteditable][data-k]').forEach(el=>{
+    el.addEventListener('blur',()=>{
+      const v = el.textContent.trim();
+      if(v === (c[el.dataset.k]||'')) return;
+      if(el.dataset.k==='name' && !v){ el.textContent = c.name; toast('会社名は空にできません'); return; }
+      c[el.dataset.k]=v; saveClient(c); render();
+    });
+  });
+  d.querySelectorAll('select[data-k]').forEach(el=>{
+    el.onchange=()=>{
+      c[el.dataset.k]=el.value;
+      saveClient(c); render(); renderDetail();
+    };
+  });
+  d.querySelectorAll('.note').forEach(el=>{
+    const n = ns[+el.dataset.i];
+    el.querySelector('.body').addEventListener('blur',e=>{
+      const v=e.target.textContent.trim();
+      if(v===n.body) return;
+      if(!v){ removeNote(n).then(render); return; }
+      n.body=v; updateNote(n);
+    });
+    el.querySelector('.del').onclick=()=>{ if(confirm('この特記事項を削除しますか？')) removeNote(n).then(render); };
+  });
+  d.querySelector('#na').onclick=()=>{
+    const b=d.querySelector('#nb').value.trim();
+    if(!b) return;
+    addNote(c.id, d.querySelector('#nc').value, b).then(render);
+  };
+  d.querySelector('#nb').addEventListener('keydown',e=>{ if(e.key==='Enter') d.querySelector('#na').click(); });
+}
+
+/* ---------- events ---------- */
+document.getElementById('q').oninput = e=>{state.q=e.target.value;render();};
+document.getElementById('fKubun').onchange = e=>{state.kubun=e.target.value;render();};
+document.getElementById('fHoken').onchange = e=>{state.hoken=e.target.value;render();};
+document.getElementById('fJimu').onchange = e=>{state.jimu=e.target.value;render();};
+document.getElementById('staffCfg').onclick = staffDialog;
+document.getElementById('importBtn').onclick = importDialog;
+document.getElementById('addClient').onclick = addClientDialog;
+document.getElementById('fTeam').onchange = e=>{state.staff=e.target.value;render();};
+document.getElementById('sortBy').onchange = e=>{state.sort=e.target.value;render();};
+document.getElementById('cBulk').onclick = e=>{
+  bulk=!bulk; picked.clear();
+  e.target.classList.toggle('on',bulk);
+  document.getElementById('bulkbar').style.display = bulk?'flex':'none';
+  document.body.classList.toggle('bulking',bulk);
+  if(bulk){ sel=null; document.body.classList.remove('viewing'); }
+  render();
+};
+document.getElementById('bulkGo').onclick = ()=>applyBulk();
+document.getElementById('bulkAll').onclick = ()=>{ sortRows(filtered()).forEach(c=>picked.add(c.id)); render(); };
+document.getElementById('bulkNone').onclick = ()=>{ picked.clear(); render(); };
+[['cWage','wage'],['cGap','gap'],['cNote','note']].forEach(([id,k])=>{
+  document.getElementById(id).onclick = e=>{ state[k]=!state[k]; e.target.classList.toggle('on',state[k]); render(); };
+});
+
+document.getElementById('csv').onclick = ()=>{
+  const cols = [['name','会社名'],['wage_no','事業所No'],['kubun','顧問区分'],['shutan','担当①'],['fukutan','担当②'],['madoguchi','連絡窓口'],
+    ['renraku','連絡方法'],['sho','社保手続き'],['koyo','雇保手続き'],['hokensha','保険者'],
+    ['kenpo_name','健保組合名'],['jimu','事務組合'],['kojo','社保料控除月'],['shime','締日'],['harai','支払日'],
+    ['shime_raw','〆・支払（原文）'],['nyuryoku','入力する月'],['roudou','労働月表示'],['shikyu','支給月表示'],
+    ['sokyu','総支給額の定義'],['keiro','回収経路'],['dare','回収先'],['keishiki','データ形式'],['hozon','保存先'],
+    ['k_to','社保控除表の送付先'],['k_how','社保控除表の送付方法'],['d_to','公文書の送付先'],
+    ['d_how','公文書の送付方法'],['bikou','備考']];
+  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const lines = [cols.map(c=>q(c[1])).concat(q('特記事項')).join(',')];
+  sortRows(filtered()).forEach(c=>{
+    const ns = notesOf(c.id).map(n=>'['+n.cat+'] '+n.body).join(' / ');
+    lines.push(cols.map(col=>q(c[col[0]])).concat(q(ns)).join(','));
+  });
+  const blob = new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '顧客マスタ_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+};
+
+boot();
+</script>
+</body>
+</html>
