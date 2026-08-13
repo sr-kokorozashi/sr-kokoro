@@ -158,6 +158,14 @@ section > h3{
 .v.empty:not(:focus):before{content:"未入力";color:#b9c0c8}
 .v.req.empty:not(:focus):before{content:"要記入";color:var(--warn)}
 .v select{border:1px solid var(--rule);border-radius:3px;padding:2px 6px;background:#fff}
+/* 見落とすと困る値は、枠ごと色を変えて目立たせる */
+.v.flag-warn,.v.flag-off,.v.flag-key{padding-left:12px !important}
+.v.flag-warn{background:#fff2dd;box-shadow:inset 4px 0 0 #dc9b34}
+.v.flag-off {background:#edf0f3;box-shadow:inset 4px 0 0 #9aa7b4}
+.v.flag-key {background:#e6effb;box-shadow:inset 4px 0 0 #4a86c8}
+.v.flag-warn select{border-color:#dc9b34;color:#8a5000;font-weight:600;background:#fffaf2}
+.v.flag-off  select{border-color:#b8c2cc;color:#4f5a66;font-weight:600;background:#f8f9fa}
+.v.flag-key  select{border-color:#7ba7d7;color:#1f4e79;font-weight:600;background:#f4f8fd}
 
 /* ---- notes ---- */
 .note{padding:11px 15px;border-bottom:1px solid #f0f2f5;display:flex;gap:11px;align-items:flex-start}
@@ -537,7 +545,26 @@ async function boot(){
       console.error(err); st('Supabase接続失敗 — ローカル保存で動作中'); local.load();
     }
   } else { st('ローカル保存（この端末のみ）'); local.load(); }
+  await cleanup();
   initFilters(); render();
+}
+
+/* 項目を作り替える前の値が残っていたら片づける（1回だけ動きます） */
+const OBSOLETE = {
+  roudou: v => !OPTS.rishoku.includes(v),   // 離職票・年更は 調整なし/1か月後/2か月後 のみ
+};
+async function cleanup(){
+  const gone = ['nyuryoku','shikyu','karte_no','roumu_name','team'];
+  let n = 0;
+  for(const c of clients){
+    let hit = false;
+    gone.forEach(k=>{ if(k in c){ delete c[k]; hit = true; } });
+    Object.entries(OBSOLETE).forEach(([k,bad])=>{
+      if(c[k] && bad(c[k])){ c[k] = ''; hit = true; }
+    });
+    if(hit){ n++; await saveClient(c, true); }
+  }
+  if(n) toast('使わなくなった項目を'+n+'社ぶん片づけました');
 }
 
 async function saveClient(c, quiet){
@@ -916,7 +943,7 @@ async function applyBulk(){
 const FLAG = {
   sho:      {'自社で手続き':'warn','対象外':'off'},
   koyo:     {'自社で手続き':'warn','対象外':'off'},
-  hokensha: {'健保組合':'warn'},
+  hokensha: {'健保組合':'key'},
 };
 const flagOf = (key,val) => (FLAG[key]||{})[val] || '';
 
@@ -969,7 +996,7 @@ function renderDetail(){
     ${field(c,'shime','締日',null,true)}
     ${field(c,'harai','支払日')}
     ${field(c,'shime_raw','〆・支払（原文）')}
-    ${field(c,'roudou','離職票・年更',[...new Set([...OPTS.rishoku, c.roudou||''])])}
+    ${field(c,'roudou','離職票・年更',OPTS.rishoku)}
     ${field(c,'sokyu','総支給額の定義')}
   </div></section>
 
