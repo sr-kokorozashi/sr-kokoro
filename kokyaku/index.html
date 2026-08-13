@@ -576,8 +576,22 @@ async function cleanup(){
 
 async function saveClient(c, quiet){
   if(remote){
-    try{ await rest('clients?id=eq.'+encodeURIComponent(c.id), {method:'PATCH', body:JSON.stringify({data:c})}); }
-    catch(e){ console.error(e); toast('保存できませんでした'); return false; }
+    try{
+      /* 更新できた行を返してもらい、0件なら「保存できた」と誤解しないようにする */
+      const res = await rest('clients?id=eq.'+encodeURIComponent(c.id),
+        {method:'PATCH', headers:{Prefer:'return=representation'}, body:JSON.stringify({data:c})});
+      if(!res || !res.length){
+        /* 行が見つからない＝取り込み前の会社。その場で作る */
+        await rest('clients', {method:'POST',
+          headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+          body: JSON.stringify({id:c.id, data:c})});
+      }
+    }
+    catch(e){
+      console.error(e);
+      toast('保存できませんでした：'+String(e.message||e).slice(0,60));
+      return false;
+    }
   } else local.flush();
   if(!quiet) toast('保存しました');
   return true;
