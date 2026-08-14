@@ -62,14 +62,23 @@ header button:hover{background:rgba(255,255,255,.22)}
   position:sticky; top:88px;
 }
 .row{
-  padding:9px 14px; border-bottom:1px solid #eef1f4; cursor:pointer;
-  display:flex; align-items:baseline; gap:8px;
+  padding:8px 14px; border-bottom:1px solid #eef1f4; cursor:pointer;
+  display:flex; align-items:flex-start; gap:8px;
 }
 .row:hover{background:var(--tint)}
 .row.sel{background:var(--tint); box-shadow:inset 3px 0 0 var(--blue)}
-.row .nm{font-weight:500; flex:1; line-height:1.4}
+/* 社名は1行目、担当や区分は2行目。列が狭くても社名が縦に割れないようにしています */
+.rmain{flex:1; min-width:0}
+.rtop{display:flex; align-items:baseline; gap:7px}
+.rsub{display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:3px}
+.row .nm{font-weight:500; line-height:1.4; word-break:break-word; flex:1; min-width:0}
 .row .kb{font-size:10px;color:var(--muted);white-space:nowrap}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--warn);flex:none;margin-top:6px}
+.row .wno{
+  font-size:11px;color:var(--navy);background:var(--tint);border-radius:3px;
+  padding:1px 6px;min-width:34px;text-align:right;flex:none;font-variant-numeric:tabular-nums;
+}
+.row .wno.none{color:#b6bec7;background:transparent}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--warn);flex:none;margin-top:7px}
 .row .tm{font-size:10px;color:#fff;background:var(--blue);border-radius:9px;padding:1px 7px;white-space:nowrap}
 .row .fg{font-size:10px;border-radius:3px;padding:1px 5px;white-space:nowrap;font-weight:600}
 .row .fg.w{background:#fff4e2;color:#9a5b00;border:1px solid #e8c894}
@@ -168,21 +177,39 @@ section > h3{
 .v.flag-key  select{border-color:#7ba7d7;color:#1f4e79;font-weight:600;background:#f4f8fd}
 
 /* ---- notes ---- */
-.note{padding:11px 15px;border-bottom:1px solid #f0f2f5;display:flex;gap:11px;align-items:flex-start}
+.note{padding:11px 15px;border-bottom:1px solid #f0f2f5}
 .note:last-of-type{border-bottom:none}
-.cat{
-  font-size:11px;padding:2px 8px;border-radius:3px;background:var(--tint);
-  color:var(--navy);white-space:nowrap;flex:none;margin-top:2px;
-}
-.cat.a{background:var(--warnbg);color:var(--warn)}
-.note .body{flex:1;white-space:pre-wrap;word-break:break-word;outline:none;border-radius:3px}
+.note.starred{background:#fffaf2;box-shadow:inset 4px 0 0 #dc9b34}
+.nhead{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:5px}
+.nstar{background:none;border:none;font-size:15px;line-height:1;padding:0 2px;color:#d5dae0;flex:none}
+.nstar.on{color:#dc9b34}
+.tag{font-size:11px;padding:2px 8px;border-radius:3px;background:var(--tint);color:var(--navy);white-space:nowrap}
+.tag.kh{background:#e6effb;color:#1f4e79;font-weight:600}
+.notag{font-size:11px;color:#a6aeb8}
+.note .body{white-space:pre-wrap;word-break:break-word;outline:none;border-radius:3px;padding:2px 4px;margin:0 -4px}
 .note .body:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--blue)}
-.note .del{background:none;border:none;color:#c3cad2;font-size:15px;line-height:1;padding:2px 4px}
+.note .del{background:none;border:none;color:#c3cad2;font-size:15px;line-height:1;padding:2px 4px;margin-left:auto;flex:none}
 .note .del:hover{color:var(--warn)}
-.addnote{padding:11px 15px;display:flex;gap:8px;border-top:1px solid var(--rule);background:#fbfcfd}
-.addnote select{border:1px solid var(--rule);border-radius:4px;padding:5px 7px;background:#fff}
-.addnote input{flex:1;border:1px solid var(--rule);border-radius:4px;padding:5px 9px}
-.addnote button{border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:4px;padding:5px 14px;font-size:12px}
+.nfoot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:11px;color:#8a93a0}
+.nfoot a{color:var(--blue);text-decoration:none;word-break:break-all}
+.nfoot .lnk2{background:none;border:none;color:var(--blue);font-size:11px;padding:0}
+.nfoot .old{color:var(--warn)}
+.notefilter{padding:8px 15px;display:flex;gap:5px;flex-wrap:wrap;border-bottom:1px solid var(--rule);background:#fbfcfd}
+.tgl{font-size:11px;padding:3px 9px;border-radius:11px;border:1px solid var(--rule);background:#fff;color:var(--muted)}
+.tgl.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.addnote{padding:11px 15px;border-top:1px solid var(--rule);background:#fbfcfd}
+.addnote textarea,.addnote input[type=text]{
+  width:100%;box-sizing:border-box;border:1px solid var(--rule);border-radius:4px;
+  padding:6px 9px;font:inherit;background:#fff;
+}
+.addnote textarea{resize:vertical;min-height:54px;line-height:1.6}
+.addnote input[type=text]{margin-top:6px;font-size:12px}
+.addnote .picks{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 0}
+.addnote .arow{display:flex;gap:9px;align-items:center;margin-top:9px}
+.addnote .go{border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:4px;padding:5px 16px;font-size:12px}
+.addnote .hint{font-size:11px;color:var(--muted)}
+.othbox{display:flex;gap:6px;align-items:center}
+.othbox input{flex:1;min-width:70px;border:1px solid var(--rule);border-radius:3px;padding:2px 6px;font:inherit;background:#fff}
 
 .empty-state{padding:70px 20px;text-align:center;color:var(--muted)}
 #toast{
@@ -200,6 +227,9 @@ section > h3{
   .grid > div.k{padding-bottom:0;border-bottom:none}
   body.viewing #list{display:none}
   body.viewing #back{display:inline-block}
+  .othbox{flex-wrap:wrap}
+  .othbox input{width:100%;flex:none;margin-top:4px}
+  .addnote .arow{flex-wrap:wrap}
 }
 #back{display:none;margin-bottom:12px;border:1px solid var(--rule);background:#fff;border-radius:4px;padding:5px 12px;font-size:12px}
 </style>
@@ -224,6 +254,7 @@ section > h3{
   <select id="fJimu"><option value="">事務組合：すべて</option></select>
   <select id="fTeam"><option value="">担当：すべて</option></select>
   <select id="sortBy">
+    <option value="wage_no" selected>並び：事業所No</option>
     <option value="name">並び：会社名</option>
     <option value="team">並び：担当①</option>
     <option value="kubun">並び：顧問区分</option>
@@ -458,18 +489,30 @@ const SR_AUTH = (SUPABASE_URL && SUPABASE_ANON_KEY) ? (function () {
 const SEED = {clients:[],notes:[]};   /* 顧問先データはSupabaseにあります。公開ファイルには置きません */
 
 const REQUIRED = ['shutan','kojo','shime','keiro','hokensha'];
-const CATS = ['独自ルール','手続き注意','進行中の課題','過去の案件','引継ぎ'];
-const ALERT_CATS = ['進行中の課題'];
+
+/* 特記事項のタグ。初期値です。実際の一覧はSupabase側に保存され、画面から追加できます */
+const DEFAULT_TAGS = ['入社','退職','扶養','月変','算定','賞与','賃金','給与計算','給付','健保組合'];
+let TAGS = DEFAULT_TAGS.slice();
+
+/* 条件に合う顧問先にだけ出すタグ。合わない会社では選択肢に出ません（付いている分は消えません） */
+const TAG_COND = {
+  '健保組合':  c => c.hokensha === '健保組合',
+  '給与計算':  c => (c.kubun||'').includes('給与計算'),
+};
+const tagsFor = c => TAGS.filter(t => !TAG_COND[t] || TAG_COND[t](c));
+
+const OTHER = 'その他';   /* 選ぶと隣に自由入力欄が出ます */
+const OTHER_FIELDS = ['keiro','hozon','k_how','d_how'];
 
 const OPTS = {
   kubun:['','手続き','給与計算','手続き・給与計算','相談顧問'],
   hokensha:['','協会けんぽ','健保組合'],
   jimu:['','SR','中企団','なし'],
   kojo:['','当月','翌月','区分により異なる'],
-  keiro:['','マイコモン','MoneyForwardからDL','メール添付','税理士事務所経由','郵送','当事務所で給与計算'],
-  hozon:['','OneDrive','ドキュ','OneDriveとドキュ'],
-  k_how:['','メール','マイコモン','チャットワーク','郵送'],
-  d_how:['','メール','マイコモン','チャットワーク','郵送'],
+  keiro:['','マイコモン','MoneyForwardからDL','メール添付','税理士事務所経由','郵送','当事務所で給与計算',OTHER],
+  hozon:['','OneDrive','ドキュ','OneDriveとドキュ',OTHER],
+  k_how:['','メール','マイコモン','チャットワーク','郵送',OTHER],
+  d_how:['','メール','マイコモン','チャットワーク','郵送',OTHER],
   tetsuzuki:['','当事務所で手続き','自社で手続き','対象外'],
   rishoku:['','調整なし','1か月後','2か月後'],
 };
@@ -479,24 +522,27 @@ const staffOf = c => [c.shutan, c.fukutan].filter(Boolean);
 const hasStaff = (c,n) => staffOf(c).includes(n);
 
 let clients = [], notes = [], sel = null, remote = false;
-const state = {q:'',kubun:'',hoken:'',jimu:'',staff:'',sort:'name',wage:false,gap:false,note:false};
+const state = {q:'',kubun:'',hoken:'',jimu:'',staff:'',sort:'wage_no',wage:false,gap:false,note:false};
+let noteFilter = '';   /* 詳細画面で特記事項をタグで絞り込むための一時的な状態 */
+let tagEditOpen = null;  /* タグ編集を開いている特記事項（付け直しのたびに閉じないように） */
 let bulk = false, picked = new Set();
 
 /* ---------- storage ---------- */
 const local = {
   load(){
     const c = localStorage.getItem('km_clients_v2'), n = localStorage.getItem('km_notes_v2');
-    if(c){ clients = JSON.parse(c); notes = JSON.parse(n||'[]'); }
+    if(c){ clients = JSON.parse(c); notes = JSON.parse(n||'[]').map(x=>noteFrom(x.id, x.client, x)); }
     else { clients = structuredClone(SEED.clients); notes = structuredClone(SEED.notes); }
     try{
       const s = JSON.parse(localStorage.getItem('km_settings_v2')||'null');
       if(s && Array.isArray(s.staff)) STAFF = s.staff;
+      if(s && Array.isArray(s.tags) && s.tags.length) TAGS = s.tags;
     }catch(e){}
   },
   flush(){
     localStorage.setItem('km_clients_v2', JSON.stringify(clients));
     localStorage.setItem('km_notes_v2', JSON.stringify(notes));
-    localStorage.setItem('km_settings_v2', JSON.stringify({staff:STAFF}));
+    localStorage.setItem('km_settings_v2', JSON.stringify({staff:STAFF, tags:TAGS}));
   },
 };
 
@@ -506,8 +552,8 @@ async function saveSettings(){
     try{
       await rest('clients', {method:'POST',
         headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-        body: JSON.stringify({id:SETTINGS_ID, data:{staff:STAFF}})});
-    }catch(e){ console.error(e); toast('担当者の保存に失敗しました'); return false; }
+        body: JSON.stringify({id:SETTINGS_ID, data:{staff:STAFF, tags:TAGS}})});
+    }catch(e){ console.error(e); toast('設定の保存に失敗しました'); return false; }
   } else local.flush();
   return true;
 }
@@ -531,16 +577,17 @@ async function boot(){
       const st0 = (cs||[]).find(r=>r.id===SETTINGS_ID);
       if(st0 && st0.data && Array.isArray(st0.data.staff)) STAFF = st0.data.staff;
       else needStaffInit = true;
+      if(st0 && st0.data && Array.isArray(st0.data.tags) && st0.data.tags.length) TAGS = st0.data.tags;
       if(SEED.clients.length && (!cs || !cs.filter(r=>r.id!==SETTINGS_ID).length)){
         await rest('clients', {method:'POST', headers:{Prefer:'return=minimal'},
           body: JSON.stringify(SEED.clients.map(c=>({id:c.id, data:c})))});
         await rest('client_notes', {method:'POST', headers:{Prefer:'return=minimal'},
-          body: JSON.stringify(SEED.notes.map(n=>({client_id:n.client, data:{cat:n.cat, body:n.body}})))});
+          body: JSON.stringify(SEED.notes.map(n=>({client_id:n.client, data:{body:n.body, tags:[], star:false}})))});
         cs = await rest('clients?select=id,data');
       }
       clients = cs.filter(r=>r.id!==SETTINGS_ID).map(r=>Object.assign({}, r.data, {id:r.id}));
       const ns = await rest('client_notes?select=id,client_id,data') || [];
-      notes = ns.map(r=>({id:r.id, client:r.client_id, cat:r.data.cat, body:r.data.body}));
+      notes = ns.map(r=>noteFrom(r.id, r.client_id, r.data));
       remote = true;
       st('Supabase接続中');
     }catch(err){
@@ -555,6 +602,32 @@ async function boot(){
   initFilters(); render();
   if(!clients.length) toast('データがありません。「データ取込」からデータファイルを読み込んでください');
 }
+
+/* ---------- 特記事項のかたち ---------- */
+const ALERT_CAT = '進行中の課題';   /* 廃止したカテゴリ。★に読み替えます */
+
+function today(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+/* 保存されている中身を、画面で使う形に整えます。古い「カテゴリ」は★として読みます */
+function noteFrom(id, clientId, data){
+  data = data || {};
+  return {
+    id, client: clientId,
+    body:    data.body || '',
+    tags:    Array.isArray(data.tags) ? data.tags.filter(Boolean) : [],
+    star:    data.star === true || (data.star === undefined && data.cat === ALERT_CAT),
+    link:    data.link || '',
+    created: data.created || '',
+    checked: data.checked || '',
+    cat:     data.cat || ''    /* 移行が終わるまでの一時的な保持 */
+  };
+}
+const noteData = n => ({
+  body:n.body, tags:n.tags||[], star:!!n.star,
+  link:n.link||'', created:n.created||'', checked:n.checked||''
+});
 
 /* 項目を作り替える前の値が残っていたら片づける（1回だけ動きます） */
 const OBSOLETE = {
@@ -572,6 +645,24 @@ async function cleanup(){
     if(hit){ n++; await saveClient(c, true); }
   }
   if(n) toast('使わなくなった項目を'+n+'社ぶん片づけました');
+  await migrateNotes();
+}
+
+/* カテゴリ廃止にともなう引っ越し。「進行中の課題」だったものに★を付けます（1回だけ動きます） */
+async function migrateNotes(){
+  const old = notes.filter(n=>n.cat);
+  if(!old.length) return;
+  let star = 0;
+  for(const n of old){
+    if(n.cat === ALERT_CAT) star++;
+    n.cat = '';
+    if(remote){
+      try{ await rest('client_notes?id=eq.'+n.id, {method:'PATCH', body:JSON.stringify({data:noteData(n)})}); }
+      catch(e){ console.error(e); toast('特記事項の引っ越しに失敗しました'); return; }
+    }
+  }
+  if(!remote) local.flush();
+  toast('特記事項'+old.length+'件を新しい形に移しました'+(star?'（うち'+star+'件に★）':''));
 }
 
 async function saveClient(c, quiet){
@@ -620,24 +711,29 @@ async function deleteClient(c){
   return true;
 }
 
-async function addNote(clientId,cat,body){
+async function addNote(clientId, src){
+  const n = noteFrom(null, clientId, Object.assign({}, src, {created:today(), checked:today()}));
   if(remote){
     try{
       const rows = await rest('client_notes', {method:'POST', headers:{Prefer:'return=representation'},
-        body: JSON.stringify({client_id:clientId, data:{cat:cat, body:body}})});
-      notes.push({id:rows[0].id, client:clientId, cat:cat, body:body});
+        body: JSON.stringify({client_id:clientId, data:noteData(n)})});
+      n.id = rows[0].id;
+      notes.push(n);
     }catch(e){ console.error(e); toast('追加できませんでした'); return; }
   } else {
-    notes.push({id:Date.now(),client:clientId,cat:cat,body:body}); local.flush();
+    n.id = Date.now(); notes.push(n); local.flush();
   }
   toast('特記事項を追加しました');
 }
-async function updateNote(n){
+/* 中身を直したら、確認日も今日にします（人が手で維持しなくて済むように） */
+async function updateNote(n, quiet){
+  n.checked = today();
+  if(!n.created) n.created = today();
   if(remote){
-    try{ await rest('client_notes?id=eq.'+n.id, {method:'PATCH', body:JSON.stringify({data:{cat:n.cat, body:n.body}})}); }
+    try{ await rest('client_notes?id=eq.'+n.id, {method:'PATCH', body:JSON.stringify({data:noteData(n)})}); }
     catch(e){ console.error(e); toast('保存できませんでした'); return; }
   } else local.flush();
-  toast('保存しました');
+  if(!quiet) toast('保存しました');
 }
 async function removeNote(n){
   if(remote){
@@ -657,6 +753,7 @@ function toast(t){
   clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),1700);
 }
 const notesOf = id => notes.filter(n=>n.client===id);
+const daysAgo = d => d ? Math.floor((Date.now()-new Date(d+'T00:00:00').getTime())/86400000) : null;
 const gapsOf = c => REQUIRED.filter(f=>!c[f]);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 
@@ -746,6 +843,52 @@ function staffDialog(){
   draw();
 }
 
+/* タグ設定 */
+function tagDialog(){
+  const draw=()=>{
+    const box = modal.open(`
+      <h3>タグの追加・削除</h3>
+      <div class="in">
+        <p class="note">ここで追加・削除したタグは、事務所の全員の画面に反映されます。<br>
+        使用中のタグを削除しても、すでに付いている特記事項からは消えません。</p>
+        <div class="slist">${TAGS.map((t,i)=>{
+          const cnt = notes.filter(n=>n.tags.includes(t)).length;
+          const cond = TAG_COND[t] ? '　※条件付きで表示' : '';
+          return `<div class="it"><span class="nm">${esc(t)}${cond}</span>
+            <span class="cnt">${cnt}件</span>
+            <button data-del="${i}">削除</button></div>`;
+        }).join('') || '<div class="it"><span class="cnt">タグが登録されていません</span></div>'}</div>
+        <div class="addrow">
+          <input type="text" id="tgNew" placeholder="追加するタグ名">
+          <button id="tgAdd">追加</button>
+        </div>
+      </div>
+      <div class="foot"><button id="tgClose">閉じる</button></div>`);
+
+    box.querySelectorAll('[data-del]').forEach(b=>{
+      b.onclick=async ()=>{
+        const t = TAGS[+b.dataset.del];
+        const cnt = notes.filter(n=>n.tags.includes(t)).length;
+        if(cnt && !confirm('「'+t+'」は'+cnt+'件の特記事項で使われています。\n一覧から削除しますか？（特記事項に付いたタグはそのまま残ります）')) return;
+        TAGS = TAGS.filter(x=>x!==t);
+        await saveSettings(); render(); draw(); toast('タグを削除しました');
+      };
+    });
+    const add=async ()=>{
+      const v=box.querySelector('#tgNew').value.trim();
+      if(!v) return;
+      if(TAGS.includes(v)){ toast('すでに登録されています'); return; }
+      TAGS.push(v);
+      await saveSettings(); render(); draw(); toast('タグを追加しました');
+    };
+    box.querySelector('#tgAdd').onclick=add;
+    box.querySelector('#tgNew').addEventListener('keydown',e=>{ if(e.key==='Enter') add(); });
+    box.querySelector('#tgClose').onclick=modal.close;
+    box.querySelector('#tgNew').focus();
+  };
+  draw();
+}
+
 /* このファイルに埋め込まれたデータを、いま動いているデータへ取り込む */
 function diffSeed(SRC){
   const fill=[], over=[], add=[];
@@ -763,7 +906,7 @@ function diffSeed(SRC){
   const newNotes = (SRC.notes||[]).filter(n=>{
     const c = clients.find(x=>x.id===n.client);
     if(!c) return false;
-    return !notes.some(o=>o.client===n.client && o.cat===n.cat && o.body===n.body);
+    return !notes.some(o=>o.client===n.client && o.body===n.body);
   });
   return {fill,over,add,newNotes};
 }
@@ -843,7 +986,9 @@ function importConfirm(SRC){
     box2.querySelector('#imGo').textContent = '取り込み中…';
     for(const c of touched) await saveClient(c, true);
     if(doAdd) for(const s of D.add) await createClient(structuredClone(s));
-    for(const n of D.newNotes) await addNote(n.client, n.cat, n.body);
+    for(const n of D.newNotes) await addNote(n.client, {
+      body:n.body, tags:Array.isArray(n.tags)?n.tags:[], star:!!n.star, link:n.link||''
+    });
     modal.close();
     refreshStaffSelects(); render();
     toast(touched.size + '社を更新しました');
@@ -905,6 +1050,18 @@ function sortRows(rows){
     const rank=c=>{const i=KUBUN_ORDER.indexOf(c.kubun||''); return i<0?99:i;};
     return rows.slice().sort((a,b)=>rank(a)-rank(b) || byName(a,b));
   }
+  if(state.sort==='wage_no'){
+    /* 数字は数として、数字でないものは文字として並べます。未入力は最後 */
+    const key=c=>{
+      const v=String(c.wage_no||'').trim();
+      if(!v) return [2,0,''];
+      return /^\d+$/.test(v) ? [0,parseInt(v,10),''] : [1,0,v];
+    };
+    return rows.slice().sort((a,b)=>{
+      const x=key(a), y=key(b);
+      return x[0]-y[0] || x[1]-y[1] || String(x[2]).localeCompare(String(y[2]),'ja') || byName(a,b);
+    });
+  }
   return rows.slice().sort(byName);
 }
 
@@ -921,7 +1078,8 @@ function filtered(){
     if(state.note && !notesOf(c.id).length) return false;
     if(q){
       const hay = [c.name,c.wage_no,c.shutan,c.fukutan,c.madoguchi,c.dare,c.k_to,c.d_to,c.sokyu,c.bikou]
-        .concat(notesOf(c.id).map(n=>n.body)).join(' ').toLowerCase();
+        .concat(notesOf(c.id).map(n=>n.body))
+        .concat(notesOf(c.id).flatMap(n=>n.tags)).join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
@@ -952,10 +1110,17 @@ function render(){
     <div class="row ${!bulk&&sel&&sel.id===c.id?'sel':''}" data-id="${esc(c.id)}">
       ${bulk ? `<span class="ck ${picked.has(c.id)?'on':''}"></span>`
              : `<span class="dot ${gapsOf(c).length?'':'hidden'}"></span>`}
-      <span class="nm">${esc(c.name)}</span>
-      ${flags}
-      <span class="tm ${tm?'':'none'}">${esc(tm||'未設定')}</span>
-      <span class="kb">${esc(c.kubun||'—')}</span>
+      <div class="rmain">
+        <div class="rtop">
+          ${state.sort==='wage_no' ? `<span class="wno ${c.wage_no?'':'none'}">${esc(c.wage_no||'—')}</span>` : ''}
+          <span class="nm">${esc(c.name)}</span>
+        </div>
+        <div class="rsub">
+          ${flags}
+          <span class="tm ${tm?'':'none'}">${esc(tm||'未設定')}</span>
+          <span class="kb">${esc(c.kubun||'—')}</span>
+        </div>
+      </div>
     </div>`;
   });
   document.getElementById('list').innerHTML = html || '<div class="empty-state">該当する顧問先がありません。</div>';
@@ -967,7 +1132,7 @@ function render(){
         picked.has(id) ? picked.delete(id) : picked.add(id);
         render(); return;
       }
-      sel = clients.find(c=>c.id===r.dataset.id); document.body.classList.add('viewing'); render();
+      sel = clients.find(c=>c.id===r.dataset.id); noteFilter=''; tagEditOpen=null; document.body.classList.add('viewing'); render();
     };
   });
   if(bulk) syncBulk();
@@ -1008,9 +1173,27 @@ const FLAG = {
 };
 const flagOf = (key,val) => (FLAG[key]||{})[val] || '';
 
+/* 「その他」を選ぶと自由に入力できる項目。他社で入力された値も選択肢に並びます */
+function optsFor(key, val){
+  const base = (OPTS[key]||[]).filter(o=>o!==OTHER);
+  const extras = [...new Set(clients.map(x=>x[key]).filter(v=>v && !base.includes(v)))]
+                   .sort((a,b)=>String(a).localeCompare(String(b),'ja'));
+  const list = base.concat(extras);
+  if(val && !list.includes(val)) list.push(val);
+  return list.concat(OTHER);
+}
+
 function field(c,key,label,opts,req){
   const val = c[key]||'';
   const fl = flagOf(key,val);
+  if(opts && OTHER_FIELDS.includes(key)){
+    const list = optsFor(key, val);
+    return `<div class="k">${label}</div><div class="v${fl?' flag-'+fl:''}"><div class="othbox">`+
+      `<select data-k="${key}">`+
+      list.map(o=>`<option value="${esc(o)}"${o===val?' selected':''}>${esc(o||'—')}</option>`).join('')+
+      `</select><input type="text" data-oth="${key}" placeholder="内容を入力" style="display:none">`+
+      `</div></div>`;
+  }
   if(opts){
     return `<div class="k">${label}</div><div class="v${fl?' flag-'+fl:''}"><select data-k="${key}">`+
       opts.map(o=>`<option value="${esc(o)}"${o===val?' selected':''}>${esc(o||'—')}</option>`).join('')+
@@ -1025,6 +1208,13 @@ function renderDetail(){
   if(!sel){ d.innerHTML='<div class="empty-state">左の一覧から顧問先を選んでください。</div>'; return; }
   const c = sel, gaps = gapsOf(c), ns = notesOf(c.id);
   const srcMissing = ['カルテ','賃金','ルーティング'].filter(s=>!(c.sources||[]).includes(s));
+  const usedTags  = TAGS.filter(t=>ns.some(n=>n.tags.includes(t)));
+  const untagged  = ns.filter(n=>!n.tags.length).length;
+  const shown = ns.filter(n=>
+      !noteFilter ? true
+    : noteFilter==='__star__' ? n.star
+    : noteFilter==='__none__' ? !n.tags.length
+    : n.tags.includes(noteFilter));
 
   d.innerHTML = `
   <button id="back">← 一覧へ</button>
@@ -1074,16 +1264,47 @@ function renderDetail(){
   </div></section>
 
   <section><h3>特記事項・イレギュラー（${ns.length}件）</h3>
-    ${ns.map((n,i)=>`
-      <div class="note" data-i="${i}">
-        <span class="cat ${ALERT_CATS.includes(n.cat)?'a':''}">${esc(n.cat)}</span>
+    ${ns.length ? `<div class="notefilter">
+      <button class="tgl ${noteFilter?'':'on'}" data-nf="">すべて（${ns.length}）</button>
+      ${ns.some(n=>n.star)?`<button class="tgl ${noteFilter==='__star__'?'on':''}" data-nf="__star__">★（${ns.filter(n=>n.star).length}）</button>`:''}
+      ${usedTags.map(t=>`<button class="tgl ${noteFilter===t?'on':''}" data-nf="${esc(t)}">${esc(t)}（${ns.filter(n=>n.tags.includes(t)).length}）</button>`).join('')}
+      ${untagged?`<button class="tgl ${noteFilter==='__none__'?'on':''}" data-nf="__none__">タグ未設定（${untagged}）</button>`:''}
+    </div>` : ''}
+    ${shown.map(n=>{
+      const age = daysAgo(n.checked);
+      return `
+      <div class="note ${n.star?'starred':''}" data-nid="${esc(String(n.id))}">
+        <div class="nhead">
+          <button class="nstar ${n.star?'on':''}" title="重要マーク">${n.star?'★':'☆'}</button>
+          ${n.tags.length ? n.tags.map(t=>`<span class="tag ${t==='健保組合'?'kh':''}">${esc(t)}</span>`).join('')
+                          : '<span class="notag">タグ未設定</span>'}
+          <button class="del" title="削除">×</button>
+        </div>
         <div class="body" contenteditable>${esc(n.body)}</div>
-        <button class="del" title="削除">×</button>
-      </div>`).join('') || '<div style="padding:14px 15px;color:#8a93a0">まだ登録がありません。</div>'}
+        <div class="tagedit" style="display:${tagEditOpen===String(n.id)?'block':'none'}">
+          <div class="picks">${tagsFor(c).map(t=>
+            `<button class="tgl ${n.tags.includes(t)?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+        </div>
+        <div class="nfoot">
+          <button class="lnk2 etag">タグを編集</button>
+          ${n.link ? `<a href="${esc(n.link)}" target="_blank" rel="noopener">🔗 リンクを開く</a>`
+                   : '<button class="lnk2 elink">リンクを追加</button>'}
+          ${n.link ? '<button class="lnk2 elink">リンクを変更</button>' : ''}
+          ${n.created ? `<span>記録 ${esc(n.created)}</span>` : ''}
+          ${n.checked ? `<span class="${age!==null&&age>365?'old':''}">確認 ${esc(n.checked)}${age!==null&&age>365?'（1年以上前）':''}</span>` : ''}
+        </div>
+      </div>`;}).join('')
+      || `<div style="padding:14px 15px;color:#8a93a0">${ns.length?'この絞り込みに当てはまる特記事項はありません。':'まだ登録がありません。'}</div>`}
     <div class="addnote">
-      <select id="nc">${CATS.map(x=>`<option>${x}</option>`).join('')}</select>
-      <input id="nb" placeholder="例：入社時にどちらの保育園か確認する">
-      <button id="na">追加</button>
+      <textarea id="nb" placeholder="例：被扶養者届には必ず住民票をつける。後から提出はNG&#10;（改行して手順を書くこともできます）"></textarea>
+      <div class="picks">${tagsFor(c).map(t=>`<button class="tgl" data-newtag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+      <input type="text" id="nlink" placeholder="リンク（任意）　Notion・OneDrive・YouTube など">
+      <div class="arow">
+        <button class="go" id="na">追加</button>
+        <label class="hint"><input type="checkbox" id="nstarnew"> ★を付ける</label>
+        <span style="flex:1"></span>
+        <button class="lnk2" id="tagCfg" style="background:none;border:none;color:var(--blue);font-size:11px">タグを追加・削除</button>
+      </div>
     </div>
   </section>
 
@@ -1108,26 +1329,89 @@ function renderDetail(){
   });
   d.querySelectorAll('select[data-k]').forEach(el=>{
     el.onchange=()=>{
-      c[el.dataset.k]=el.value;
-      saveClient(c); render(); renderDetail();
+      const k = el.dataset.k;
+      if(OTHER_FIELDS.includes(k) && el.value===OTHER){
+        const inp = el.parentElement.querySelector('input[data-oth]');
+        inp.style.display=''; inp.value=''; inp.focus();
+        return;                      /* 入力されるまでは保存しません */
+      }
+      c[k]=el.value;
+      saveClient(c); render();
     };
   });
-  d.querySelectorAll('.note').forEach(el=>{
-    const n = ns[+el.dataset.i];
+  d.querySelectorAll('input[data-oth]').forEach(el=>{
+    const commit=()=>{
+      const v = el.value.trim();
+      if(!v){ renderDetail(); return; }      /* 空のままなら元に戻します */
+      c[el.dataset.oth]=v;
+      saveClient(c); render();
+    };
+    el.addEventListener('blur', commit);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); } });
+  });
+  /* タグでの絞り込み */
+  d.querySelectorAll('.notefilter .tgl').forEach(el=>{
+    el.onclick=()=>{ noteFilter = el.dataset.nf; renderDetail(); };
+  });
+
+  d.querySelectorAll('.note[data-nid]').forEach(el=>{
+    const n = ns.find(x=>String(x.id)===el.dataset.nid);
+    if(!n) return;
+
+    /* 本文（改行そのまま） */
     el.querySelector('.body').addEventListener('blur',e=>{
-      const v=e.target.textContent.trim();
+      const v=e.target.innerText.replace(/\u00a0/g,' ').trim();
       if(v===n.body) return;
       if(!v){ removeNote(n).then(render); return; }
-      n.body=v; updateNote(n);
+      n.body=v; updateNote(n).then(renderDetail);
     });
+
+    /* ★の付け外し */
+    el.querySelector('.nstar').onclick=()=>{
+      n.star = !n.star;
+      updateNote(n, true).then(()=>{ render(); });
+    };
+
+    /* タグの編集 */
+    el.querySelector('.etag').onclick=()=>{
+      tagEditOpen = (tagEditOpen===String(n.id)) ? null : String(n.id);
+      renderDetail();
+    };
+    el.querySelectorAll('.tagedit .tgl').forEach(b=>{
+      b.onclick=()=>{
+        const t = b.dataset.t;
+        n.tags = n.tags.includes(t) ? n.tags.filter(x=>x!==t) : n.tags.concat(t);
+        updateNote(n, true).then(()=>{ renderDetail(); });
+      };
+    });
+
+    /* リンク */
+    const lb = el.querySelector('.elink');
+    if(lb) lb.onclick=()=>{
+      const v = prompt('リンク（NotionやOneDriveのURL）を貼ってください。空にすると外れます。', n.link||'');
+      if(v===null) return;
+      n.link = v.trim();
+      updateNote(n, true).then(renderDetail);
+    };
+
     el.querySelector('.del').onclick=()=>{ if(confirm('この特記事項を削除しますか？')) removeNote(n).then(render); };
   });
+
+  /* 新規追加 */
+  d.querySelectorAll('[data-newtag]').forEach(b=>{
+    b.onclick=()=>b.classList.toggle('on');
+  });
+  d.querySelector('#tagCfg').onclick = tagDialog;
   d.querySelector('#na').onclick=()=>{
-    const b=d.querySelector('#nb').value.trim();
-    if(!b) return;
-    addNote(c.id, d.querySelector('#nc').value, b).then(render);
+    const body = d.querySelector('#nb').value.trim();
+    if(!body){ toast('本文を入力してください'); return; }
+    const tags = [...d.querySelectorAll('[data-newtag].on')].map(b=>b.dataset.newtag);
+    addNote(c.id, {
+      body, tags,
+      star: d.querySelector('#nstarnew').checked,
+      link: d.querySelector('#nlink').value.trim()
+    }).then(()=>{ noteFilter=''; render(); });
   };
-  d.querySelector('#nb').addEventListener('keydown',e=>{ if(e.key==='Enter') d.querySelector('#na').click(); });
 }
 
 /* ---------- events ---------- */
@@ -1166,7 +1450,9 @@ document.getElementById('csv').onclick = ()=>{
   const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
   const lines = [cols.map(c=>q(c[1])).concat(q('特記事項')).join(',')];
   sortRows(filtered()).forEach(c=>{
-    const ns = notesOf(c.id).map(n=>'['+n.cat+'] '+n.body).join(' / ');
+    const ns = notesOf(c.id).map(n=>
+      (n.star?'★':'') + (n.tags.length?'['+n.tags.join(',')+'] ':'') + n.body
+      + (n.link?' <'+n.link+'>':'')).join(' / ');
     lines.push(cols.map(col=>q(c[col[0]])).concat(q(ns)).join(','));
   });
   const blob = new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
