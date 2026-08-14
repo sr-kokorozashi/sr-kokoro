@@ -152,6 +152,26 @@ body.bulking #list{top:129px}
 .badge.o{background:var(--okbg);color:var(--ok)}
 
 section{background:var(--paper);border:1px solid var(--rule);border-radius:6px;margin-bottom:16px}
+/* 特記事項は緑地に白いカードを並べる形にして、他のセクションと区別しています（★とは別） */
+section.notes{border-color:#b6cec2;background:#e3eee8;box-shadow:0 1px 5px rgba(21,50,40,.10)}
+section.notes > h3{background:var(--ok);color:#fff;border-bottom-color:var(--ok);letter-spacing:.1em}
+section.notes .notefilter{background:#d3e4db;border-bottom:1px solid #bfd6ca}
+.nbody{padding:10px 10px 12px}
+section.notes .note{
+  background:#fff;border:1px solid #d3e2da;border-radius:6px;
+  padding:10px 12px;margin-bottom:8px;
+}
+section.notes .note:last-of-type{margin-bottom:0}
+section.notes .note.starred{background:#fff8ee;border-color:#e3bf88;box-shadow:inset 4px 0 0 #dc9b34}
+
+/* 追加欄は特記事項の枠の外に、独立したカードとして置きます */
+.addout{margin-bottom:16px}
+.addout .addnote{
+  background:var(--paper);border:1px solid var(--rule);border-radius:6px;
+  padding:13px 15px 15px;
+}
+.addout .addnote .ttl{color:var(--blue);font-size:12px}
+.addout .addnote .ttl::before{color:var(--blue)}
 section > h3{
   margin:0; padding:9px 15px; font-size:12px; font-weight:600; letter-spacing:.08em;
   color:var(--navy); background:var(--tint); border-bottom:1px solid var(--rule);
@@ -186,8 +206,11 @@ section > h3{
 .tag{font-size:11px;padding:2px 8px;border-radius:3px;background:var(--tint);color:var(--navy);white-space:nowrap}
 .tag.kh{background:#e6effb;color:#1f4e79;font-weight:600}
 .notag{font-size:11px;color:#a6aeb8}
-.note .body{white-space:pre-wrap;word-break:break-word;outline:none;border-radius:3px;padding:2px 4px;margin:0 -4px}
+.note .body{white-space:pre-wrap;word-break:break-word;outline:none;border-radius:3px;padding:3px 5px;margin:0 -5px;cursor:text}
+.note .body:hover{background:#f4f7fa}
 .note .body:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--blue)}
+.note .del{opacity:.5}
+.note:hover .del{opacity:1}
 .note .del{background:none;border:none;color:#c3cad2;font-size:15px;line-height:1;padding:2px 4px;margin-left:auto;flex:none}
 .note .del:hover{color:var(--warn)}
 .nfoot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:11px;color:#8a93a0}
@@ -197,7 +220,12 @@ section > h3{
 .notefilter{padding:8px 15px;display:flex;gap:5px;flex-wrap:wrap;border-bottom:1px solid var(--rule);background:#fbfcfd}
 .tgl{font-size:11px;padding:3px 9px;border-radius:11px;border:1px solid var(--rule);background:#fff;color:var(--muted)}
 .tgl.on{background:var(--navy);color:#fff;border-color:var(--navy)}
-.addnote{padding:11px 15px;border-top:1px solid var(--rule);background:#fbfcfd}
+.addnote{padding:12px 15px 14px;border-top:2px solid var(--rule);background:#eef1f5}
+.addnote .ttl{
+  font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;
+  margin-bottom:7px;display:flex;align-items:center;gap:6px;
+}
+.addnote .ttl::before{content:'＋';font-size:13px;color:var(--blue)}
 .addnote textarea,.addnote input[type=text]{
   width:100%;box-sizing:border-box;border:1px solid var(--rule);border-radius:4px;
   padding:6px 9px;font:inherit;background:#fff;
@@ -216,8 +244,15 @@ section > h3{
   position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
   background:var(--navy);color:#fff;padding:9px 20px;border-radius:5px;font-size:13px;
   opacity:0;pointer-events:none;transition:opacity .22s;z-index:60;
+  display:flex;align-items:center;gap:14px;max-width:92vw;
 }
 #toast.show{opacity:1}
+#toast.act{pointer-events:auto}
+#toast .undo{
+  background:none;border:1px solid rgba(255,255,255,.55);color:#fff;
+  border-radius:4px;padding:3px 11px;font-size:12px;white-space:nowrap;cursor:pointer;
+}
+#toast .undo:hover{background:rgba(255,255,255,.16)}
 
 @media(max-width:820px){
   .wrap{display:block}
@@ -712,7 +747,9 @@ async function deleteClient(c){
 }
 
 async function addNote(clientId, src){
-  const n = noteFrom(null, clientId, Object.assign({}, src, {created:today(), checked:today()}));
+  const n = noteFrom(null, clientId, src);
+  if(!n.created) n.created = today();   /* 元に戻したときは、当時の日付を保ちます */
+  if(!n.checked) n.checked = today();
   if(remote){
     try{
       const rows = await rest('client_notes', {method:'POST', headers:{Prefer:'return=representation'},
@@ -748,9 +785,20 @@ async function removeNote(n){
 /* ---------- helpers ---------- */
 const st = t => document.getElementById('status').textContent = t;
 let tt;
-function toast(t){
-  const el=document.getElementById('toast'); el.textContent=t; el.classList.add('show');
-  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),1700);
+function toast(t, undo){
+  const el=document.getElementById('toast');
+  el.textContent = t;
+  el.classList.remove('act');
+  if(undo){
+    const b=document.createElement('button');
+    b.className='undo'; b.textContent='元に戻す';
+    b.onclick=()=>{ el.classList.remove('show','act'); undo(); };
+    el.appendChild(b);
+    el.classList.add('act');
+  }
+  el.classList.add('show');
+  clearTimeout(tt);
+  tt=setTimeout(()=>el.classList.remove('show','act'), undo?7000:1700);
 }
 const notesOf = id => notes.filter(n=>n.client===id);
 const daysAgo = d => d ? Math.floor((Date.now()-new Date(d+'T00:00:00').getTime())/86400000) : null;
@@ -1262,13 +1310,14 @@ function renderDetail(){
     ${field(c,'bikou','備考')}
   </div></section>
 
-  <section><h3>特記事項・イレギュラー（${ns.length}件）</h3>
+  <section class="notes"><h3>特記事項・イレギュラー（${ns.length}件）</h3>
     ${ns.length ? `<div class="notefilter">
       <button class="tgl ${noteFilter?'':'on'}" data-nf="">すべて（${ns.length}）</button>
       ${ns.some(n=>n.star)?`<button class="tgl ${noteFilter==='__star__'?'on':''}" data-nf="__star__">★（${ns.filter(n=>n.star).length}）</button>`:''}
       ${usedTags.map(t=>`<button class="tgl ${noteFilter===t?'on':''}" data-nf="${esc(t)}">${esc(t)}（${ns.filter(n=>n.tags.includes(t)).length}）</button>`).join('')}
       ${untagged?`<button class="tgl ${noteFilter==='__none__'?'on':''}" data-nf="__none__">タグ未設定（${untagged}）</button>`:''}
     </div>` : ''}
+    <div class="nbody">
     ${shown.map(n=>{
       const age = daysAgo(n.checked);
       return `
@@ -1294,7 +1343,12 @@ function renderDetail(){
         </div>
       </div>`;}).join('')
       || `<div style="padding:14px 15px;color:#8a93a0">${ns.length?'この絞り込みに当てはまる特記事項はありません。':'まだ登録がありません。'}</div>`}
+    </div>
+  </section>
+
+  <div class="addout">
     <div class="addnote">
+      <div class="ttl">新しい特記事項を追加</div>
       <textarea id="nb" placeholder="例：被扶養者届には必ず住民票をつける。後から提出はNG&#10;（改行して手順を書くこともできます）"></textarea>
       <div class="picks">${tagsFor(c).map(t=>`<button class="tgl" data-newtag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
       <input type="text" id="nlink" placeholder="リンク（任意）　Notion・OneDrive・YouTube など">
@@ -1305,7 +1359,7 @@ function renderDetail(){
         <button class="lnk2" id="tagCfg" style="background:none;border:none;color:var(--blue);font-size:11px">タグを追加・削除</button>
       </div>
     </div>
-  </section>
+  </div>
 
   <div class="dz"><button id="delClient">この顧問先を削除</button></div>`;
 
@@ -1361,8 +1415,17 @@ function renderDetail(){
     el.querySelector('.body').addEventListener('blur',e=>{
       const v=e.target.innerText.replace(/\u00a0/g,' ').trim();
       if(v===n.body) return;
-      if(!v){ removeNote(n).then(render); return; }
-      n.body=v; updateNote(n).then(renderDetail);
+      if(!v){                       /* 全部消えても勝手には削除しません */
+        e.target.innerText = n.body;
+        toast('本文は空にできません。削除するときは×から');
+        return;
+      }
+      const before = n.body;
+      n.body = v;
+      updateNote(n, true).then(()=>{
+        renderDetail();
+        toast('保存しました', ()=>{ n.body = before; updateNote(n, true).then(renderDetail); });
+      });
     });
 
     /* ★の付け外し */
@@ -1393,7 +1456,15 @@ function renderDetail(){
       updateNote(n, true).then(renderDetail);
     };
 
-    el.querySelector('.del').onclick=()=>{ if(confirm('この特記事項を削除しますか？')) removeNote(n).then(render); };
+    el.querySelector('.del').onclick=()=>{
+      const preview = n.body.length>24 ? n.body.slice(0,24)+'…' : n.body;
+      if(!confirm('この特記事項を削除しますか？\n\n「'+preview+'」')) return;
+      const backup = noteData(n), cid = n.client;
+      removeNote(n).then(()=>{
+        render();
+        toast('削除しました', ()=>{ addNote(cid, backup).then(render); });
+      });
+    };
   });
 
   /* 新規追加 */
