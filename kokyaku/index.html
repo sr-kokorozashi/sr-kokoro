@@ -634,7 +634,7 @@ const OBSOLETE = {
   roudou: v => !OPTS.rishoku.includes(v),   // 離職票・年更は 調整なし/1か月後/2か月後 のみ
 };
 async function cleanup(){
-  const gone = ['nyuryoku','shikyu','karte_no','roumu_name','team'];
+  const gone = ['nyuryoku','shikyu','karte_no','roumu_name','team','shime_raw'];
   let n = 0;
   for(const c of clients){
     let hit = false;
@@ -1021,7 +1021,7 @@ function addClientDialog(){
     while(clients.some(c=>c.id===id)) id = name + '_' + (i++);
     const c = {};
     ['id','name','wage_no','kubun','shutan','fukutan','madoguchi','renraku','sho','koyo',
-     'hokensha','kenpo_name','jimu','shime','harai','shime_raw','roudou','kojo',
+     'hokensha','kenpo_name','jimu','shime','harai','roudou','kojo',
      'sokyu','keiro','dare','keishiki','hozon','k_to','k_how','d_to','d_how','bikou'].forEach(k=>c[k]='');
     c.id=id; c.name=name; c.kenpo_denshi=false; c.sources=[];
     c.kubun = box.querySelector('#acKubun').value;
@@ -1246,7 +1246,6 @@ function renderDetail(){
   <section><h3>賃金入力</h3><div class="grid">
     ${field(c,'shime','締日',null,true)}
     ${field(c,'harai','支払日')}
-    ${field(c,'shime_raw','〆・支払（原文）')}
     ${field(c,'roudou','離職票・年更',OPTS.rishoku)}
     ${field(c,'sokyu','総支給額の定義')}
   </div></section>
@@ -1443,7 +1442,7 @@ document.getElementById('csv').onclick = ()=>{
   const cols = [['name','会社名'],['wage_no','事業所No'],['kubun','顧問区分'],['shutan','担当①'],['fukutan','担当②'],['madoguchi','連絡窓口'],
     ['renraku','連絡方法'],['sho','社保手続き'],['koyo','雇保手続き'],['hokensha','保険者'],
     ['kenpo_name','健保組合名'],['jimu','事務組合'],['kojo','社保料控除月'],['shime','締日'],['harai','支払日'],
-    ['shime_raw','〆・支払（原文）'],['roudou','離職票・年更'],
+    ['roudou','離職票・年更'],
     ['sokyu','総支給額の定義'],['keiro','回収経路'],['dare','回収先'],['keishiki','データ形式'],['hozon','保存先'],
     ['k_to','社保控除表の送付先'],['k_how','社保控除表の送付方法'],['d_to','公文書の送付先'],
     ['d_how','公文書の送付方法'],['bikou','備考']];
