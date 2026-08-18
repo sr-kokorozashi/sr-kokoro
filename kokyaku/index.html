@@ -206,15 +206,39 @@ section > h3{
 .tag{font-size:11px;padding:2px 8px;border-radius:3px;background:var(--tint);color:var(--navy);white-space:nowrap}
 .tag.kh{background:#e6effb;color:#1f4e79;font-weight:600}
 .notag{font-size:11px;color:#a6aeb8}
-.note .body{white-space:pre-wrap;word-break:break-word;outline:none;border-radius:3px;padding:3px 5px;margin:0 -5px;cursor:text}
-.note .body:hover{background:#f4f7fa}
-.note .body:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--blue)}
+/* 本文はふだん読むだけ。「編集」を押したときだけ contenteditable が付きます */
+.note .body{white-space:pre-wrap;word-break:break-word;outline:none;border-radius:3px;padding:3px 5px;margin:0 -5px}
+.note .body[contenteditable]{background:#fff;box-shadow:inset 0 0 0 2px var(--blue);cursor:text;padding:6px 8px;margin:0 -2px}
+.note.editing{box-shadow:0 0 0 2px var(--blue),0 2px 8px rgba(31,78,121,.16) !important}
+
+/* 編集中に出る 保存／取消 の行 */
+.editrow{display:flex;gap:8px;align-items:center;margin-top:8px}
+.editrow .save{border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:4px;padding:4px 15px;font-size:12px}
+.editrow .cancel{border:1px solid var(--rule);background:#fff;color:var(--muted);border-radius:4px;padding:4px 13px;font-size:12px}
+.editrow .note-hint{font-size:11px;color:#8a93a0}
+
+/* 操作できないボタンは薄く。編集中は他の操作をいったん止めます */
+.note button:disabled,.notefilter .tgl:disabled,.addnote button:disabled{opacity:.3;cursor:not-allowed}
+
+/* リンクは本文の直下に、独立したボタンとして置きます */
+.nlink{margin-top:8px}
+.linkbtn{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;padding:4px 11px;border-radius:4px;
+  border:1px solid #a9c4e0;background:#fff;color:#1f4e79;
+  text-decoration:none;font-weight:600;
+}
+.linkbtn:hover{background:#f2f7fc;border-color:#4a86c8}
+.linkbtn.notion{border-color:#c2c6cc;color:#3a3f46}
+.linkbtn.notion:hover{background:#f6f7f8;border-color:#8a9099}
 .note .del{opacity:.5}
 .note:hover .del{opacity:1}
 .note .del{background:none;border:none;color:#c3cad2;font-size:15px;line-height:1;padding:2px 4px;margin-left:auto;flex:none}
 .note .del:hover{color:var(--warn)}
-.nfoot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:11px;color:#8a93a0}
-.nfoot a{color:var(--blue);text-decoration:none;word-break:break-all}
+/* 下段は「左＝操作」「右＝日付」に振り分けます */
+.nfoot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:9px;padding-top:8px;border-top:1px solid #eef1f4;font-size:11px;color:#8a93a0}
+.nfoot .ops{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.nfoot .dates{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-left:auto;color:#a2aab4}
 .nfoot .lnk2{background:none;border:none;color:var(--blue);font-size:11px;padding:0}
 .nfoot .old{color:var(--warn)}
 .notefilter{padding:8px 15px;display:flex;gap:5px;flex-wrap:wrap;border-bottom:1px solid var(--rule);background:#fbfcfd}
@@ -526,7 +550,7 @@ const SEED = {clients:[],notes:[]};   /* 顧問先データはSupabaseにあり�
 const REQUIRED = ['shutan','kojo','shime','keiro','hokensha'];
 
 /* 特記事項のタグ。初期値です。実際の一覧はSupabase側に保存され、画面から追加できます */
-const DEFAULT_TAGS = ['入社','退職','扶養','月変','算定','賞与','賃金','給与計算','給付','健保組合'];
+const DEFAULT_TAGS = ['入社','退職','扶養','月変','算定','賞与','賃金','給与計算','給付','年更','健保組合'];
 let TAGS = DEFAULT_TAGS.slice();
 
 /* 条件に合う顧問先にだけ出すタグ。合わない会社では選択肢に出ません（付いている分は消えません） */
@@ -559,6 +583,26 @@ const hasStaff = (c,n) => staffOf(c).includes(n);
 let clients = [], notes = [], sel = null, remote = false;
 const state = {q:'',kubun:'',hoken:'',jimu:'',staff:'',sort:'wage_no',wage:false,gap:false,note:false};
 let noteFilter = '';   /* 詳細画面で特記事項をタグで絞り込むための一時的な状態 */
+
+/* 本文を編集しているあいだの状態。編集できるのは一度に1件だけです。
+   noteDraft に書きかけを持っておくので、画面が描き直されても打ちかけは消えません */
+let noteEditOpen = null, noteDraft = '', noteFocus = false;
+
+/* リンク先の種類。URLのドメインから見分けます。
+   OneDriveは法人テナント（〇〇.sharepoint.com）と個人版で形が違うので、どちらも拾います */
+const LINK_KINDS = [
+  {test:h => /(^|\.)notion\.(so|site)$/.test(h) || /(^|\.)notion\.com$/.test(h),
+   label:'Notion', icon:'📄', cls:'notion'},
+  {test:h => /(^|\.)sharepoint\.com$/.test(h) || /(^|\.)onedrive\.live\.com$/.test(h)
+          || /(^|\.)1drv\.ms$/.test(h) || /(^|\.)onedrive\.com$/.test(h),
+   label:'OneDrive', icon:'📁', cls:'onedrive'},
+];
+function linkInfo(url){
+  let host = '';
+  try{ host = new URL(/^[a-z][a-z0-9+.-]*:/i.test(url) ? url : 'https://'+url).hostname.toLowerCase(); }
+  catch(e){ host = ''; }
+  return LINK_KINDS.find(k => k.test(host)) || {label:'リンク', icon:'🔗', cls:'other'};
+}
 let tagEditOpen = null;  /* タグ編集を開いている特記事項（付け直しのたびに閉じないように） */
 let bulk = false, picked = new Set();
 
@@ -1180,7 +1224,9 @@ function render(){
         picked.has(id) ? picked.delete(id) : picked.add(id);
         render(); return;
       }
-      sel = clients.find(c=>c.id===r.dataset.id); noteFilter=''; tagEditOpen=null; document.body.classList.add('viewing'); render();
+      sel = clients.find(c=>c.id===r.dataset.id); noteFilter=''; tagEditOpen=null;
+      noteEditOpen=null; noteDraft=''; noteFocus=false;
+      document.body.classList.add('viewing'); render();
     };
   });
   if(bulk) syncBulk();
@@ -1312,34 +1358,47 @@ function renderDetail(){
 
   <section class="notes"><h3>特記事項・イレギュラー（${ns.length}件）</h3>
     ${ns.length ? `<div class="notefilter">
-      <button class="tgl ${noteFilter?'':'on'}" data-nf="">すべて（${ns.length}）</button>
-      ${ns.some(n=>n.star)?`<button class="tgl ${noteFilter==='__star__'?'on':''}" data-nf="__star__">★（${ns.filter(n=>n.star).length}）</button>`:''}
-      ${usedTags.map(t=>`<button class="tgl ${noteFilter===t?'on':''}" data-nf="${esc(t)}">${esc(t)}（${ns.filter(n=>n.tags.includes(t)).length}）</button>`).join('')}
-      ${untagged?`<button class="tgl ${noteFilter==='__none__'?'on':''}" data-nf="__none__">タグ未設定（${untagged}）</button>`:''}
+      <button class="tgl ${noteFilter?'':'on'}" data-nf=""${noteEditOpen?' disabled':''}>すべて（${ns.length}）</button>
+      ${ns.some(n=>n.star)?`<button class="tgl ${noteFilter==='__star__'?'on':''}" data-nf="__star__"${noteEditOpen?' disabled':''}>★（${ns.filter(n=>n.star).length}）</button>`:''}
+      ${usedTags.map(t=>`<button class="tgl ${noteFilter===t?'on':''}" data-nf="${esc(t)}"${noteEditOpen?' disabled':''}>${esc(t)}（${ns.filter(n=>n.tags.includes(t)).length}）</button>`).join('')}
+      ${untagged?`<button class="tgl ${noteFilter==='__none__'?'on':''}" data-nf="__none__"${noteEditOpen?' disabled':''}>タグ未設定（${untagged}）</button>`:''}
     </div>` : ''}
     <div class="nbody">
     ${shown.map(n=>{
       const age = daysAgo(n.checked);
+      const editing = noteEditOpen === String(n.id);   /* この特記事項を編集中かどうか */
+      const locked  = noteEditOpen && !editing;        /* 他を編集中なので、いま触らせない */
+      const off     = (noteEditOpen ? ' disabled' : '');
+      const li      = n.link ? linkInfo(n.link) : null;
       return `
-      <div class="note ${n.star?'starred':''}" data-nid="${esc(String(n.id))}">
+      <div class="note ${n.star?'starred':''} ${editing?'editing':''}" data-nid="${esc(String(n.id))}">
         <div class="nhead">
-          <button class="nstar ${n.star?'on':''}" title="重要マーク">${n.star?'★':'☆'}</button>
+          <button class="nstar ${n.star?'on':''}" title="重要マーク"${off}>${n.star?'★':'☆'}</button>
           ${n.tags.length ? n.tags.map(t=>`<span class="tag ${t==='健保組合'?'kh':''}">${esc(t)}</span>`).join('')
                           : '<span class="notag">タグ未設定</span>'}
-          <button class="del" title="削除">×</button>
+          <button class="del" title="削除"${off}>×</button>
         </div>
-        <div class="body" contenteditable>${esc(n.body)}</div>
+        <div class="body"${editing?' contenteditable':''}>${esc(editing ? noteDraft : n.body)}</div>
+        ${editing ? `<div class="editrow">
+          <button class="save">保存</button>
+          <button class="cancel">取消</button>
+          <span class="note-hint">Enterで改行／Escで取消</span>
+        </div>` : ''}
+        ${li ? `<div class="nlink"><a class="linkbtn ${li.cls}" href="${esc(n.link)}" target="_blank" rel="noopener">${li.icon} ${li.label}を開く</a></div>` : ''}
         <div class="tagedit" style="display:${tagEditOpen===String(n.id)?'block':'none'}">
           <div class="picks">${tagsFor(c).map(t=>
-            `<button class="tgl ${n.tags.includes(t)?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+            `<button class="tgl ${n.tags.includes(t)?'on':''}" data-t="${esc(t)}"${off}>${esc(t)}</button>`).join('')}</div>
         </div>
         <div class="nfoot">
-          <button class="lnk2 etag">タグを編集</button>
-          ${n.link ? `<a href="${esc(n.link)}" target="_blank" rel="noopener">🔗 リンクを開く</a>`
-                   : '<button class="lnk2 elink">リンクを追加</button>'}
-          ${n.link ? '<button class="lnk2 elink">リンクを変更</button>' : ''}
-          ${n.created ? `<span>記録 ${esc(n.created)}</span>` : ''}
-          ${n.checked ? `<span class="${age!==null&&age>365?'old':''}">確認 ${esc(n.checked)}${age!==null&&age>365?'（1年以上前）':''}</span>` : ''}
+          <div class="ops">
+            ${editing ? '' : `<button class="lnk2 nedit"${locked?' disabled':''}>編集</button>`}
+            <button class="lnk2 etag"${off}>タグを編集</button>
+            <button class="lnk2 elink"${off}>${n.link?'リンクを変更':'リンクを追加'}</button>
+          </div>
+          <div class="dates">
+            ${n.created ? `<span>記録 ${esc(n.created)}</span>` : ''}
+            ${n.checked ? `<span class="${age!==null&&age>365?'old':''}">確認 ${esc(n.checked)}${age!==null&&age>365?'（1年以上前）':''}</span>` : ''}
+          </div>
         </div>
       </div>`;}).join('')
       || `<div style="padding:14px 15px;color:#8a93a0">${ns.length?'この絞り込みに当てはまる特記事項はありません。':'まだ登録がありません。'}</div>`}
@@ -1353,7 +1412,7 @@ function renderDetail(){
       <div class="picks">${tagsFor(c).map(t=>`<button class="tgl" data-newtag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
       <input type="text" id="nlink" placeholder="リンク（任意）　Notion・OneDrive・YouTube など">
       <div class="arow">
-        <button class="go" id="na">追加</button>
+        <button class="go" id="na"${noteEditOpen?' disabled':''}>追加</button>
         <label class="hint"><input type="checkbox" id="nstarnew"> ★を付ける</label>
         <span style="flex:1"></span>
         <button class="lnk2" id="tagCfg" style="background:none;border:none;color:var(--blue);font-size:11px">タグを追加・削除</button>
@@ -1370,7 +1429,12 @@ function renderDetail(){
     refreshStaffSelects(); render(); toast(c.name + ' を削除しました');
   };
 
-  d.querySelector('#back').onclick=()=>{document.body.classList.remove('viewing');sel=null;render();};
+  d.querySelector('#back').onclick=()=>{
+    if(noteEditOpen && noteDraft.trim() !== (ns.find(x=>String(x.id)===noteEditOpen)||{}).body
+       && !confirm('編集中の特記事項があります。保存せずに一覧へ戻りますか？')) return;
+    noteEditOpen=null; noteDraft=''; noteFocus=false;
+    document.body.classList.remove('viewing');sel=null;render();
+  };
 
   d.querySelectorAll('[contenteditable][data-k]').forEach(el=>{
     el.addEventListener('blur',()=>{
@@ -1411,22 +1475,54 @@ function renderDetail(){
     const n = ns.find(x=>String(x.id)===el.dataset.nid);
     if(!n) return;
 
-    /* 本文（改行そのまま） */
-    el.querySelector('.body').addEventListener('blur',e=>{
-      const v=e.target.innerText.replace(/\u00a0/g,' ').trim();
-      if(v===n.body) return;
-      if(!v){                       /* 全部消えても勝手には削除しません */
-        e.target.innerText = n.body;
-        toast('本文は空にできません。削除するときは×から');
-        return;
-      }
-      const before = n.body;
-      n.body = v;
-      updateNote(n, true).then(()=>{
-        renderDetail();
-        toast('保存しました', ()=>{ n.body = before; updateNote(n, true).then(renderDetail); });
+    /* 本文（改行そのまま）。ふだんは読むだけで、「編集」を押したときだけ書き換えられます */
+    const editBtn = el.querySelector('.nedit');
+    if(editBtn) editBtn.onclick=()=>{
+      noteEditOpen = String(n.id);
+      noteDraft = n.body;
+      noteFocus = true;
+      renderDetail();
+    };
+
+    const bodyEl = el.querySelector('.body');
+    if(noteEditOpen === String(n.id)){
+      const readDraft = () => bodyEl.innerText.replace(/\u00a0/g,' ');
+      /* 打ちかけを控えておくので、途中で画面が描き直されても消えません */
+      bodyEl.addEventListener('input', ()=>{ noteDraft = readDraft(); });
+
+      const finish = () => { noteEditOpen = null; noteDraft = ''; };
+
+      const save = () => {
+        const v = readDraft().trim();
+        if(!v){ toast('本文は空にできません。削除するときは×から'); bodyEl.focus(); return; }
+        if(v === n.body){ finish(); renderDetail(); return; }
+        const before = n.body;
+        n.body = v;
+        finish();
+        updateNote(n, true).then(()=>{
+          render();
+          toast('保存しました', ()=>{ n.body = before; updateNote(n, true).then(render); });
+        });
+      };
+      const cancel = () => {
+        if(readDraft().trim() !== n.body && !confirm('編集した内容を取り消します。よろしいですか？')) return;
+        finish(); renderDetail();
+      };
+
+      el.querySelector('.save').onclick = save;
+      el.querySelector('.cancel').onclick = cancel;
+      bodyEl.addEventListener('keydown', e=>{
+        if(e.key === 'Escape'){ e.preventDefault(); cancel(); }
       });
-    });
+
+      /* 「編集」を押した直後だけ、文末にカーソルを置きます */
+      if(noteFocus){
+        noteFocus = false;
+        bodyEl.focus();
+        const r = document.createRange(); r.selectNodeContents(bodyEl); r.collapse(false);
+        const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      }
+    }
 
     /* ★の付け外し */
     el.querySelector('.nstar').onclick=()=>{
