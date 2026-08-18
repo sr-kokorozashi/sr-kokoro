@@ -131,6 +131,52 @@ td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align:
 .ins-badge { display: inline-block; padding: 2px 7px; border-radius: 9px; font-size: 10px; font-weight: 700; background: #fff3e0; color: #b06000; border: 1px solid #f0d0a0; white-space: nowrap; margin-left: 5px; }
 .ins-badge.shaho { background: #e8f1fb; color: #12599c; border-color: #b9d4ee; }
 
+
+/* ===== 印刷（PDF出力）用 ===== */
+#print-area { display: none; }
+@media print {
+  @page { size: A4 landscape; margin: 10mm 9mm; }
+  html, body { background: #fff !important; overflow: visible !important; height: auto !important; }
+  body > *:not(#print-area) { display: none !important; }
+  #print-area {
+    display: block !important;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: #000; font-size: 9pt; line-height: 1.45;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  #print-area * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ps-head { display: flex; justify-content: space-between; align-items: flex-end;
+             border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 9px; }
+  .ps-title { font-size: 15pt; font-weight: 700; letter-spacing: 1px; }
+  .ps-head-right { font-size: 8.5pt; text-align: right; line-height: 1.6; }
+  .ps-done  { display: inline-block; border: 1.5px solid #1a7a3c; color: #1a7a3c;
+              padding: 1px 8px; border-radius: 3px; font-weight: 700; font-size: 9pt; }
+  .ps-open  { display: inline-block; border: 1.5px solid #b3261e; color: #b3261e;
+              padding: 1px 8px; border-radius: 3px; font-weight: 700; font-size: 9pt; }
+  .ps-sec { font-size: 10pt; font-weight: 700; margin: 11px 0 4px;
+            border-left: 4px solid #000; padding-left: 6px; }
+  #print-area table { width: 100%; border-collapse: collapse; }
+  #print-area th, #print-area td { border: 0.5pt solid #999; padding: 3px 5px; vertical-align: top; }
+  #print-area th { background: #eee; font-weight: 700; text-align: left; white-space: nowrap; }
+  .ps-meta td { font-size: 9pt; }
+  .ps-meta .lbl { background: #f4f4f4; font-weight: 700; white-space: nowrap; width: 78px; }
+  .ps-dates td { font-size: 9pt; }
+  .ps-dates .lbl { background: #f4f4f4; font-weight: 700; white-space: nowrap; }
+  .ps-list { font-size: 8.5pt; }
+  .ps-list thead { display: table-header-group; }
+  .ps-list tr { page-break-inside: avoid; }
+  .ps-list .sec td { background: #ddd; font-weight: 700; font-size: 9pt; }
+  .ps-list .no { width: 26px; text-align: center; white-space: nowrap; }
+  .ps-list .chk { width: 30px; text-align: center; font-size: 11pt; }
+  .ps-list .dl { width: 66px; white-space: nowrap; }
+  .ps-list .dt { width: 66px; white-space: nowrap; }
+  .ps-sub { font-size: 7.5pt; color: #555; display: block; margin-top: 1px; white-space: pre-line; }
+  .ps-overdue { color: #b3261e; font-weight: 700; }
+  .ps-note { border: 0.5pt solid #999; padding: 6px 8px; font-size: 9pt; white-space: pre-wrap; }
+  .ps-foot { margin-top: 10px; font-size: 7.5pt; color: #555;
+             border-top: 0.5pt solid #999; padding-top: 4px; display: flex; justify-content: space-between; }
+}
+
 /* ALERT */
 .alert-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .alert-chip { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
@@ -755,6 +801,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="btn btn-ghost btn-sm" onclick="openMailModal()">📧 メール</button>
+        <button class="btn btn-ghost btn-sm" onclick="printCaseSheet()">🖨 PDF出力</button>
         <button class="btn btn-ghost btn-sm" onclick="openEditModal()">✏️ 編集</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCurrentCase()">🗑 削除</button>
         <button class="close-btn" onclick="closeModal('modal-detail')">×</button>
@@ -2302,6 +2349,135 @@ function renderCaseTable() {
     <thead><tr><th>性別</th><th>事業所名</th><th>対象者</th><th>ステータス</th><th>出産予定日</th><th>実分娩日</th><th>次の期限</th><th>アラート</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+}
+
+
+// ===== 産休育休チェックシート PDF出力（ブラウザの印刷→PDFとして保存） =====
+function psEsc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function psRow(label, value) {
+  return '<tr><td class="lbl">' + psEsc(label) + '</td><td>' + (value || '—') + '</td></tr>';
+}
+// 完了状況を数える（済 / 不要 を完了とみなす）
+function countCaseProgress(c) {
+  const procs = getProcedures(c).filter(p => !p.isSectionHeader);
+  let done = 0;
+  procs.forEach(p => { const st = getProcSt(c, p.id); if (st === '済' || st === '不要') done++; });
+  return { total: procs.length, done: done, rest: procs.length - done };
+}
+
+function buildCaseSheetHtml(c) {
+  const t = today();
+  const procs = getProcedures(c);
+  const prog = countCaseProgress(c);
+  const now = new Date();
+  const stamp = now.getFullYear() + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  const insLabel = c.insType === 'koyo' ? '雇用保険のみ（社会保険なし）'
+                 : c.insType === 'shaho' ? '社会保険のみ（雇用保険なし）'
+                 : '社会保険＋雇用保険（両方加入）';
+  const badge = prog.rest === 0
+    ? '<span class="ps-done">✔ 全手続き完了</span>'
+    : '<span class="ps-open">未完了 ' + prog.rest + ' 件</span>';
+
+  // --- 重要日程 ---
+  let dates = '';
+  if (c.gender === 'female') {
+    const d = getFemaleDates(c);
+    dates =
+      '<tr><td class="lbl">産休開始（産前42日）</td><td>' + fmtDate(d.sanzenStart) + '</td>' +
+      '<td class="lbl">産休終了（産後56日）</td><td>' + fmtDate(d.sangoEnd) + '</td>' +
+      '<td class="lbl">育休開始</td><td>' + fmtDate(d.ikukyuStart) + '</td></tr>' +
+      '<tr><td class="lbl">育休終了（' + psEsc(calcIkukyuEndLabel(c.ikukyuExtend)) + '）</td><td>' + fmtDate(d.ikukyuEnd) + '</td>' +
+      '<td class="lbl">職場復帰予定日</td><td>' + (c.returnDate ? fmtDate(c.returnDate) : '—') + '</td>' +
+      '<td class="lbl">出産予定日 / 実分娩日</td><td>' + fmtDate(c.dueDate) + ' / ' + (c.birthDate ? fmtDate(c.birthDate) : '—') + '</td></tr>';
+  } else {
+    const d = getMaleDates(c);
+    dates =
+      '<tr><td class="lbl">出産予定日 / 実分娩日</td><td>' + fmtDate(c.dueDate) + ' / ' + (c.birthDate ? fmtDate(c.birthDate) : '—') + '</td>' +
+      '<td class="lbl">産後8週間末日</td><td>' + fmtDate(d.papaPeriodEnd) + '</td>' +
+      '<td class="lbl">1歳到達日</td><td>' + fmtDate(d.ikukyuEnd) + '</td></tr>' +
+      '<tr><td class="lbl">産後パパ育休 第1回</td><td>' + (c.papa1Start ? fmtDate(c.papa1Start) + ' 〜 ' + fmtDate(c.papa1End) : '—') + '</td>' +
+      '<td class="lbl">産後パパ育休 第2回</td><td>' + (c.papa2Start ? fmtDate(c.papa2Start) + ' 〜 ' + fmtDate(c.papa2End) : 'なし') + '</td>' +
+      '<td class="lbl">育休 第1回 / 第2回</td><td>' + (c.ikukyu1Start ? fmtDate(c.ikukyu1Start) : '—') + ' / ' + (c.ikukyu2Start ? fmtDate(c.ikukyu2Start) : '—') + '</td></tr>';
+  }
+  if (c.shimbi || c.shiharai) {
+    dates += '<tr><td class="lbl">賃金締日 / 支払日</td><td colspan="5">' + psEsc(c.shimbi || '—') + ' / ' + psEsc(c.shiharai || '—') + '</td></tr>';
+  }
+
+  // --- チェックリスト本体 ---
+  const rows = procs.map(p => {
+    if (p.isSectionHeader) {
+      return '<tr class="sec"><td colspan="8">' + psEsc(p.section) + '</td></tr>';
+    }
+    const st = getProcSt(c, p.id);
+    const stDate = getProcDate(c, p.id);
+    const memo = getProcMemo(c, p.id);
+    const overdue = p.deadline && p.deadline < t && st !== '済' && st !== '不要';
+    const mark = st === '済' ? '☑' : st === '不要' ? '⊘' : '☐';
+    const stLabel = st === '済' ? '済' : st === '不要' ? '不要' : (overdue ? '期限超過' : '未');
+    const kob = isKobunshoRequired(p.id) ? getKobunsho(c, p.id) : null;
+    const kobCell = kob === null ? '—' : (kob === '済' ? '☑ 済' : kob === '不要' ? '⊘ 不要' : '☐ 未');
+    const hik = getProcHikitsugi(c, p.id) || [];
+    const hikHtml = hik.length
+      ? '<span class="ps-sub">' + hik.map(i => (i.done ? '☑ ' : '☐ ') + psEsc(i.text)).join('\n') + '</span>' : '';
+    return '<tr>' +
+      '<td class="no">' + psEsc(p.no || '') + '</td>' +
+      '<td class="chk">' + mark + '</td>' +
+      '<td>' + psEsc(p.name) + (p.note ? '<span class="ps-sub">' + psEsc(p.note) + '</span>' : '') + '</td>' +
+      '<td>' + psEsc(p.period || '—') + '</td>' +
+      '<td>' + psEsc(p.docs || '—') + '</td>' +
+      '<td class="dl' + (overdue ? ' ps-overdue' : '') + '">' + (p.deadline ? fmtDate(p.deadline) : '—') + '</td>' +
+      '<td class="dt' + (overdue ? ' ps-overdue' : '') + '">' + psEsc(stLabel) + (stDate ? '<span class="ps-sub">' + fmtDate(stDate) + '</span>' : '') + '</td>' +
+      '<td>' + kobCell + (memo ? '<span class="ps-sub">' + psEsc(memo) + '</span>' : '') + hikHtml + '</td>' +
+      '</tr>';
+  }).join('');
+
+  let notes = '';
+  if (c.hikitsugi) notes += '<div class="ps-sec">■ 引継ぎメモ</div><div class="ps-note">' + psEsc(c.hikitsugi) + '</div>';
+  if (c.memo)      notes += '<div class="ps-sec">■ 備考</div><div class="ps-note">' + psEsc(c.memo) + '</div>';
+
+  return '' +
+    '<div class="ps-head">' +
+      '<div class="ps-title">産休・育休 チェックシート</div>' +
+      '<div class="ps-head-right">' + badge + '<br>完了 ' + prog.done + ' / ' + prog.total + ' 件　出力 ' + stamp + '</div>' +
+    '</div>' +
+    '<table class="ps-meta"><tbody>' +
+      '<tr><td class="lbl">事業所名</td><td>' + psEsc(c.company) + '</td>' +
+          '<td class="lbl">対象者</td><td>' + psEsc(c.name) + '（' + (c.gender === 'male' ? '男性' : '女性') + '）</td>' +
+          '<td class="lbl">子の氏名</td><td>' + psEsc(c.childName || '—') + '</td></tr>' +
+      '<tr><td class="lbl">加入保険</td><td>' + psEsc(insLabel) + '</td>' +
+          '<td class="lbl">ステータス</td><td>' + psEsc(getStatus(c)) + '</td>' +
+          '<td class="lbl">子の扶養</td><td>' + psEsc(c.dependent || '未') + '</td></tr>' +
+    '</tbody></table>' +
+    '<div class="ps-sec">■ 重要日程</div>' +
+    '<table class="ps-dates"><tbody>' + dates + '</tbody></table>' +
+    '<div class="ps-sec">■ 手続きチェックリスト（☑ 済 ／ ⊘ 不要 ／ ☐ 未）</div>' +
+    '<table class="ps-list"><thead><tr>' +
+      '<th class="no">No.</th><th class="chk">✓</th><th>手続き・給付金</th><th>対象期間</th>' +
+      '<th>添付書類</th><th class="dl">届出期日</th><th class="dt">状況／完了日</th><th>公文書・備考・引継ぎ</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>' +
+    notes +
+    '<div class="ps-foot"><span>産休・育休管理システム SR Office v2</span><span>出力日時：' + stamp + '</span></div>';
+}
+
+function printCaseSheet(caseId) {
+  const id = caseId || currentCaseId;
+  const c = cases.find(x => x.id === id);
+  if (!c) { showToast('案件が見つかりません'); return; }
+  const prog = countCaseProgress(c);
+  if (prog.rest > 0) {
+    if (!confirm('未完了の手続きが ' + prog.rest + ' 件あります。\nこのまま出力しますか？\n（未完了は ☐ のまま印刷されます）')) return;
+  }
+  const area = document.getElementById('print-area');
+  area.innerHTML = buildCaseSheetHtml(c);
+  const prevTitle = document.title;
+  document.title = '産休育休チェックシート_' + c.company + '_' + c.name;
+  window.print();
+  setTimeout(function() { document.title = prevTitle; area.innerHTML = ''; }, 800);
 }
 
 // ===== CASE DETAIL =====
@@ -6367,5 +6543,8 @@ function getExcelImportData() {
 })();
 
 </script>
+
+<!-- 印刷（PDF出力）専用エリア：画面には表示されません -->
+<div id="print-area"></div>
 </body>
 </html>
