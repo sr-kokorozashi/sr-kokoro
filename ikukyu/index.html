@@ -129,6 +129,7 @@ td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align:
 .badge.期限超過 { background: var(--red-bg); color: var(--red); }
 .badge.未 { background: #f5f5f5; color: #888; }
 .ins-badge { display: inline-block; padding: 2px 7px; border-radius: 9px; font-size: 10px; font-weight: 700; background: #fff3e0; color: #b06000; border: 1px solid #f0d0a0; white-space: nowrap; margin-left: 5px; }
+.ins-badge.shaho { background: #e8f1fb; color: #12599c; border-color: #b9d4ee; }
 
 /* ALERT */
 .alert-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -592,6 +593,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
         <div class="form-group"><label>加入保険 *</label>
           <select class="form-select" id="ff-ins-type">
             <option value="">社会保険＋雇用保険（両方加入）</option>
+            <option value="shaho">社会保険のみ（雇用保険なし）</option>
             <option value="koyo">雇用保険のみ（社会保険なし）</option>
           </select>
         </div>
@@ -660,6 +662,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
         <div class="form-group"><label>加入保険 *</label>
           <select class="form-select" id="fm-ins-type">
             <option value="">社会保険＋雇用保険（両方加入）</option>
+            <option value="shaho">社会保険のみ（雇用保険なし）</option>
             <option value="koyo">雇用保険のみ（社会保険なし）</option>
           </select>
         </div>
@@ -1971,9 +1974,13 @@ function getMaleProcedures(c) {
 }
 
 // ===== 加入保険区分によるフィルタ =====
+// 加入保険（case.insType）は3種類
+//   ''      = 社会保険＋雇用保険（両方加入）… すべて表示
+//   'shaho' = 社会保険のみ（雇用保険なし）  … 雇用保険の手続きを除外
+//   'koyo'  = 雇用保険のみ（社会保険なし）  … 社会保険の手続きを除外
 // 手続きIDごとの保険区分
-//   'shaho' = 社会保険（健保・厚年）の手続き → 雇用保険のみの人は不要
-//   'koyo'  = 雇用保険の手続き               → 常に必要
+//   'shaho' = 社会保険（健保・厚年）の手続き
+//   'koyo'  = 雇用保険の手続き
 //   'both'  = 案内系など区分に関係なく行うもの
 const PROC_INS = {
   // ---- 女性 ----
@@ -2034,11 +2041,32 @@ function procIns(id) {
 
 const CIRCLED_NO = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮';
 
+// 加入保険の選択肢（value, ラベル）
+const INS_TYPE_OPTIONS = [
+  ['',      '社会保険＋雇用保険（両方加入）'],
+  ['shaho', '社会保険のみ（雇用保険なし）'],
+  ['koyo',  '雇用保険のみ（社会保険なし）'],
+];
+function insTypeSelectHtml(id, cur) {
+  const v = cur || '';
+  return '<select class="form-select" id="' + id + '">' + INS_TYPE_OPTIONS.map(function(o) {
+    return '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+  }).join('') + '</select>';
+}
+// 一覧＝short（雇のみ／社のみ）、詳細＝フル表記
+function insBadge(insType, short) {
+  if (insType === 'koyo')  return '<span class="ins-badge">' + (short ? '雇のみ' : '雇用保険のみ') + '</span>';
+  if (insType === 'shaho') return '<span class="ins-badge shaho">' + (short ? '社のみ' : '社会保険のみ') + '</span>';
+  return '';
+}
+
 // 加入区分でフィルタし、空セクションを除去し、①②③を振り直す
 function applyInsFilter(procs, insType) {
-  if (insType !== 'koyo') return procs;
-  // 1) 社保専用の手続きを除外
-  let out = procs.filter(p => p.isSectionHeader || procIns(p.id) !== 'shaho');
+  if (insType !== 'koyo' && insType !== 'shaho') return procs;
+  // 1) 加入していない保険の専用手続きを除外
+  //    雇用保険のみ → 'shaho' を除外 ／ 社会保険のみ → 'koyo' を除外
+  const dropKind = (insType === 'koyo') ? 'shaho' : 'koyo';
+  let out = procs.filter(p => p.isSectionHeader || procIns(p.id) !== dropKind);
   // 2) 中身が0件になったセクションヘッダーを除去
   out = out.filter((p, i) => {
     if (!p.isSectionHeader) return true;
@@ -2256,7 +2284,7 @@ function renderCaseTable() {
     return `<tr class="row-link" onclick="openCaseDetail('${c.id}')">
       <td>${gLabel}</td>
       <td><strong>${c.company}</strong></td>
-      <td>${c.name}${c.insType === 'koyo' ? '<span class="ins-badge">雇のみ</span>' : ''}</td>
+      <td>${c.name}${insBadge(c.insType, true)}</td>
       <td><span class="badge ${status}">${status}</span></td>
       <td class="date-display">${fmtDate(c.dueDate)}</td>
       <td class="date-display">${fmtDate(c.birthDate)}</td>
@@ -2285,7 +2313,7 @@ function openCaseDetail(id) {
   const procs = getProcedures(c);
   const t = today();
   const gLabel = c.gender === 'male' ? '♂ 男性' : '♀ 女性';
-  document.getElementById('detail-title').innerHTML = `${gLabel} ／ ${c.company}　${c.name}${c.insType === 'koyo' ? '<span class="ins-badge">雇用保険のみ</span>' : ''}`;
+  document.getElementById('detail-title').innerHTML = `${gLabel} ／ ${c.company}　${c.name}${insBadge(c.insType, false)}`;
   document.getElementById('detail-sub').textContent = `登録日: ${fmtDate(c.createdAt?.split('T')[0])} | ステータス: ${status} | ${c.childName ? '子: '+c.childName : ''} | 扶養: ${c.dependent || '未'}`;
 
   const rows = procs.map(p => {
@@ -2426,7 +2454,7 @@ function openEditModal() {
       <div class="form-grid">
         <div class="form-group"><label>事業所名</label><input class="form-input" id="e-company" value="${c.company}"></div>
         <div class="form-group"><label>氏名</label><input class="form-input" id="e-name" value="${c.name}"></div>
-        <div class="form-group"><label>加入保険</label><select class="form-select" id="e-ins-type"><option value="" ${!c.insType?'selected':''}>社会保険＋雇用保険（両方加入）</option><option value="koyo" ${c.insType==='koyo'?'selected':''}>雇用保険のみ（社会保険なし）</option></select></div>
+        <div class="form-group"><label>加入保険</label>${insTypeSelectHtml('e-ins-type', c.insType)}</div>
         <div class="form-group"><label>子の氏名</label><input class="form-input" id="e-child-name" value="${c.childName||''}"></div>
         <div class="form-group"><label>子の扶養</label><select class="form-select" id="e-dependent"><option value="">未定</option><option value="○" ${c.dependent==='○'?'selected':''}>○</option><option value="×" ${c.dependent==='×'?'selected':''}>×</option></select></div>
         <div class="form-group"><label>出産予定日</label><input class="form-input" type="date" id="e-due-date" value="${c.dueDate||''}"></div>
@@ -2446,7 +2474,7 @@ function openEditModal() {
       <div class="form-grid">
         <div class="form-group"><label>事業所名</label><input class="form-input" id="e-company" value="${c.company}"></div>
         <div class="form-group"><label>氏名</label><input class="form-input" id="e-name" value="${c.name}"></div>
-        <div class="form-group"><label>加入保険</label><select class="form-select" id="e-ins-type"><option value="" ${!c.insType?'selected':''}>社会保険＋雇用保険（両方加入）</option><option value="koyo" ${c.insType==='koyo'?'selected':''}>雇用保険のみ（社会保険なし）</option></select></div>
+        <div class="form-group"><label>加入保険</label>${insTypeSelectHtml('e-ins-type', c.insType)}</div>
         <div class="form-group"><label>子の氏名</label><input class="form-input" id="e-child-name" value="${c.childName||''}"></div>
         <div class="form-group"><label>子の扶養</label><select class="form-select" id="e-dependent"><option value="">未定</option><option value="○" ${c.dependent==='○'?'selected':''}>○</option><option value="×" ${c.dependent==='×'?'selected':''}>×</option></select></div>
         <div class="form-group"><label>出産予定日</label><input class="form-input" type="date" id="e-due-date" value="${c.dueDate||''}"></div>
@@ -2746,7 +2774,7 @@ function copyMailText() {
 
 function buildMailBody(lines) { return lines.join('\n'); }
 
-// 雇用保険のみ加入の場合、メール文面から社会保険関連のブロックを除去する
+// 加入していない保険に関するブロックをメール文面から除去する
 // 「■ 見出し」から次の空行までを1ブロックとして扱う
 const MAIL_SHAHO_KEYWORDS = [
   '\u7523\u524d\u7523\u5f8c\u4f11\u696d\u53d6\u5f97\u8005\u7533\u51fa\u66f8',
@@ -2760,14 +2788,67 @@ const MAIL_SHAHO_KEYWORDS = [
   '\u6708\u984d\u5909\u66f4\u5c4a',
   '\u6276\u990a\u7570\u52d5\u5c4a',
 ];
-function stripShahoFromMail(body) {
+// 雇用保険（給付金）関連ブロックの見出しキーワード（社会保険のみの人には不要）
+const MAIL_KOYO_KEYWORDS = [
+  '雇用保険',
+  '育児休業給付金',
+  '出生時育児休業給付金',
+  '出生後休業支援給付金',
+  '育児時短就業給付金',
+  '賃金証明書',
+  '申請対象期間',
+  '書類提出期限',
+  'ご準備いただくもの',
+  '必須添付書類',
+];
+function stripBlocksFromMail(body, keywords) {
   const blocks = body.split('\n\n');
-  const kept = blocks.filter(bl => {
-    const head = bl.split('\n').find(l => l.indexOf('\u25a0') === 0);
-    if (!head) return true;
-    return !MAIL_SHAHO_KEYWORDS.some(k => head.indexOf(k) >= 0);
+  const kept = [];
+  let dropping = false;   // 直前の「■ ブロック」を削除したか
+  blocks.forEach(bl => {
+    const lines = bl.split('\n');
+    const head = lines.find(l => l.indexOf('\u25a0') === 0);
+    if (head) {
+      dropping = keywords.some(k => head.indexOf(k) >= 0);
+      if (!dropping) kept.push(bl);
+      return;
+    }
+    // 削除した見出しに続く字下げ（全角スペース始まり）の明細ブロックも一緒に削除する
+    if (dropping && (lines[0] || '').indexOf('\u3000') === 0) return;
+    dropping = false;
+    kept.push(bl);
   });
   return kept.join('\n\n');
+}
+function stripShahoFromMail(body) { return stripBlocksFromMail(body, MAIL_SHAHO_KEYWORDS); }
+function stripKoyoFromMail(body)  { return stripBlocksFromMail(body, MAIL_KOYO_KEYWORDS); }
+
+// 雇用保険の給付金だけを扱う文面（社会保険のみの人にはまるごと不要）
+function isKoyoOnlyTemplate(label) {
+  return label.indexOf('給付金') >= 0 || label.indexOf('延長手続き') >= 0;
+}
+// 社会保険のみの方向けの注意書き
+function shahoNoticeLines(c) {
+  const lines = [
+    '\u25a0 雇用保険のご加入状況について',
+    '\u3000' + c.name + '様は社会保険（健康保険・厚生年金）のみのご加入となりますので、',
+    '\u3000雇用保険からの育児休業給付金・出生後休業支援給付金・育児時短就業給付金の支給はございません。',
+  ];
+  if (c.gender === 'female') {
+    lines.push('\u3000産前産後休業・育児休業中の社会保険料免除、出産手当金・出産育児一時金は通常どおり対象となります。');
+  } else {
+    lines.push('\u3000育児休業中の社会保険料免除は通常どおり対象となります。');
+  }
+  return lines;
+}
+// 最後の「■ ブロック」の直後（結びの挨拶の前）に注意書きを差し込む
+function insertNoticeBlock(body, noticeLines) {
+  const blocks = body.split('\n\n');
+  let last = -1;
+  blocks.forEach((bl, i) => { if (bl.indexOf('\u25a0') >= 0) last = i; });
+  const notice = noticeLines.join('\n');
+  if (last < 0) blocks.push(notice); else blocks.splice(last + 1, 0, notice);
+  return blocks.join('\n\n');
 }
 // 雇用保険のみの女性は産休開始前の文面が全て社保ブロックで空になるため、専用文面に差し替える
 function koyoSankyuMailBody(c) {
@@ -2799,15 +2880,36 @@ function koyoSankyuMailBody(c) {
 }
 function getMailTemplates(c) {
   const tpls = (c.gender === 'male' ? getMaleMailTemplates(c) : getFemaleMailTemplates(c));
-  if (c.insType !== 'koyo') return tpls;
-  return tpls.map(t => {
-    const body = stripShahoFromMail(t.body);
-    // 社保ブロックを抜いた結果、中身が無くなった文面は差し替える
-    if (c.gender === 'female' && body.indexOf('■') < 0) {
-      return Object.assign({}, t, { body: koyoSankyuMailBody(c) });
+
+  // ---- 雇用保険のみ（社会保険なし）：社保ブロックを除去 ----
+  if (c.insType === 'koyo') {
+    return tpls.map(t => {
+      const body = stripShahoFromMail(t.body);
+      // 社保ブロックを抜いた結果、中身が無くなった文面は差し替える
+      if (c.gender === 'female' && body.indexOf('■') < 0) {
+        return Object.assign({}, t, { body: koyoSankyuMailBody(c) });
+      }
+      return Object.assign({}, t, { body: body });
+    });
+  }
+
+  // ---- 社会保険のみ（雇用保険なし）：雇用保険ブロックを除去 ----
+  if (c.insType === 'shaho') {
+    const out = [];
+    tpls.forEach(t => {
+      if (isKoyoOnlyTemplate(t.label)) return;   // 給付金・延長手続きの案内はまるごと不要
+      const body = stripKoyoFromMail(t.body);
+      if (body.indexOf('■') < 0) return;      // 抜いた結果、中身が無くなった文面は出さない
+      out.push(Object.assign({}, t, { body: body }));
+    });
+    // 先頭の文面に「雇用保険の給付はありません」の案内を1回だけ差し込む
+    if (out.length > 0) {
+      out[0] = Object.assign({}, out[0], { body: insertNoticeBlock(out[0].body, shahoNoticeLines(c)) });
     }
-    return Object.assign({}, t, { body: body });
-  });
+    return out;
+  }
+
+  return tpls;
 }
 
 // ===== CUSTOM TEMPLATE MANAGER =====
