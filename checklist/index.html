@@ -67,6 +67,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 .filter-select:focus{border-color:#2563EB;}
 .filter-clear{padding:5px 10px;border:1px solid #E2E8F0;border-radius:6px;font-size:11px;font-family:inherit;background:#fff;color:#94A3B8;cursor:pointer;}
 .filter-clear:hover{background:#F1F5F9;color:#475569;}
+.filter-csv{padding:5px 12px;border:1px solid #059669;border-radius:6px;font-size:11px;font-family:inherit;background:#fff;color:#059669;cursor:pointer;font-weight:700;}
+.filter-csv:hover{background:#ECFDF5;}
+.age-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:5px;background:#F1F5F9;color:#64748B;vertical-align:middle;}
 .proc-summary{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
 .proc-chip{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .12s;}
 .proc-chip.off{background:#fff!important;color:#64748B!important;border-color:#E2E8F0!important;}
@@ -275,6 +278,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
           <option value="">担当者：すべて</option>
         </select>
         <button class="filter-clear" onclick="clearFilters()">絞り込みをリセット</button>
+        <select class="filter-select" id="sort-select" onchange="setDashSort(this.value)">
+          <option value="days">並び：経過日数が長い順</option>
+          <option value="new">並び：新しい順</option>
+          <option value="proc">並び：手続き順</option>
+          <option value="company">並び：会社名順</option>
+        </select>
+        <button class="filter-csv" onclick="exportCsv()">⬇ 表示中をCSV出力</button>
       </div>
       <div class="proc-summary" id="proc-summary"></div>
       <div class="status-filters" id="status-filters"></div>
@@ -1591,6 +1601,7 @@ let cases = [];          // [{id, company, name, proc, status, checks, waitFlags
 let currentId = null;
 let viewMode = 'd';      // 'd'=dashboard, 'c'=checklist
 let dashFilter = 'all';
+let dashSort = 'days';   // days=経過日数が長い順 / new=新しい順 / proc=手続き順 / company=会社名順
 let sbFilter = 'all';
 let expanded = {};
 let selProc = null;
@@ -1841,7 +1852,7 @@ function renderDash() {
   const procCounts = {};
   cases.forEach(c => { procCounts[c.proc] = (procCounts[c.proc]||0)+1; });
   document.getElementById('proc-summary').innerHTML = Object.entries(procCounts)
-    .sort((a,b) => b[1]-a[1])
+    .sort((a,b) => procOrder(a[0]) - procOrder(b[0]))
     .map(([pr, cnt]) => {
       const p = P[pr] || {color:'#6B7280', icon:'📋'};
       const on = procVal === pr;
@@ -1872,6 +1883,16 @@ function renderDash() {
   if (procVal) filtered = filtered.filter(c => c.proc === procVal);
   if (tantoVal) filtered = filtered.filter(c => (c.tantoLog||[]).some(t => t.name === tantoVal));
 
+  // 並べ替え
+  const ageOf = c => { const d = daysSince(c.created_at); return d === null ? -1 : d; };
+  filtered = filtered.slice().sort((a,b) => {
+    if (dashSort === 'new')     return String(b.created_at||'').localeCompare(String(a.created_at||''));
+    if (dashSort === 'company') return (a.company||'').localeCompare(b.company||'', 'ja') || ageOf(b) - ageOf(a);
+    if (dashSort === 'proc')    return procOrder(a.proc) - procOrder(b.proc) || ageOf(b) - ageOf(a);
+    return ageOf(b) - ageOf(a);   // days（既定）
+  });
+  _lastFiltered = filtered;
+
   if (!filtered.length) {
     document.getElementById('dash-content').innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">該当する案件がありません</div><div style="font-size:12px;">絞り込み条件を変えてみてください</div></div>`;
     return;
@@ -1898,7 +1919,10 @@ function renderDash() {
           <span class="dc-pct" style="color:${p.color}">${pt}%</span>
         </div>
       </div>
-      <span class="st-badge" style="background:${st.bg};color:${st.color}">● ${st.label}</span>
+      <span class="st-badge" style="background:${st.bg};color:${st.color}">● ${st.label}</span>${(() => {
+        const d = daysSince(c.created_at);
+        return d === null ? '' : `<span class="age-badge">登録から ${d}日</span>`;
+      })()}
       ${waitChips}
       <div class="dc-bar"><div class="dc-bar-fill" style="width:${pt}%;background:${p.color}"></div></div>
       <div class="dc-bl"><span>${dn} / ${all.length} タスク完了</span></div>
@@ -1916,7 +1940,80 @@ function renderDash() {
   }).join('') + '</div>';
 }
 
+// ============================================================
+// CSV出力（表示中の内容をそのまま出力）
+// ============================================================
+let _lastFiltered = [];
+
+function csvCell(v) {
+  const s = (v === null || v === undefined) ? '' : String(v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function exportCsv() {
+  const rows = _lastFiltered || [];
+  if (!rows.length) { toast('出力できる案件がありません'); return; }
+
+  const header = ['会社名','氏名','手続き名','ステータス','経過日数','担当者','メモ','確認'];
+  const body = rows.map(c => {
+    const d = daysSince(c.created_at);
+    const tanto = (c.tantoLog && c.tantoLog.length) ? c.tantoLog[c.tantoLog.length-1].name : '';
+    return [
+      c.company || '',
+      c.name || '',
+      c.freeName ? c.freeName : (c.proc || ''),
+      stInfo(c.status || 'none').label,
+      d === null ? '' : d,
+      tanto,
+      (c.caseMemo || '').replace(/\r?\n/g, ' '),
+      ''   // 確認欄（印刷して手書きチェック用）
+    ].map(csvCell).join(',');
+  });
+
+  const csv = '\uFEFF' + [header.map(csvCell).join(','), ...body].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const now = new Date();
+  const ymd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+
+  // ファイル名に絞り込み条件を反映
+  const parts = ['手続き一覧'];
+  if (dashFilter !== 'all') parts.push(stInfo(dashFilter).label);
+  const co = document.getElementById('company-filter');
+  const pr = document.getElementById('proc-filter');
+  if (co && co.value) parts.push(co.value);
+  if (pr && pr.value) parts.push(pr.value);
+  const fname = parts.join('_').replace(/[\\\/:*?"<>|]/g, '') + '_' + ymd + '.csv';
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast(`${rows.length}件をCSV出力しました`);
+}
+
+// ---- 手続き種別の並び順（新規案件ダイアログと同じ順） ----
+// PROC_KEYS に無い種別は末尾に回す
+function procOrder(pr) {
+  const i = PROC_KEYS.indexOf(pr);
+  return i === -1 ? 9999 : i;
+}
+
+// ---- 経過日数（案件登録日からの日数） ----
+function daysSince(iso) {
+  if (!iso) return null;
+  const t = new Date(iso);
+  if (isNaN(t)) return null;
+  const a = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  const now = new Date();
+  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
 function setDashFilter(f) { dashFilter = f; renderDash(); }
+function setDashSort(v) { dashSort = v; renderDash(); }
 function setProcFilter(pr) {
   const el = document.getElementById('proc-filter');
   if (el) el.value = el.value === pr ? '' : pr;
@@ -1930,6 +2027,9 @@ function clearFilters() {
   if (co) co.value = '';
   if (pr) pr.value = '';
   if (ta) ta.value = '';
+  dashSort = 'days';
+  const so = document.getElementById('sort-select');
+  if (so) so.value = 'days';
   renderDash();
 }
 
