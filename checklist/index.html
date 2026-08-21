@@ -721,8 +721,34 @@ async function sbUpdate(id, data) {
       body: JSON.stringify(data)
     });
     if (!r.ok) { const t = await r.text(); throw new Error(t); }
+    /* 更新できた行を返してもらいます。
+       0件のときは対象の案件がDBに無いということなので、失敗を返します。
+       PostgreSQLは0件更新でもエラーにならないため、ここを見ないと
+       保存できていないのに「保存済」と表示されてしまいます。 */
+    const rows = await r.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      console.warn('sbUpdate: 対象の案件がDBにありません id=', id);
+      return false;
+    }
     return true;
   } catch(e) { console.error('sbUpdate', e); return false; }
+}
+
+/* 復元専用。案件がDBに無ければ、同じidで作り直します。
+   id列は「指定があればそれを使う」設定にしてあるので、idを渡せます。
+   通常の保存(saveCase)ではこれを使いません。削除済みの案件が
+   他の人の保存操作で復活してしまうためです。 */
+async function sbRestoreOne(row) {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${TABLE}`, {
+      method: 'POST',
+      headers: { ...SB_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(row)
+    });
+    if (!r.ok) { const t = await r.text(); throw new Error(t); }
+    const rows = await r.json();
+    return Array.isArray(rows) && rows.length > 0;
+  } catch(e) { console.error('sbRestoreOne', e); return false; }
 }
 
 async function sbDelete(id) {
@@ -2760,6 +2786,7 @@ async function restoreData(event) {
 
     setSyncStatus('🔄 復元中...');
     let successCount = 0;
+    let failCount = 0;
     for (const c of importCases) {
       const payload = {
         company: c.company || '',
@@ -2767,6 +2794,7 @@ async function restoreData(event) {
         proc: c.proc || '',
         free_name: c.freeName || c.free_name || '',
         proc_date: c.procDate || c.proc_date || '',
+        proc_date2: c.procDate2 || c.proc_date2 || '',
         status: c.status || 'none',
         checks: c.checks || {},
         wait_flags: c.waitFlags || c.wait_flags || {},
@@ -2779,20 +2807,32 @@ async function restoreData(event) {
         ha_fuyo: c.hasFuyo !== false,
     has_calc: c.hasCalc !== null ? c.hasCalc : null,
         has_shaho: c.hasShaho !== false,
+        has_tsukihen: (c.hasTsukihen !== undefined ? c.hasTsukihen
+                     : (c.has_tsukihen !== undefined ? c.has_tsukihen : null)),
         free_labels: c.freeLabels || c.free_labels || {},
         updated_at: new Date().toISOString(),
       };
-      // 既存案件はupdate、なければinsert
+      /* 案件がDBに残っていれば上書き、消えていれば同じidで作り直します。
+         以前は sbUpdate だけを呼んでいたため、削除済みの案件は
+         0件更新のまま「復元しました」と表示されていました。 */
+      let ok;
       if (c.id) {
-        await sbUpdate(c.id, payload);
+        payload.id = Number(c.id);
+        payload.created_at = c.created_at || new Date().toISOString();
+        ok = await sbRestoreOne(payload);
       } else {
         payload.created_at = new Date().toISOString();
-        await sbInsert(payload);
+        ok = !!(await sbInsert(payload));
       }
-      successCount++;
+      if (ok) successCount++; else failCount++;
     }
     await loadData();
-    toast(`✅ ${successCount}件のデータを復元しました`);
+    if (failCount > 0) {
+      toast(`⚠️ ${successCount}件を復元しましたが、${failCount}件は失敗しました`);
+      setSyncStatus('⚠️ 一部復元できませんでした');
+    } else {
+      toast(`✅ ${successCount}件のデータを復元しました`);
+    }
   } catch(e) {
     toast('❌ 復元に失敗しました: ' + e.message);
     setSyncStatus('⚠️ 復元失敗');
