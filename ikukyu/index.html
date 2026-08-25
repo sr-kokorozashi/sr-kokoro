@@ -1825,6 +1825,47 @@ function getMaleDates(c) {
   return { base, papaPeriodEnd, ikukyuEnd, kyufuPeriods };
 }
 
+// ── 産後パパ育休まわりの共通ヘルパー ──
+function _ymd(s) { const a = String(s).split('-').map(Number); return { y: a[0], m: a[1], d: a[2] }; }
+function _pad(n) { return String(n).padStart(2, '0'); }
+function _lastDay(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); } // m は1始まり
+// 休業日数（暦日・両端含む）
+function countLeaveDays(start, end) {
+  if (!start) return 0;
+  if (!end) return 0;
+  const a = new Date(start + 'T00:00:00Z'), b = new Date(end + 'T00:00:00Z');
+  return Math.floor((b - a) / 86400000) + 1;
+}
+// 起算日から○か月を経過する日の属する月の末日（雇用保険の申請期限の考え方）
+function monthEndAfterMonths(start, months) {
+  if (!start) return null;
+  const s = _ymd(start);
+  let y = s.y, m = s.m + months;
+  while (m > 12) { m -= 12; y += 1; }
+  const day = Math.min(s.d, _lastDay(y, m));   // 応当日（無ければその月の末日）
+  // 応当日の前日＝「○か月を経過する日」
+  let ey = y, em = m, ed = day - 1;
+  if (ed < 1) { em -= 1; if (em < 1) { em = 12; ey -= 1; } ed = _lastDay(ey, em); }
+  return `${ey}-${_pad(em)}-${_pad(_lastDay(ey, em))}`;
+}
+// 社保免除の可否メモ（月末日を含むか／同一月内14日以上か）
+function shahoMenjoNote(start, end) {
+  if (!start) return '';
+  if (!end) return '終了日が未確定です';
+  const s = _ymd(start);
+  const nd = _ymd(addDays(end, 1)); // 終了日の翌日
+  if (nd.y !== s.y || nd.m !== s.m) {
+    let py = nd.y, pm = nd.m - 1; if (pm < 1) { pm = 12; py -= 1; } // 終了日翌日の属する月の前月
+    return (s.y === py && s.m === pm)
+      ? `⭕ 月末日を含むため ${s.m}月分 の社会保険料が免除`
+      : `⭕ ${s.m}月分 〜 ${pm}月分 の社会保険料が免除（月末日を含む）`;
+  }
+  const days = countLeaveDays(start, end);
+  return days >= 14
+    ? `⭕ 同一月内${days}日 → ${s.m}月分 の社会保険料が免除\n⚠️ 就業日は14日のカウントから除外。就業させると14日を割り免除不可になる場合あり`
+    : `⚠️ 同一月内${days}日・月末日を含まないため ${s.m}月分 は免除対象外`;
+}
+
 function getMaleProcedures(c) {
   const d = getMaleDates(c);
   const b = d.base;
@@ -1834,54 +1875,110 @@ function getMaleProcedures(c) {
   // ── 産後パパ育休（出生時育児休業） ──
   if (c.papa1Start || c.papa1End) {
     procs.push({ section: '【産後パパ育休（出生時育児休業）】', isSectionHeader: true, isMale: true });
+    const NO = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+    let n = 0;
+    // 第1回・第2回が同一月内に収まるか（同一月内なら社保免除の申出書は1枚にまとめる）
+    const ym = v => v ? v.slice(0, 7) : null;
+    const papaSameMonth = !!(c.papa2Start && c.papa1End && c.papa2End &&
+      ym(c.papa1Start) === ym(c.papa1End) && ym(c.papa1End) === ym(c.papa2Start) && ym(c.papa2Start) === ym(c.papa2End));
+    const papaTotalDays = countLeaveDays(c.papa1Start, c.papa1End) + countLeaveDays(c.papa2Start, c.papa2End);
+    const lastPapaEnd = c.papa2End || c.papa2Start || c.papa1End || null;
+
     procs.push({
-      id: 'm-chingin-shomei', no: '①',
+      id: 'm-chingin-shomei', no: NO[n++],
       name: '育児休業等賃金証明書',
       period: null,
       deadline: c.papa1Start ? addDays(c.papa1Start, 14) : null,
       sendDate: c.papa1Start ? addDays(c.papa1Start, -14) : null,
       docs: '雇用保険被保険者休業開始時賃金月額証明書・賃金台帳（直近6か月）・出勤簿',
-      note: 'ゆうちょ銀行の場合は漢数字「〇」入力不可',
+      note: 'ゆうちょ銀行の場合は漢数字「〇」入力不可\n給付金支給申請書と同時提出（1回目の休業開始日で作成）',
     });
+
+    // ── 社保免除（育児休業等取得者申出書）──
+    // 分割取得は「回ごと」に申出が必要。ただし同一月内の複数回は1枚にまとめる（日本年金機構）
+    if (papaSameMonth) {
+      procs.push({
+        id: 'm-shahoMenjo-papa1', no: NO[n++],
+        name: '育児休業等取得者申出書（社保免除）産後パパ育休 第1回・第2回',
+        period: `${fmtDate(c.papa1Start)} 〜 ${fmtDate(c.papa2End)}（同一月内のため1枚にまとめる）`,
+        deadline: c.papa1Start || null,
+        sendDate: c.papa1Start ? addDays(c.papa1Start, -14) : null,
+        docs: '育児休業等取得者申出書・出生時育児休業申出書のコピー',
+        note: '同一月内に複数回取得のため、最初の開始日と最後の終了日を記載して1枚で提出\n' + shahoMenjoNote(c.papa1Start, c.papa2End),
+      });
+    } else {
+      procs.push({
+        id: 'm-shahoMenjo-papa1', no: NO[n++],
+        name: c.papa2Start ? '育児休業等取得者申出書（社保免除）産後パパ育休 第1回' : '育児休業等取得者申出書（社保免除）産後パパ育休',
+        period: c.papa1Start ? `${fmtDate(c.papa1Start)} 〜 ${fmtDate(c.papa1End || '')}` : '—',
+        deadline: c.papa1Start || null,
+        sendDate: c.papa1Start ? addDays(c.papa1Start, -14) : null,
+        docs: '育児休業等取得者申出書・出生時育児休業申出書のコピー',
+        note: (c.papa2Start ? '⚠️ 分割取得は回ごとに申出が必要。第2回分は別紙で提出（次項）\n' : '') + shahoMenjoNote(c.papa1Start, c.papa1End),
+      });
+      if (c.papa2Start) {
+        procs.push({
+          id: 'm-shahoMenjo-papa2', no: NO[n++],
+          name: '育児休業等取得者申出書（社保免除）産後パパ育休 第2回',
+          period: `${fmtDate(c.papa2Start)} 〜 ${fmtDate(c.papa2End || '')}`,
+          deadline: c.papa2Start || null,
+          sendDate: c.papa2Start ? addDays(c.papa2Start, -14) : null,
+          docs: '育児休業等取得者申出書・出生時育児休業申出書のコピー',
+          note: '⚠️ 第1回とは別に提出（1枚の申出書に第1回・第2回をまとめて書けるのは同一月内の場合のみ）\n' + shahoMenjoNote(c.papa2Start, c.papa2End),
+        });
+      }
+    }
+
+    // ── 出生時育児休業給付金 ──
+    // 申請可能日＝原則「出生後8週間を経過する日の翌日」／例外：2回目の休業終了日の翌日、28日到達日の翌日
+    let papaApplyFrom = d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 1) : null;
+    let papaApplyNote = '産後8週間経過後';
+    if (c.papa2Start && lastPapaEnd) {
+      papaApplyFrom = addDays(lastPapaEnd, 1);
+      papaApplyNote = '第2回の休業終了日の翌日';
+    } else if (papaTotalDays >= 28 && c.papa1End) {
+      papaApplyFrom = addDays(c.papa1End, 1);
+      papaApplyNote = '取得日数が28日に達した日の翌日';
+    }
+    // 申請期限＝申請可能日から2か月を経過する日の属する月の末日
+    const papaDeadline = papaApplyFrom ? monthEndAfterMonths(papaApplyFrom, 2) : null;
+
     procs.push({
-      id: 'm-shahoMenjo-papa1', no: '②',
-      name: '育児休業等取得者申出書（社保免除）産後パパ育休',
-      period: c.papa1Start ? `${fmtDate(c.papa1Start)} 〜 ${fmtDate(c.papa1End || '')}${c.papa2Start ? `　/ 第2回: ${fmtDate(c.papa2Start)} 〜 ${fmtDate(c.papa2End || '')}` : ''}` : '—',
-      deadline: c.papa1Start || null,
-      sendDate: c.papa1Start ? addDays(c.papa1Start, -14) : null,
-      docs: '育児休業等取得者申出書・出生時育児休業申出書のコピー',
-      note: '産後パパ育休は14日以上で月末をまたがなくても社保免除可（賞与は1か月超必要）',
-    });
-    const papaDeadline = d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 60) : null;
-    procs.push({
-      id: 'm-papa-kyufu', no: '③',
+      id: 'm-papa-kyufu', no: NO[n++],
       name: '出生時育児休業給付金（産後パパ育休給付）',
-      period: b ? `出生後8週間以内（〜${fmtDate(d.papaPeriodEnd)}）` : '—',
+      period: c.papa2Start
+        ? `第1回 ${fmtDate(c.papa1Start)}〜${fmtDate(c.papa1End || '')} ／ 第2回 ${fmtDate(c.papa2Start)}〜${fmtDate(c.papa2End || '')}（通算${papaTotalDays}日）`
+        : (b ? `${fmtDate(c.papa1Start)}〜${fmtDate(c.papa1End || '')}（通算${papaTotalDays}日／出生後8週間以内〜${fmtDate(d.papaPeriodEnd)}）` : '—'),
       deadline: papaDeadline,
-      availableDate: d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 1) : null,
-      sendDate: d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 3) : null,
+      availableDate: papaApplyFrom,
+      sendDate: papaApplyFrom ? addDays(papaApplyFrom, 2) : null,
       docs: '①育児休業給付受給資格確認票・出生時育児休業給付金支給申請書（専用様式・通常育休の様式と別）　②雇用保険被保険者休業開始時賃金月額証明書（①と同時提出）　③母子手帳（出生届出済証明ページ）のコピー　④出生時育児休業申出書のコピー　⑤賃金台帳・出勤簿（対象期間分）　⑥通帳またはキャッシュカードのコピー',
-      note: '⚠️ 申請受付開始は産後8週間経過後。賃金証明書と同時に申請する。\n就業日数が最大10日（10日超の場合は80時間）以下であること。\n2回分割取得の場合も1回の申請書で申請可。',
+      note: `⚠️ 申請受付開始は ${fmtDate(papaApplyFrom)}（${papaApplyNote}）。賃金証明書と同時に申請する。\n`
+          + (c.papa2Start ? '✅ 2回に分割取得しても給付金の申請は1回にまとめる。申請書の「支給期間その1」〜「その2」に各休業期間・就業日数・支払賃金を分けて記載。\n' : '')
+          + `就業日数が最大10日（10日超の場合は80時間）以下であること。休業が28日より短い場合は日数按分（例：14日→最大5日）。\n`
+          + `申請期限：${fmtDate(papaDeadline)}（申請可能日から2か月を経過する日の属する月の末日）`,
     });
     if (shienKyufuTarget) {
       procs.push({
-        id: 'm-shien-papa', no: '④',
+        id: 'm-shien-papa', no: NO[n++],
         name: '出生後休業支援給付金（+13%）産後パパ育休分',
-        period: `産後パパ育休通算14日以上取得分（最大28日）`,
+        period: `産後パパ育休 通算${papaTotalDays}日（14日以上が要件／最大28日）`,
         deadline: papaDeadline,
-        sendDate: d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 3) : null,
+        availableDate: papaApplyFrom,
+        sendDate: papaApplyFrom ? addDays(papaApplyFrom, 2) : null,
         docs: '出生時育児休業給付金支給申請書（出生後休業支援給付金と一体申請）・配偶者が産後休業中の証明書類（配偶者の産休届出書写し等）または配偶者の育休取得証明書',
-        note: `産後パパ育休14日以上取得が要件。配偶者条件: ${c.spouseIkukyu === 'sangokyu' ? '配偶者は産後休業中→要件充足（最も多いケース）' : c.spouseIkukyu === 'musho' ? '配偶者が無業・自営→要件緩和' : '配偶者も育休取得'}。\n産後パパ育休給付金申請と同時申請が原則。`,
+        note: (papaTotalDays > 0 && papaTotalDays < 14 ? `⚠️ 通算${papaTotalDays}日で14日未満のため現状は要件を満たしません。\n` : `通算${papaTotalDays}日で14日以上の要件を充足。\n`)
+            + `配偶者条件: ${c.spouseIkukyu === 'sangokyu' ? '配偶者は産後休業中→要件充足（最も多いケース）' : c.spouseIkukyu === 'musho' ? '配偶者が無業・自営→要件緩和' : '配偶者も育休取得'}。\n産後パパ育休給付金申請と同時申請が原則（分割2回でも申請は1回）。`,
       });
     }
     procs.push({
-      id: 'm-papa-end-shinsei', no: shienKyufuTarget ? '⑤' : '④',
+      id: 'm-papa-end-shinsei', no: NO[n++],
       name: '育児休業等取得者申出書 終了届（産後パパ育休終了後）',
-      period: null,
-      deadline: c.papa1End ? addDays(c.papa1End, 30) : null,
-      sendDate: c.papa1End || null,
+      period: lastPapaEnd ? `最終休業終了日: ${fmtDate(lastPapaEnd)}` : null,
+      deadline: lastPapaEnd ? addDays(lastPapaEnd, 30) : null,
+      sendDate: lastPapaEnd || null,
       docs: '育児休業等取得者申出書 終了届',
-      note: '産後パパ育休終了後に提出（通常育休に引き続く場合は継続申出でも可）',
+      note: '予定より早く終了した場合に提出（回ごとに必要）。予定どおり終了する場合は原則不要。\n通常育休に引き続く場合は継続申出でも可',
     });
   }
 
@@ -2092,6 +2189,7 @@ const PROC_INS = {
   // ---- 男性 ----
   'm-chingin-shomei':    'koyo',
   'm-shahoMenjo-papa1':  'shaho',
+  'm-shahoMenjo-papa2':  'shaho',
   'm-papa-kyufu':        'koyo',
   'm-shien-papa':        'koyo',
   'm-papa-end-shinsei':  'shaho',
@@ -3399,8 +3497,13 @@ function getMaleMailTemplates(c) {
 
   // ① 産後パパ育休
   if (c.papa1Start) {
-    var papaDeadline = d.papaPeriodEnd ? fmtDate(addDays(d.papaPeriodEnd, 60)) : '\u2014';
-    var papaFrom = d.papaPeriodEnd ? fmtDate(addDays(d.papaPeriodEnd, 1)) : '\u2014';
+    var _lastPapaEnd = c.papa2End || c.papa2Start || c.papa1End || null;
+    var _papaTotal = countLeaveDays(c.papa1Start, c.papa1End) + countLeaveDays(c.papa2Start, c.papa2End);
+    var _papaFromRaw = d.papaPeriodEnd ? addDays(d.papaPeriodEnd, 1) : null;
+    if (c.papa2Start && _lastPapaEnd) _papaFromRaw = addDays(_lastPapaEnd, 1);
+    else if (_papaTotal >= 28 && c.papa1End) _papaFromRaw = addDays(c.papa1End, 1);
+    var papaDeadline = _papaFromRaw ? fmtDate(monthEndAfterMonths(_papaFromRaw, 2)) : '\u2014';
+    var papaFrom = _papaFromRaw ? fmtDate(_papaFromRaw) : '\u2014';
     var p1lines = [
       '\u300b\u7523\u5f8c\u30d1\u30d1\u80b2\u4f11\uff08\u51fa\u751f\u6642\u80b2\u5150\u4f11\u696d\uff09\u306e\u3054\u6848\u5185\u300b',
       '', company, name + '\u69d8', '',
