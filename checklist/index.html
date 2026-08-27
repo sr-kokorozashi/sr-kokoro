@@ -53,7 +53,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 #vd::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px;}
 .vd-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .vd-head h2{font-size:16px;font-weight:700;color:#0F172A;}
-.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;}
+/* サマリーは非表示（戻すときは display:none → display:grid） */
+.summary{display:none;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;}
 .sm{background:#fff;border-radius:8px;padding:10px 14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07);}
 .sm-n{font-size:22px;font-weight:700;}
 .sm-l{font-size:10px;color:#64748B;margin-top:2px;}
@@ -65,46 +66,66 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 .filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
 .filter-select{padding:5px 10px;border:1px solid #E2E8F0;border-radius:6px;font-size:12px;font-family:inherit;background:#fff;color:#475569;cursor:pointer;outline:none;}
 .filter-select:focus{border-color:#2563EB;}
-.filter-clear{padding:5px 10px;border:1px solid #E2E8F0;border-radius:6px;font-size:11px;font-family:inherit;background:#fff;color:#94A3B8;cursor:pointer;}
+/* 絞り込みが効いているときだけ目立たせる */
+.filter-clear{padding:5px 10px;border:1px solid #E2E8F0;border-radius:6px;font-size:11px;font-family:inherit;background:#fff;color:#94A3B8;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s;}
 .filter-clear:hover{background:#F1F5F9;color:#475569;}
+.filter-clear.on{border-color:#EA580C;background:#FFF7ED;color:#C2410C;font-weight:700;box-shadow:0 0 0 3px rgba(234,88,12,.12);}
+.filter-clear.on:hover{background:#FFEDD5;color:#9A3412;}
+.fc-cnt{background:#EA580C;color:#fff;border-radius:8px;padding:0 6px;font-size:10px;line-height:15px;}
+/* 選ばれている絞り込み自体も色を付ける */
+.filter-select.on{border-color:#2563EB;background:#EFF6FF;color:#1D4ED8;font-weight:700;}
 .filter-csv{padding:5px 12px;border:1px solid #059669;border-radius:6px;font-size:11px;font-family:inherit;background:#fff;color:#059669;cursor:pointer;font-weight:700;}
 .filter-csv:hover{background:#ECFDF5;}
 .age-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:5px;background:#F1F5F9;color:#64748B;vertical-align:middle;}
+.apply-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:5px;background:#F1F5F9;color:#64748B;vertical-align:middle;white-space:nowrap;}
 .proc-summary{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
 .proc-chip{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .12s;}
 .proc-chip.off{background:#fff!important;color:#64748B!important;border-color:#E2E8F0!important;}
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;}
 .dc{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);cursor:pointer;border:2px solid transparent;transition:all .15s;}
 .dc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.12);}
-.dc-head{display:flex;align-items:flex-start;gap:7px;margin-bottom:8px;}
-.dc-ico{font-size:20px;line-height:1;}
+/* カード見出し：日付を主役に */
+.dc-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:9px;}
+.dc-date{flex-shrink:0;width:66px;text-align:center;border-right:1px solid #E2E8F0;padding-right:10px;}
+.dc-date-y{font-size:9px;color:#94A3B8;font-weight:600;}
+.dc-date-md{font-size:22px;font-weight:700;color:#0F172A;line-height:1.12;letter-spacing:-.03em;}
+.dc-date-w{font-size:9px;color:#64748B;margin-top:1px;}
+.dc-date-l{font-size:9px;font-weight:700;margin-top:4px;padding:1px 0;border-radius:3px;}
+.dc-date-2{font-size:10px;font-weight:600;color:#475569;margin-top:5px;padding-top:5px;border-top:1px dashed #E2E8F0;}
+.dc-date-none{font-size:10px;color:#CBD5E1;padding:16px 0;}
 .dc-inf{flex:1;min-width:0;}
-.dc-co{font-weight:700;color:#0F172A;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dc-sub{font-size:10px;color:#64748B;margin-top:1px;}
-.dc-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
-.dc-proc{font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;}
-.dc-pct{font-size:18px;font-weight:700;}
-.st-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-bottom:6px;}
-.dc-bar{background:#E2E8F0;border-radius:3px;height:5px;overflow:hidden;margin-bottom:4px;}
+.dc-proc{font-size:14px;font-weight:700;line-height:1.2;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.dc-co{font-size:15px;font-weight:700;color:#0F172A;margin-top:5px;line-height:1.3;overflow-wrap:anywhere;}
+.dc-sub{font-size:13px;font-weight:500;color:#475569;margin-top:3px;line-height:1.3;}
+.badge-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.dc-bar{background:#E2E8F0;border-radius:3px;height:5px;overflow:hidden;margin-top:10px;}
 .dc-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
-.dc-bl{font-size:10px;color:#64748B;display:flex;justify-content:space-between;}
 
 /* 待ち中情報 */
 .waiting-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
 .wchip{font-size:9px;padding:2px 7px;border-radius:4px;background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;font-weight:600;}
 
 /* ステータスドロップダウン */
-.st-sel{width:100%;font-size:11px;font-family:inherit;border:1px solid #E2E8F0;border-radius:6px;padding:4px 6px;cursor:pointer;background:#F8FAFC;color:#475569;margin-top:8px;}
+/* 現在のステータス色をそのまま持つ（バッジは廃止） */
+.dc-foot{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.st-sel{flex:1;min-width:0;font-size:11px;font-weight:700;font-family:inherit;border:1.5px solid;border-radius:6px;
+        padding:4px 24px 4px 8px;cursor:pointer;appearance:none;-webkit-appearance:none;
+        background-repeat:no-repeat;background-position:right 7px center;background-size:9px;transition:box-shadow .12s;}
+.st-sel:hover{box-shadow:0 0 0 3px rgba(0,0,0,.05);}
+.st-sel:focus{outline:none;box-shadow:0 0 0 3px rgba(0,0,0,.09);}
+.st-sel option{background:#fff;color:#1E293B;font-weight:500;}
 
 /* アクション */
-.dc-acts{display:flex;gap:6px;margin-top:8px;}
-.dc-btn{flex:1;padding:5px;border-radius:5px;border:none;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .12s;}
-.dc-open{background:#EFF6FF;color:#2563EB;}
-.dc-open:hover{background:#DBEAFE;}
-.dc-del{background:#FEF2F2;color:#DC2626;}
-.dc-edit{background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;}
-.dc-edit:hover{background:#E2E8F0;}
-.dc-del:hover{background:#FEE2E2;}
+/* アイコンのみ・右下に小さく */
+.dc-acts{display:flex;gap:4px;justify-content:flex-end;}
+.dc-btn{width:26px;height:26px;padding:0;font-size:12px;line-height:1;border:none;background:transparent;
+        font-family:inherit;cursor:pointer;border-radius:6px;opacity:.45;transition:all .12s;
+        display:flex;align-items:center;justify-content:center;}
+.dc:hover .dc-btn{opacity:.8;}
+.dc-btn:hover{opacity:1!important;transform:scale(1.12);}
+.dc-open:hover{background:#EFF6FF;}
+.dc-edit:hover{background:#F1F5F9;}
+.dc-del:hover{background:#FEF2F2;}
 
 /* チェックリスト */
 #vc{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -277,9 +298,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
         <select class="filter-select" id="tanto-filter" onchange="renderDash()">
           <option value="">担当者：すべて</option>
         </select>
-        <button class="filter-clear" onclick="clearFilters()">絞り込みをリセット</button>
+        <button class="filter-clear" id="btn-clear" onclick="clearFilters()">絞り込みをリセット</button>
         <select class="filter-select" id="sort-select" onchange="setDashSort(this.value)">
           <option value="days">並び：経過日数が長い順</option>
+          <option value="apply">並び：申請可能日が早い順</option>
           <option value="new">並び：新しい順</option>
           <option value="proc">並び：手続き順</option>
           <option value="company">並び：会社名順</option>
@@ -789,6 +811,16 @@ const PROC_DATE_CONFIG = {
   '扶養（削除）':         { label: '異動年月日',        type: 'date' },
   '月変・賃金入力':       { label: '賃金支給月', type: 'month', label2: '月変月', type2: 'month' },
   '賞与支払届':          { label: '賞与支給日',        type: 'date' },
+};
+
+// ---- 申請可能日：基準日（proc_date）に何日足すと申請できるか ----
+// 未定義の手続き（月変・労災など）は「日付待ちではない」扱い
+const PROC_APPLY_OFFSET = {
+  '入社': 0, '入社（健保組合）': 0,
+  '退職': 1, '退職（健保組合）': 1,          // 退職日の翌日から
+  '同日得喪': 0, '同日得喪（健保組合）': 0,
+  '扶養': 0, '扶養（削除）': 0,
+  '賞与支払届': 0,
 };
 function stInfo(k) { return STATUSES.find(s => s.key === k) || STATUSES[0]; }
 
@@ -1874,6 +1906,19 @@ function renderDash() {
       tantos.map(t => `<option value="${esc(t)}" ${t===tantoVal?'selected':''}>${esc(t)}</option>`).join('');
   }
 
+  // 絞り込みが効いているかを見た目に反映
+  [[companyEl, companyVal], [procEl, procVal], [tantoEl, tantoVal]].forEach(([el, v]) => {
+    if (el) el.classList.toggle('on', !!v);
+  });
+  const activeCount = [companyVal, procVal, tantoVal].filter(Boolean).length + (dashFilter !== 'all' ? 1 : 0);
+  const clearBtn = document.getElementById('btn-clear');
+  if (clearBtn) {
+    clearBtn.classList.toggle('on', activeCount > 0);
+    clearBtn.innerHTML = activeCount > 0
+      ? `✕ 絞り込みをリセット <span class="fc-cnt">${activeCount}</span>`
+      : '絞り込みをリセット';
+  }
+
   // 手続き別集計
   const procCounts = {};
   cases.forEach(c => { procCounts[c.proc] = (procCounts[c.proc]||0)+1; });
@@ -1912,6 +1957,7 @@ function renderDash() {
   // 並べ替え
   const ageOf = c => { const d = daysSince(c.created_at); return d === null ? -1 : d; };
   filtered = filtered.slice().sort((a,b) => {
+    if (dashSort === 'apply')   return applyInfo(a).sortKey - applyInfo(b).sortKey || ageOf(b) - ageOf(a);
     if (dashSort === 'new')     return String(b.created_at||'').localeCompare(String(a.created_at||''));
     if (dashSort === 'company') return (a.company||'').localeCompare(b.company||'', 'ja') || ageOf(b) - ageOf(a);
     if (dashSort === 'proc')    return procOrder(a.proc) - procOrder(b.proc) || ageOf(b) - ageOf(a);
@@ -1929,38 +1975,37 @@ function renderDash() {
     const waitChips = c.waitFlags && Object.keys(c.waitFlags).some(k=>c.waitFlags[k])
       ? `<div class="waiting-chips">${WAIT_ITEMS.filter(w=>c.waitFlags[w.key]).map(w=>`<span class="wchip">⏳ ${w.label}</span>`).join('')}</div>` : '';
     const tantoLast = c.tantoLog && c.tantoLog.length ? `<div style="font-size:10px;color:#64748B;margin-top:4px;">担当: ${esc(c.tantoLog[c.tantoLog.length-1].name)}</div>` : '';
+    // 申請待ちのときは「登録からN日」を隠す（申請可能日バッジと数字が紛らわしいため）
+    const ageDays = daysSince(c.created_at);
+    const ageBadge = (ageDays === null || (c.status||'none') === 'shinsei')
+      ? '' : `<span class="age-badge">登録から ${ageDays}日</span>`;
+    const apBadge = applyBadge(c);
+    const badgeRow = (ageBadge || apBadge) ? `<div class="badge-row">${ageBadge}${apBadge}</div>` : '';
+
     return `<div class="dc" onclick="openChecklist('${c.id}')">
       <div class="dc-head">
-        <div class="dc-ico" style="text-align:center;">
-          <div style="font-size:20px;line-height:1;">${p.icon}</div>
-          ${c.procDate ? '<div style="font-size:10px;font-weight:700;color:#1E293B;margin-top:3px;white-space:nowrap;">' + esc(c.procDate) + '</div>' : ''}
-          ${c.procDate2 ? '<div style="font-size:10px;font-weight:600;color:#475569;margin-top:1px;white-space:nowrap;">' + esc(c.procDate2) + '</div>' : ''}
-        </div>
+        ${dcDateCol(c)}
         <div class="dc-inf">
+          <div class="dc-proc" style="color:${p.color}">${p.icon} ${c.freeName ? esc(c.freeName) : esc(c.proc)}${c.round?`<span style="background:#FEF9C3;color:#B45309;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;">${esc(c.round)}</span>`:''}</div>
           <div class="dc-co">${esc(c.company)}</div>
-          <div class="dc-sub">${esc(c.name||'')}${c.name?' · ':''}${c.round?`<span style='background:#FEF9C3;color:#B45309;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;margin-right:3px;'>${esc(c.round)}</span>`:''}</div>
-        </div>
-        <div class="dc-right">
-          <span class="dc-proc" style="background:${p.color}18;color:${p.color}">${c.freeName ? esc(c.freeName) : esc(c.proc)}</span>
-          <span class="dc-pct" style="color:${p.color}">${pt}%</span>
+          ${c.name ? `<div class="dc-sub">${esc(c.name)}</div>` : ''}
         </div>
       </div>
-      <span class="st-badge" style="background:${st.bg};color:${st.color}">● ${st.label}</span>${(() => {
-        const d = daysSince(c.created_at);
-        return d === null ? '' : `<span class="age-badge">登録から ${d}日</span>`;
-      })()}
+      ${badgeRow}
       ${waitChips}
       <div class="dc-bar"><div class="dc-bar-fill" style="width:${pt}%;background:${p.color}"></div></div>
-      <div class="dc-bl"><span>${dn} / ${all.length} タスク完了</span></div>
       ${tantoLast}
-      ${c.caseMemo ? '<div style="font-size:11px;color:#92400E;font-weight:700;margin-top:4px;padding:5px 8px;background:#FEF3C7;border-radius:4px;border-left:3px solid #F59E0B;line-height:1.5;">' + esc(c.caseMemo) + '</div>' : ''}
-      <select class="st-sel" onchange="setStatusFromDash('${c.id}',this.value)" onclick="event.stopPropagation()">
-        ${STATUSES.filter(s => s.key !== 'double' || c.proc === '月変・賃金入力').map(s=>`<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('')}
-      </select>
-      <div class="dc-acts">
-        <button class="dc-btn dc-open" onclick="event.stopPropagation();openChecklist('${c.id}')">☑ チェックリストを開く</button>
-        <button class="dc-btn dc-edit" onclick="event.stopPropagation();openEditCase('${c.id}')">✏️ 修正</button>
-        <button class="dc-btn dc-del" onclick="event.stopPropagation();deleteCase('${c.id}')">🗑 削除</button>
+      ${c.caseMemo ? '<div style="font-size:11px;color:#92400E;font-weight:700;margin-top:8px;padding:5px 8px;background:#FEF3C7;border-radius:4px;border-left:3px solid #F59E0B;line-height:1.5;">' + esc(c.caseMemo) + '</div>' : ''}
+      <div class="dc-foot">
+        <select class="st-sel" onchange="setStatusFromDash('${c.id}',this.value)" onclick="event.stopPropagation()"
+          style="background-color:${st.bg};color:${st.color};border-color:${st.color};background-image:${caret(st.color)}">
+          ${STATUSES.filter(s => s.key !== 'double' || c.proc === '月変・賃金入力').map(s=>`<option value="${s.key}"${(c.status||'none')===s.key?' selected':''}>${s.label}</option>`).join('')}
+        </select>
+        <div class="dc-acts">
+          <button class="dc-btn dc-open" onclick="event.stopPropagation();openChecklist('${c.id}')" title="チェックリストを開く" aria-label="チェックリストを開く">☑</button>
+          <button class="dc-btn dc-edit" onclick="event.stopPropagation();openEditCase('${c.id}')" title="修正" aria-label="修正">✏️</button>
+          <button class="dc-btn dc-del" onclick="event.stopPropagation();deleteCase('${c.id}')" title="削除" aria-label="削除">🗑</button>
+        </div>
       </div>
     </div>`;
   }).join('') + '</div>';
@@ -2038,7 +2083,86 @@ function daysSince(iso) {
   return Math.max(0, Math.round((b - a) / 86400000));
 }
 
-function setDashFilter(f) { dashFilter = f; renderDash(); }
+// ---- 申請可能日の判定 ----
+function applyInfo(c) {
+  const off = PROC_APPLY_OFFSET[c.proc];
+  if (off === undefined) {
+    return { kind:'na', days:null, label:'⚠️ 日付待ちの手続きではありません',
+             color:'#B45309', bg:'#FEF3C7', applyYmd:'', sortKey:-100000 };
+  }
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(c.procDate || '');
+  if (!m) {
+    return { kind:'nodate', days:null, label:'⚠️ 日付が入っていません',
+             color:'#B91C1C', bg:'#FEF2F2', applyYmd:'', sortKey:-100000 };
+  }
+  const apply = new Date(+m[1], +m[2]-1, +m[3] + off);
+  const n = new Date();
+  const today = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  const diff = Math.round((apply - today) / 86400000);
+  const ymd = apply.getFullYear() + '/' + String(apply.getMonth()+1).padStart(2,'0') + '/' + String(apply.getDate()).padStart(2,'0');
+
+  if (diff < 0)   return { kind:'over',   days:diff, label:`⚠️ 申請可能 ${-diff}日経過`, color:'#B91C1C', bg:'#FEF2F2', applyYmd:ymd, sortKey:diff };
+  if (diff === 0) return { kind:'today',  days:0,    label:'📮 今日から申請できます',     color:'#C2410C', bg:'#FFF7ED', applyYmd:ymd, sortKey:0 };
+  if (diff <= 3)  return { kind:'soon',   days:diff, label:`あと${diff}日`,              color:'#B45309', bg:'#FEF9C3', applyYmd:ymd, sortKey:diff };
+  return            { kind:'future', days:diff, label:`あと${diff}日`,              color:'#64748B', bg:'#F1F5F9', applyYmd:ymd, sortKey:diff };
+}
+
+// 申請待ちの案件だけにバッジを出す
+function applyBadge(c) {
+  if ((c.status || 'none') !== 'shinsei') return '';
+  const a = applyInfo(c);
+  const ttl = a.applyYmd ? ` title="申請可能日 ${a.applyYmd}"` : '';
+  return `<span class="apply-badge" style="background:${a.bg};color:${a.color}"${ttl}>${a.label}</span>`;
+}
+
+// ---- 日付欄（カード左端）----
+function dcDateCol(c) {
+  const cfg = PROC_DATE_CONFIG[c.proc], p = gp(c);
+  // 日付を持たない手続き（労災・傷病手当など）は日付欄そのものを出さない
+  if (!cfg) return '';
+  // 日付を持つはずなのに空 → 入力漏れなので枠は残して知らせる
+  if (!c.procDate) return `<div class="dc-date"><div class="dc-date-none">日付なし</div></div>`;
+
+  const fmt = v => {
+    const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || '');
+    if (d) {
+      const dt = new Date(+d[1], +d[2]-1, +d[3]);
+      return { y:d[1], md:d[2]+'/'+d[3], w:'('+['日','月','火','水','木','金','土'][dt.getDay()]+')' };
+    }
+    const m = /^(\d{4})-(\d{2})$/.exec(v || '');
+    if (m) return { y:m[1], md:m[2]+'月', w:'' };
+    return { y:'', md:esc(v), w:'' };
+  };
+
+  const a = fmt(c.procDate);
+  const lab = (cfg.label || '').replace('年月日', '日');
+  const lab2 = cfg.label2 || '';
+  const b = c.procDate2 ? fmt(c.procDate2) : null;
+
+  return `<div class="dc-date">
+    ${a.y ? `<div class="dc-date-y">${a.y}</div>` : ''}
+    <div class="dc-date-md">${a.md}</div>
+    ${a.w ? `<div class="dc-date-w">${a.w}</div>` : ''}
+    <div class="dc-date-l" style="background:${p.color}14;color:${p.color}">${esc(lab)}</div>
+    ${b ? `<div class="dc-date-2">${esc(lab2)} ${b.md}</div>` : ''}
+  </div>`;
+}
+
+// ---- ステータスプルダウンの▼を文字色に合わせる ----
+function caret(color) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+function setDashFilter(f) {
+  // 申請待ちを開いたら申請可能日順へ、離れたら元の既定へ自動で戻す
+  if (f === 'shinsei' && dashSort === 'days') dashSort = 'apply';
+  if (f !== 'shinsei' && dashSort === 'apply') dashSort = 'days';
+  dashFilter = f;
+  const el = document.getElementById('sort-select');
+  if (el) el.value = dashSort;
+  renderDash();
+}
 function setDashSort(v) { dashSort = v; renderDash(); }
 function setProcFilter(pr) {
   const el = document.getElementById('proc-filter');
