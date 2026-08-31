@@ -1972,7 +1972,9 @@ function renderDash() {
   document.getElementById('dash-content').innerHTML = '<div class="dash-grid">' + filtered.map(c => {
     const p = gp(c), all = allTasks(c), dn = all.filter(t => c.checks[t.id]).length, pt = all.length ? Math.round(dn/all.length*100) : 0;
     const st = stInfo(c.status||'none');
-    const waitChips = c.waitFlags && Object.keys(c.waitFlags).some(k=>c.waitFlags[k])
+    // 待ちチップは「書類・情報待ち」のときだけ。ほかのステータスに移ったら出さない
+    // （waitFlags 自体は残すので、書類・情報待ちに戻せばチェックも戻る）
+    const waitChips = (c.status||'none') === 'wait' && c.waitFlags && Object.keys(c.waitFlags).some(k=>c.waitFlags[k])
       ? `<div class="waiting-chips">${WAIT_ITEMS.filter(w=>c.waitFlags[w.key]).map(w=>`<span class="wchip">⏳ ${w.label}</span>`).join('')}</div>` : '';
     const tantoLast = c.tantoLog && c.tantoLog.length ? `<div style="font-size:10px;color:#64748B;margin-top:4px;">担当: ${esc(c.tantoLog[c.tantoLog.length-1].name)}</div>` : '';
     // 申請待ちのときは「登録からN日」を隠す（申請可能日バッジと数字が紛らわしいため）
