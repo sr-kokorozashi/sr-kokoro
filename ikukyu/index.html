@@ -91,12 +91,13 @@ body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: va
 .card-title { font-size: 14px; font-weight: 700; }
 
 /* STATS */
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; border-left: 4px solid transparent; }
 .stat-card.blue { border-left-color: var(--blue); }
 .stat-card.red { border-left-color: var(--red); }
 .stat-card.orange { border-left-color: var(--orange); }
 .stat-card.green { border-left-color: var(--green); }
+.stat-card.purple { border-left-color: var(--purple); }
 .stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
 .stat-value { font-size: 28px; font-weight: 700; line-height: 1; }
 .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
@@ -327,6 +328,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
     <div class="sidebar-section">
       <div class="sidebar-label">絞り込み</div>
       <div class="sidebar-item" onclick="filterByAlert('kobunsho')">📬 公文書待ち</div>
+      <div class="sidebar-item" onclick="filterByAlert('birthcheck')">🔔 出産確認待ち</div>
     </div>
   </aside>
 
@@ -351,6 +353,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
         <div class="stat-card red"><div class="stat-label">期限超過</div><div class="stat-value" id="stat-overdue">0</div><div class="stat-sub">件の手続き</div></div>
         <div class="stat-card orange"><div class="stat-label">7日以内の期限</div><div class="stat-value" id="stat-soon">0</div><div class="stat-sub">件の手続き</div></div>
         <div class="stat-card green"><div class="stat-label">完了済み</div><div class="stat-value" id="stat-done">0</div><div class="stat-sub">件の手続き</div></div>
+        <div class="stat-card purple" onclick="filterByAlert('birthcheck')" style="cursor:pointer;"><div class="stat-label">出産確認待ち</div><div class="stat-value" id="stat-birthcheck">0</div><div class="stat-sub">件の案件</div></div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">🚨 期限超過の手続き</div></div>
@@ -389,10 +392,14 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
             <option value="復帰済">復帰済</option>
             <option value="時短中">時短中</option>
           </select>
+          <select class="filter-select" id="tanto-filter" onchange="renderCaseTable()">
+            <option value="">担当者：すべて</option>
+          </select>
           <select class="filter-select" id="alert-filter" onchange="renderCaseTable()">
             <option value="">全案件</option>
             <option value="alert">要対応のみ</option>
             <option value="kobunsho">公文書待ち</option>
+            <option value="birthcheck">出産確認待ち</option>
           </select>
         </div>
         <div id="case-table-container"></div>
@@ -649,6 +656,10 @@ label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
           </select>
         </div>
         <div class="form-group"><label>出産予定日 *</label><input class="form-input" id="ff-due-date" type="date" oninput="autoCalcF()"></div>
+        <div class="form-group"><label>産前休業開始日</label>
+          <input class="form-input" id="ff-sanzen-start" type="date" oninput="onSanzenManualInput()">
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;" id="ff-sanzen-note">出産予定日を入れると42日前が自動で入ります。42日前から取らない場合はここを書き換えてください。</div>
+        </div>
         <div class="form-group"><label>実分娩日（出産後に入力）</label><input class="form-input" id="ff-birth-date" type="date" oninput="autoCalcF()"></div>
         <div class="form-group"><label>職場復帰予定日</label><input class="form-input" id="ff-return-date" type="date"></div>
         <div class="form-group"><label>復帰後の勤務形態</label>
@@ -1376,6 +1387,26 @@ function fmtDate(d) {
   return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
 }
 function today() { return new Date().toISOString().split('T')[0]; }
+function escH(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+// ===== 担当者（チェックリストと同じ方式：記録を積み上げ、最新を「今の担当」とする） =====
+function tantoLast(c) {
+  return (c && c.tantoLog && c.tantoLog.length) ? c.tantoLog[c.tantoLog.length - 1].name : '';
+}
+// ===== 出産予定日の超過確認 =====
+// 予定日を過ぎても実分娩日が未入力なら、お客様への確認を促す
+// 「確認済み」を押すと BIRTH_CHECK_SNOOZE_DAYS 日だけ非表示にし、その後また表示する
+const BIRTH_CHECK_SNOOZE_DAYS = 7;
+function needsBirthCheck(c) {
+  if (!c || !c.dueDate || c.birthDate) return false;
+  const t = today();
+  if (c.dueDate >= t) return false;
+  if (c.birthCheckedAt && addDays(c.birthCheckedAt, BIRTH_CHECK_SNOOZE_DAYS) > t) return false;
+  return true;
+}
 function daysUntil(dateStr) {
   if (!dateStr) return null;
   return Math.ceil((new Date(dateStr) - new Date(today())) / 86400000);
@@ -1432,7 +1463,10 @@ function calcIkukyuEndLabel(extend) {
 function getFemaleDates(c) {
   const base = c.birthDate || c.dueDate;
   if (!base && !c.dueDate) return {};
-  const sanzenStart = addDays(c.dueDate, -41);
+  // 産前休業開始日：手入力があればそれを使う。なければ出産予定日の42日前
+  const sanzenAuto = addDays(c.dueDate, -41);
+  const sanzenIsManual = !!(c.sanzenStartManual && c.sanzenStartManual !== sanzenAuto);
+  const sanzenStart = c.sanzenStartManual || sanzenAuto;
   const sangoEnd = addDays(base, 56);
   const ikukyuStart = addDays(base, 57);
   const ikukyuEnd1 = calcFirstBirthday(base);
@@ -1447,7 +1481,7 @@ function getFemaleDates(c) {
     kyufuPeriods.push({ num: i+1, start: ps, end, deadline: calcDeadline(end) });
     ps = addDays(end, 1);
   }
-  return { sanzenStart, sangoEnd, ikukyuStart, ikukyuEnd, ikukyuEnd1, ikukyuEnd18m, kyufuPeriods, base };
+  return { sanzenStart, sanzenAuto, sanzenIsManual, sangoEnd, ikukyuStart, ikukyuEnd, ikukyuEnd1, ikukyuEnd18m, kyufuPeriods, base };
 }
 
 function getFemaleProcedures(c) {
@@ -2301,6 +2335,8 @@ function getAlerts(c) {
   const procs = getProcedures(c).filter(p => !p.isSectionHeader);
   const alerts = [];
   const t = today();
+  // 出産予定日を過ぎて実分娩日が未入力の場合（男女とも）
+  if (needsBirthCheck(c)) alerts.push({ type: 'birthcheck', proc: null });
   procs.forEach(p => {
     const status = getProcSt(c, p.id);
     if (status === '済' || status === '不要') return;
@@ -2312,13 +2348,30 @@ function getAlerts(c) {
 }
 
 // ===== AUTO CALC =====
+// 産前休業開始日を手で書き換えたかどうか（新規登録フォーム用）
+let _ffSanzenTouched = false;
+function onSanzenManualInput() { _ffSanzenTouched = true; autoCalcF(); }
+function ffSanzenManualValue() {
+  const due = document.getElementById('ff-due-date').value;
+  const sz = document.getElementById('ff-sanzen-start');
+  if (!sz || !sz.value) return '';
+  return sz.value !== addDays(due, -41) ? sz.value : '';
+}
 function autoCalcF() {
   const due = document.getElementById('ff-due-date').value;
   const birth = document.getElementById('ff-birth-date').value;
+  const sz = document.getElementById('ff-sanzen-start');
+  // 手で書き換えていない間は、出産予定日に追従して自動で埋める
+  if (sz && due && !_ffSanzenTouched) sz.value = addDays(due, -41) || '';
+  const note = document.getElementById('ff-sanzen-note');
+  if (note) note.textContent = _ffSanzenTouched
+    ? '手入力の日付です。出産予定日の42日前に戻すには日付を消して予定日を入れ直してください。'
+    : '出産予定日を入れると42日前が自動で入ります。42日前から取らない場合はここを書き換えてください。';
   if (!due) { document.getElementById('ff-dates-preview').style.display = 'none'; return; }
-  const d = getFemaleDates({ dueDate: due, birthDate: birth });
+  const manual = ffSanzenManualValue();
+  const d = getFemaleDates({ dueDate: due, birthDate: birth, sanzenStartManual: manual });
   document.getElementById('ff-dates-grid').innerHTML = `
-    <div class="info-item highlight"><div class="info-item-label">産前42日前（産休開始）</div><div class="info-item-value date">${fmtDate(d.sanzenStart)}</div></div>
+    <div class="info-item highlight"><div class="info-item-label">産休開始（${d.sanzenIsManual ? '手入力' : '産前42日前'}）</div><div class="info-item-value date">${fmtDate(d.sanzenStart)}</div></div>
     <div class="info-item highlight"><div class="info-item-label">産後56日後（産休終了）</div><div class="info-item-value date">${fmtDate(d.sangoEnd)}</div></div>
     <div class="info-item highlight"><div class="info-item-label">育休開始日</div><div class="info-item-value date">${fmtDate(d.ikukyuStart)}</div></div>
     <div class="info-item"><div class="info-item-label">1歳到達日（育休終了）</div><div class="info-item-value date">${fmtDate(d.ikukyuEnd)}</div></div>
@@ -2342,6 +2395,7 @@ async function saveNewCase(gender) {
       childName: document.getElementById('ff-child-name').value.trim(),
       dependent: document.getElementById('ff-dependent').value,
       dueDate: document.getElementById('ff-due-date').value,
+      sanzenStartManual: ffSanzenManualValue(),
       birthDate: document.getElementById('ff-birth-date').value,
       returnDate: document.getElementById('ff-return-date').value,
       ikukyuExtend: document.getElementById('ff-ikukyu-extend').value,
@@ -2356,7 +2410,8 @@ async function saveNewCase(gender) {
     };
     cases.push(c); await save();
     closeModal('modal-new-female');
-    ['ff-company','ff-name','ff-child-name','ff-due-date','ff-birth-date','ff-return-date','ff-jitan-start-date','ff-shimbi','ff-shiharai','ff-hikitsugi','ff-memo'].forEach(id => document.getElementById(id).value = '');
+    ['ff-company','ff-name','ff-child-name','ff-due-date','ff-sanzen-start','ff-birth-date','ff-return-date','ff-jitan-start-date','ff-shimbi','ff-shiharai','ff-hikitsugi','ff-memo'].forEach(id => document.getElementById(id).value = '');
+    _ffSanzenTouched = false;
     document.getElementById('ff-ins-type').value = '';
     document.getElementById('ff-dates-preview').style.display = 'none';
   } else {
@@ -2407,8 +2462,18 @@ function renderCaseTable() {
   companyEl.innerHTML = '<option value="">全事業所</option>' +
     companies.map(co => `<option value="${co}" ${co === curCompany ? 'selected' : ''}>${co}</option>`).join('');
 
+  // 担当者フィルター（記録された担当者名から自動で作る）
+  const tantoEl = document.getElementById('tanto-filter');
+  const curTanto = tantoEl ? tantoEl.value : '';
+  if (tantoEl) {
+    const tantos = [...new Set(cases.map(c => tantoLast(c)))].filter(Boolean).sort();
+    tantoEl.innerHTML = '<option value="">担当者：すべて</option>' +
+      tantos.map(t => `<option value="${escH(t)}" ${t === curTanto ? 'selected' : ''}>${escH(t)}</option>`).join('');
+  }
+
   const search = document.getElementById('search-input').value.toLowerCase();
   const companyF = companyEl.value;
+  const tantoF = tantoEl ? tantoEl.value : '';
   const genderF = document.getElementById('gender-filter').value;
   const statusF = document.getElementById('status-filter').value;
   const alertF = document.getElementById('alert-filter').value;
@@ -2426,8 +2491,10 @@ function renderCaseTable() {
     if (companyF && c.company !== companyF) return false;
     if (genderF && c.gender !== genderF) return false;
     if (statusF && getStatus(c) !== statusF) return false;
+    if (tantoF && tantoLast(c) !== tantoF) return false;
     if (alertF === 'alert' && getAlerts(c).length === 0) return false;
     if (alertF === 'kobunsho' && !hasKobunshoWaiting(c)) return false;
+    if (alertF === 'birthcheck' && !needsBirthCheck(c)) return false;
     return true;
   });
   const container = document.getElementById('case-table-container');
@@ -2447,6 +2514,8 @@ function renderCaseTable() {
     const overdue = alerts.filter(a => a.type === 'overdue').length;
     const soon = alerts.filter(a => a.type === 'soon').length;
     const available = alerts.filter(a => a.type === 'available').length;
+    const birthCheck = needsBirthCheck(c);
+    const tantoName = tantoLast(c);
     const gLabel = c.gender === 'male' ? '<span class="gender-badge male">♂ 男性</span>' : '<span class="gender-badge female">♀ 女性</span>';
     let nextDeadline = '—';
     const futureDead = getProcedures(c).filter(p => !p.isSectionHeader && p.deadline && getProcSt(c, p.id) !== '済' && daysUntil(p.deadline) >= 0).sort((a,b) => a.deadline > b.deadline ? 1 : -1);
@@ -2465,21 +2534,23 @@ function renderCaseTable() {
       <td>${gLabel}</td>
       <td><strong>${c.company}</strong></td>
       <td>${c.name}${insBadge(c.insType, true)}</td>
+      <td style="font-size:12px;">${tantoName ? escH(tantoName) : '<span style="color:var(--text-muted);">—</span>'}</td>
       <td><span class="badge ${status}">${status}</span></td>
       <td class="date-display">${fmtDate(c.dueDate)}</td>
       <td class="date-display">${fmtDate(c.birthDate)}</td>
       <td class="date-display" style="font-size:11px;">${nextDeadline}</td>
       <td><div class="alert-row">
+        ${birthCheck ? '<span class="alert-chip red">🔔 出産確認</span>' : ''}
         ${kobunshoChips}
         ${!kobunshoChips && overdue > 0 ? `<span class="alert-chip red">超過${overdue}件</span>` : ''}
         ${!kobunshoChips && soon > 0 ? `<span class="alert-chip orange">7日内${soon}件</span>` : ''}
         ${!kobunshoChips && available > 0 ? `<span class="alert-chip" style="background:#eef7f2;color:#27ae60;">申請可${available}件</span>` : ''}
-        ${!kobunshoChips && alerts.length === 0 ? '<span style="font-size:11px;color:var(--text-muted);">問題なし</span>' : ''}
+        ${!kobunshoChips && !birthCheck && alerts.length === 0 ? '<span style="font-size:11px;color:var(--text-muted);">問題なし</span>' : ''}
       </div></td>
     </tr>`;
   }).join('');
   container.innerHTML = `<table>
-    <thead><tr><th>性別</th><th>事業所名</th><th>対象者</th><th>ステータス</th><th>出産予定日</th><th>実分娩日</th><th>次の期限</th><th>アラート</th></tr></thead>
+    <thead><tr><th>性別</th><th>事業所名</th><th>対象者</th><th>担当者</th><th>ステータス</th><th>出産予定日</th><th>実分娩日</th><th>次の期限</th><th>アラート</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
 }
@@ -2521,7 +2592,7 @@ function buildCaseSheetHtml(c) {
   if (c.gender === 'female') {
     const d = getFemaleDates(c);
     dates =
-      '<tr><td class="lbl">産休開始（産前42日）</td><td>' + fmtDate(d.sanzenStart) + '</td>' +
+      '<tr><td class="lbl">産休開始（' + (d.sanzenIsManual ? '手入力' : '産前42日') + '）</td><td>' + fmtDate(d.sanzenStart) + '</td>' +
       '<td class="lbl">産休終了（産後56日）</td><td>' + fmtDate(d.sangoEnd) + '</td>' +
       '<td class="lbl">育休開始</td><td>' + fmtDate(d.ikukyuStart) + '</td></tr>' +
       '<tr><td class="lbl">育休終了（' + psEsc(calcIkukyuEndLabel(c.ikukyuExtend)) + '）</td><td>' + fmtDate(d.ikukyuEnd) + '</td>' +
@@ -2585,6 +2656,7 @@ function buildCaseSheetHtml(c) {
       '<tr><td class="lbl">加入保険</td><td>' + psEsc(insLabel) + '</td>' +
           '<td class="lbl">ステータス</td><td>' + psEsc(getStatus(c)) + '</td>' +
           '<td class="lbl">子の扶養</td><td>' + psEsc(c.dependent || '未') + '</td></tr>' +
+      '<tr><td class="lbl">担当者</td><td colspan="5">' + psEsc(tantoLast(c) || '—') + '</td></tr>' +
     '</tbody></table>' +
     '<div class="ps-sec">■ 重要日程</div>' +
     '<table class="ps-dates"><tbody>' + dates + '</tbody></table>' +
@@ -2688,7 +2760,7 @@ function openCaseDetail(id) {
   if (c.gender === 'female') {
     const d = getFemaleDates(c);
     keyDatesHtml = `<div class="info-grid" style="margin-bottom:20px;">
-      <div class="info-item highlight"><div class="info-item-label">産前42日前（産休開始）</div><div class="info-item-value date">${fmtDate(d.sanzenStart)}</div></div>
+      <div class="info-item highlight"><div class="info-item-label">産休開始（${d.sanzenIsManual ? '手入力' : '産前42日前'}）</div><div class="info-item-value date">${fmtDate(d.sanzenStart)}</div></div>
       <div class="info-item highlight"><div class="info-item-label">産後56日後（産休終了）</div><div class="info-item-value date">${fmtDate(d.sangoEnd)}</div></div>
       <div class="info-item highlight"><div class="info-item-label">育休開始日</div><div class="info-item-value date">${fmtDate(d.ikukyuStart)}</div></div>
       <div class="info-item"><div class="info-item-label">育休終了日（${calcIkukyuEndLabel(c.ikukyuExtend)}）</div><div class="info-item-value date">${fmtDate(d.ikukyuEnd)}</div></div>
@@ -2711,7 +2783,34 @@ function openCaseDetail(id) {
     </div>`;
   }
 
+  // 担当者パネル（チェックリストと同じ操作感）
+  const tantoHist = (c.tantoLog && c.tantoLog.length)
+    ? c.tantoLog.slice(-3).map(t => `<span style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:2px 8px;">${escH(t.name)}<span style="color:var(--text-muted);"> ${escH(t.date)}</span></span>`).join(' ')
+    : '<span style="color:var(--text-muted);">まだ記録なし</span>';
+  const tantoPanel = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:12px;">
+      <span style="font-weight:600;">今日の担当：</span>
+      <input id="tanto-input" type="text" placeholder="氏名を入力" style="padding:5px 9px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;background:var(--surface);" onkeydown="if(event.key==='Enter')saveTanto()">
+      <button class="btn btn-ghost btn-sm" onclick="saveTanto()">記録</button>
+      <span style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;">${tantoHist}</span>
+    </div>`;
+
+  // 出産確認パネル
+  let birthPanel = '';
+  if (needsBirthCheck(c)) {
+    birthPanel = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;margin-bottom:14px;font-size:12px;color:var(--red);">
+      <span style="font-weight:700;">🔔 出産予定日から${Math.abs(daysUntil(c.dueDate))}日経過しています</span>
+      <span>実分娩日が未入力です。お客様に出産の有無を確認してください。</span>
+      <button class="btn btn-ghost btn-sm" onclick="markBirthChecked()">確認済みにする</button>
+    </div>`;
+  } else if (c.birthCheckedAt && !c.birthDate && c.dueDate && c.dueDate < today()) {
+    birthPanel = `<div style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:11px;color:var(--text-muted);">
+      🔔 出産確認済み（${fmtDate(c.birthCheckedAt)}）。実分娩日が入力されないままの場合、${fmtDate(addDays(c.birthCheckedAt, BIRTH_CHECK_SNOOZE_DAYS))}以降にまた表示します。
+    </div>`;
+  }
+
   document.getElementById('detail-body').innerHTML = `
+    ${birthPanel}
+    ${tantoPanel}
     ${keyDatesHtml}
     <table class="checklist-table">
       <thead><tr><th>No.</th><th>手続き・給付金</th><th>対象期間</th><th>添付書類</th><th>届出期日</th><th>ステータス</th></tr></thead>
@@ -2722,6 +2821,33 @@ function openCaseDetail(id) {
     ${c.memo ? `<div style="margin-top:12px;padding:12px 16px;background:var(--accent-bg);border-radius:8px;font-size:13px;"><strong>📝 備考：</strong>${c.memo}</div>` : ''}
   `;
   document.getElementById('modal-detail').classList.add('open');
+}
+
+// ② 担当者を記録する
+async function saveTanto() {
+  const c = cases.find(x => x.id === currentCaseId);
+  if (!c) return;
+  const el = document.getElementById('tanto-input');
+  const name = el ? el.value.trim() : '';
+  if (!name) { showToast('担当者の氏名を入力してください'); return; }
+  if (!c.tantoLog) c.tantoLog = [];
+  c.tantoLog.push({ name: name, date: new Date().toLocaleDateString('ja-JP') });
+  if (c.tantoLog.length > 10) c.tantoLog = c.tantoLog.slice(-10);
+  await save();
+  renderAll();
+  openCaseDetail(c.id);
+  showToast('📝 ' + name + ' さんを担当として記録しました');
+}
+
+// ③ 出産の確認が済んだことを記録する（一定期間アラートを止める）
+async function markBirthChecked() {
+  const c = cases.find(x => x.id === currentCaseId);
+  if (!c) return;
+  c.birthCheckedAt = today();
+  await save();
+  renderAll();
+  openCaseDetail(c.id);
+  showToast('🔔 確認済みにしました（' + BIRTH_CHECK_SNOOZE_DAYS + '日後にまた表示します）');
 }
 
 async function toggleStatus(procId, caseId, e) {
@@ -2767,6 +2893,13 @@ function openEditModal() {
         <div class="form-group"><label>子の氏名</label><input class="form-input" id="e-child-name" value="${c.childName||''}"></div>
         <div class="form-group"><label>子の扶養</label><select class="form-select" id="e-dependent"><option value="">未定</option><option value="○" ${c.dependent==='○'?'selected':''}>○</option><option value="×" ${c.dependent==='×'?'selected':''}>×</option></select></div>
         <div class="form-group"><label>出産予定日</label><input class="form-input" type="date" id="e-due-date" value="${c.dueDate||''}"></div>
+        <div class="form-group"><label>産前休業開始日</label>
+          <input class="form-input" type="date" id="e-sanzen-start" value="${c.sanzenStartManual || addDays(c.dueDate, -41) || ''}">
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">
+            ${c.sanzenStartManual ? '手入力の日付です。' : '出産予定日の42日前（自動計算）です。'}
+            <button type="button" class="btn btn-ghost btn-sm" style="margin-left:6px;padding:1px 8px;font-size:10px;" onclick="resetSanzenAuto()">自動に戻す</button>
+          </div>
+        </div>
         <div class="form-group"><label>実分娩日</label><input class="form-input" type="date" id="e-birth-date" value="${c.birthDate||''}"></div>
         <div class="form-group"><label>復帰予定日</label><input class="form-input" type="date" id="e-return-date" value="${c.returnDate||''}"></div>
         <div class="form-group"><label>復帰後の勤務形態</label><select class="form-select" id="e-jitan"><option value="" ${!c.jitan?'selected':''}>通常勤務</option><option value="1" ${c.jitan==='1'?'selected':''}>時短勤務</option></select></div>
@@ -2810,9 +2943,18 @@ function openEditModal() {
   document.getElementById('modal-edit').classList.add('open');
 }
 
+function resetSanzenAuto() {
+  const dueEl = document.getElementById('e-due-date');
+  const szEl = document.getElementById('e-sanzen-start');
+  if (!dueEl || !szEl) return;
+  szEl.value = addDays(dueEl.value, -41) || '';
+  showToast('産前休業開始日を自動計算に戻しました（保存で確定します）');
+}
+
 async function saveEdit() {
   const c = cases.find(x => x.id === currentCaseId);
   if (!c) return;
+  const prevDue = c.dueDate;
   c.company = document.getElementById('e-company').value.trim();
   c.name = document.getElementById('e-name').value.trim();
   c.childName = document.getElementById('e-child-name').value.trim();
@@ -2821,6 +2963,22 @@ async function saveEdit() {
   c.dueDate = document.getElementById('e-due-date').value;
   c.birthDate = document.getElementById('e-birth-date').value;
   c.returnDate = document.getElementById('e-return-date').value;
+  // 産前休業開始日：出産予定日を変更したのに手入力値が残っている場合は確認する
+  const szEl = document.getElementById('e-sanzen-start');
+  if (szEl) {
+    const auto = addDays(c.dueDate, -41);
+    let v = szEl.value;
+    if (prevDue !== c.dueDate && v && v !== auto) {
+      const ok = confirm(
+        '出産予定日を変更しました。\n' +
+        '産前休業開始日は手入力の ' + fmtDate(v) + ' のままです。\n\n' +
+        '［OK］自動計算の ' + fmtDate(auto) + ' に更新する\n' +
+        '［キャンセル］手入力の ' + fmtDate(v) + ' を残す'
+      );
+      if (ok) v = auto;
+    }
+    c.sanzenStartManual = (v && v !== auto) ? v : '';
+  }
   if (document.getElementById('e-ikukyu-extend')) c.ikukyuExtend = document.getElementById('e-ikukyu-extend').value;
   if (document.getElementById('e-jitan')) c.jitan = document.getElementById('e-jitan').value;
   if (document.getElementById('e-jitan-start-date')) c.jitanStartDate = document.getElementById('e-jitan-start-date').value;
@@ -2853,12 +3011,31 @@ async function deleteCurrentCase() {
   showToast('🗑 案件を削除しました');
 }
 
+// ===== 出産確認を期限一覧に並べるための共通部品 =====
+// 期限カレンダー・ダッシュボードの両方で同じ形の項目として扱う
+function birthCheckItems() {
+  return cases.filter(c => needsBirthCheck(c))
+    .map(c => ({ c: c, p: null, days: daysUntil(c.dueDate), type: 'birthcheck' }));
+}
+function birthCheckItemHtml(c, days) {
+  const gIcon = c.gender === 'male' ? '♂' : '♀';
+  return `<div class="upcoming-item urgent" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
+      <div class="upcoming-date"><div class="day">${Math.abs(days)}日超過</div><div style="font-size:10px;margin-top:3px;">${fmtDate(c.dueDate)}</div></div>
+      <div style="flex:1;">
+        <div class="upcoming-title">${gIcon} 🔔 出産の確認（実分娩日が未入力）</div>
+        <div class="upcoming-meta">${c.company} / ${c.name}　出産予定日を過ぎています。お客様に確認してください。</div>
+      </div>
+      <span class="badge 期限超過">出産確認</span>
+    </div>`;
+}
+
 // ===== DASHBOARD =====
 function renderDashboard() {
   const t = today();
-  let overdue = 0, soon = 0, done = 0;
+  let overdue = 0, soon = 0, done = 0, birthCheck = 0;
   const upcomingItems = [];
   cases.forEach(c => {
+    if (needsBirthCheck(c)) birthCheck++;
     const alerts = getAlerts(c);
     overdue += alerts.filter(a => a.type === 'overdue').length;
     soon += alerts.filter(a => a.type === 'soon').length;
@@ -2878,6 +3055,9 @@ function renderDashboard() {
   document.getElementById('stat-overdue').textContent = overdue;
   document.getElementById('stat-soon').textContent = soon;
   document.getElementById('stat-done').textContent = done;
+  if (document.getElementById('stat-birthcheck')) document.getElementById('stat-birthcheck').textContent = birthCheck;
+  // 出産確認も「対応が必要なもの」として同じ一覧に並べる
+  upcomingItems.push(...birthCheckItems());
   document.getElementById('badge-cases').textContent = cases.length;
   document.getElementById('badge-upcoming').textContent = upcomingItems.length;
   // 引継ぎメモのバッジ（未済項目がある案件数）
@@ -2893,6 +3073,7 @@ function renderDashboard() {
     return;
   }
   el.innerHTML = `<div class="upcoming-list">${upcomingItems.slice(0,10).map(({c,p,days,type}) => {
+    if (type === 'birthcheck') return birthCheckItemHtml(c, days);
     const isAvailable = type === 'available';
     const cls = days < 0 ? 'urgent' : isAvailable ? 'soon' : '';
     const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : isAvailable ? '申請可能' : `あと${days}日`;
@@ -2960,6 +3141,8 @@ function renderUpcoming() {
       }
     });
   });
+  // 出産確認も同じ一覧に並べる（超過日数の大きいものが上に来る）
+  allItems.push(...birthCheckItems());
   allItems.sort((a,b) => a.days - b.days);
   const el = document.getElementById('upcoming-content');
   if (allItems.length === 0) {
@@ -2967,6 +3150,7 @@ function renderUpcoming() {
     return;
   }
   el.innerHTML = `<div class="upcoming-list">${allItems.map(({c,p,days,type}) => {
+    if (type === 'birthcheck') return birthCheckItemHtml(c, days);
     const isAvailable = type === 'available';
     const cls = !isAvailable ? 'urgent' : 'soon';
     const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : isAvailable ? '申請可能' : `あと${days}日`;
@@ -2989,6 +3173,7 @@ function openPage(name) {
   if (name === 'handover') renderHandover();
 }
 function openNewCaseModal(gender) {
+  if (gender !== 'male') _ffSanzenTouched = false;
   document.getElementById(gender === 'male' ? 'modal-new-male' : 'modal-new-female').classList.add('open');
 }
 function filterByStatus(s) { document.getElementById('status-filter').value = s; document.getElementById('gender-filter').value = ''; openPage('cases'); renderCaseTable(); }
