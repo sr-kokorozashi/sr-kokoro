@@ -8,6 +8,7 @@
 :root{
   --navy:#1F4E79; --blue:#2E75B6; --ink:#15202b; --muted:#6b7280;
   --paper:#fff; --bg:#f4f6f8; --rule:#dfe4ea; --tint:#eef3f9;
+  --hh:44px; --stick:88px;   /* 見出し帯の高さ。帯が2段に折り返しても一覧が隠れないよう、画面側で測って入れ直します */
   --warn:#b45309; --warnbg:#fdf3e3; --ok:#1d6e56; --okbg:#e6f4ef;
 }
 *{box-sizing:border-box}
@@ -41,7 +42,7 @@ header button:hover{background:rgba(255,255,255,.22)}
 .filters{
   background:var(--paper); border-bottom:1px solid var(--rule);
   padding:9px 16px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
-  position:sticky; top:44px; z-index:20;
+  position:sticky; top:var(--hh); z-index:20;
 }
 .filters input[type=search]{
   flex:1; min-width:190px; padding:6px 10px;
@@ -58,8 +59,8 @@ header button:hover{background:rgba(255,255,255,.22)}
 .wrap{display:flex; align-items:flex-start; gap:0}
 #list{
   width:290px; flex:none; border-right:1px solid var(--rule);
-  background:var(--paper); height:calc(100vh - 88px); overflow-y:auto;
-  position:sticky; top:88px;
+  background:var(--paper); height:calc(100vh - var(--stick)); overflow-y:auto;
+  position:sticky; top:var(--stick);
 }
 .row{
   padding:8px 14px; border-bottom:1px solid #eef1f4; cursor:pointer;
@@ -96,7 +97,7 @@ header button:hover{background:rgba(255,255,255,.22)}
   border:solid #fff;border-width:0 2px 2px 0;transform:rotate(43deg)}
 .bulkbar{
   background:var(--tint);border-bottom:1px solid var(--rule);padding:8px 16px;
-  display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:88px;z-index:19;
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:var(--stick);z-index:19;
 }
 .bulkbar select{padding:5px 8px;border:1px solid var(--rule);border-radius:4px;background:#fff}
 .bulkbar .go{background:var(--navy);color:#fff;border:none;border-radius:4px;padding:6px 13px;font-size:12px}
@@ -136,9 +137,9 @@ header button:hover{background:rgba(255,255,255,.22)}
 .dz button{background:#fff;color:#b4231f;border:1px solid #e6c3c1;border-radius:4px;padding:6px 13px;font-size:12px}
 .dot.hidden{visibility:hidden}
 
-#detail{flex:1; min-width:0; padding:20px 26px 60px; height:calc(100vh - 88px); overflow-y:auto}
-body.bulking #list,body.bulking #detail{height:calc(100vh - 129px)}
-body.bulking #list{top:129px}
+#detail{flex:1; min-width:0; padding:20px 26px 60px; height:calc(100vh - var(--stick)); overflow-y:auto}
+body.bulking #list,body.bulking #detail{height:calc(100vh - var(--stick) - var(--bb,41px))}
+body.bulking #list{top:calc(var(--stick) + var(--bb,41px))}
 #detail h2{font-size:20px;margin:0 0 2px;color:var(--navy);font-weight:600;
   outline:none;border-radius:4px;padding:1px 5px;margin-left:-5px}
 #detail h2[contenteditable]:hover{background:#fafbfc;box-shadow:inset 0 0 0 1px var(--rule)}
@@ -181,7 +182,7 @@ section > h3{
 .grid > div{padding:7px 15px;border-bottom:1px solid #f0f2f5}
 .grid > div.k{color:var(--muted);font-size:12px;background:#fbfcfd}
 .grid > div:nth-last-child(-n+2){border-bottom:none}
-.v[contenteditable]{outline:none;min-height:1.7em;border-radius:3px}
+.v[contenteditable]{outline:none;min-height:1.7em;border-radius:3px;white-space:pre-wrap;word-break:break-word}
 .v[contenteditable]:hover{background:#fafbfc;box-shadow:inset 0 0 0 1px var(--rule)}
 .v[contenteditable]:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--blue)}
 .v.empty:not(:focus):before{content:"未入力";color:#b9c0c8}
@@ -290,6 +291,86 @@ section > h3{
   .othbox input{width:100%;flex:none;margin-top:4px}
   .addnote .arow{flex-wrap:wrap}
 }
+/* ===== 閲覧モード（ふだんの表示）===== */
+.vhead{display:flex;align-items:flex-start;gap:16px;margin-bottom:14px}
+.vhead .vt{flex:1;min-width:0}
+.vhead .vname{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.vhead .vno{font-size:13px;color:var(--navy);background:#e4ecf5;border-radius:4px;padding:1px 8px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vhead .vno.none{color:#8a93a0;background:#eef1f4;font-weight:400}
+.vhead h2{font-size:22px !important;color:var(--ink) !important;font-weight:700 !important;margin:0 !important;padding:0 !important}
+.vmeta{font-size:12px;color:#566170;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.vmeta .badge{margin-right:0}
+.editbtn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:700;white-space:nowrap;flex:none}
+.editbtn:hover{background:#163a5b}
+.editbtn.ghost{background:#fff;color:var(--navy);border:1px solid #a9c4e0}
+.editbtn.ghost:hover{background:#f2f7fc}
+.editbar{display:flex;align-items:center;gap:12px;background:#e4ecf5;border:1px solid #bcd2ec;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)}
+.editbar span{flex:1}
+
+.staffs{display:flex;gap:10px;margin-bottom:14px}
+.staffs .s{flex:1;min-width:0;background:#fff;border:1px solid #dde2e8;border-radius:8px;padding:8px 14px}
+.staffs .s .r{font-size:11px;color:#566170;letter-spacing:.04em}
+.staffs .s .n{font-size:18px;font-weight:700;line-height:1.5}
+.staffs .s .n.none{font-size:13px;font-weight:400;color:#8a93a0;padding-top:4px}
+.staffs .s .n.req{color:var(--warn)}
+
+.alert{background:#fff4e0;border:1px solid #efd3a4;border-radius:10px;padding:13px 16px 15px;margin-bottom:12px}
+.alert .ah{display:flex;align-items:baseline;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+.alert .ah b{font-size:16px;color:#9a4a06}
+.alert .ah span{font-size:12px;color:#566170}
+.alert .sub2{font-size:12px;font-weight:700;color:#9a4a06;margin:12px 0 6px}
+.alert.calm{background:#f7f8f9;border-color:#e1e5ea;padding:10px 16px}
+.alert.calm .ah{margin:0}
+.alert.calm .ah b{font-size:13px;color:#566170}
+.astar{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #efd3a4;border-radius:6px;padding:9px 12px;margin-bottom:6px}
+.astar:last-of-type{margin-bottom:0}
+.astar .mk{color:#d18a1f;font-size:16px;line-height:1.5;flex:none}
+.astar .bd{flex:1;min-width:0;font-size:15px;font-weight:600;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.astar .side{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}
+.astar .side .tags{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.astar .side .lnk2{background:none;border:none;color:var(--blue);font-size:11px;padding:0}
+.excs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;align-items:start}
+.exc.wide{grid-column:1 / -1}
+.exc{background:#fff;border:1px solid #efd3a4;border-radius:6px;padding:8px 12px}
+.exc .l{font-size:11px;color:#566170}
+.exc .v{font-size:16px;font-weight:700;color:#9a4a06;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.exc.wide .v{font-size:15px;line-height:1.7}
+.exc .s2{font-size:11px;color:#566170;word-break:break-word}
+
+.gapline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:#566170;margin:0 2px 14px}
+.gapline .gd{width:7px;height:7px;border-radius:50%;background:#b8c0c9;flex:none}
+.gapline .rq{color:var(--warn);font-weight:700}
+.gapline button{background:none;border:none;color:var(--blue);text-decoration:underline;font-size:12px;padding:0}
+
+.vcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.vcard{background:#fff;border:1px solid #dde2e8;border-radius:8px;padding:11px 16px 6px}
+.vcard .ch{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:5px;border-bottom:2px solid var(--navy);margin-bottom:2px}
+.vcard .ch b{font-size:14px;color:var(--navy);letter-spacing:.06em}
+.vcard .ch span{font-size:11px;color:#566170}
+.vrow{display:grid;grid-template-columns:128px minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:1px solid #f0f2f4}
+.vrow:last-child{border-bottom:none}
+.vrow .l{font-size:12px;color:#566170;padding-top:2px}
+.vrow .v{white-space:pre-wrap;word-break:break-word}
+.vrow .v.x{font-weight:700;color:#9a4a06}
+.vrow .v.x::after{content:'注意';font-size:10px;font-weight:700;color:#9a4a06;background:#fff4e0;border:1px solid #efd3a4;border-radius:3px;padding:0 5px;margin-left:7px;vertical-align:1px}
+.vcard .none{font-size:12px;color:#8a93a0;padding:8px 0}
+.starinfo{font-size:11px;color:#3d6b57;padding:6px 4px 2px}
+
+.row .fg.f{background:#f1ecfb;color:#5b3f96;border:1px solid #d3c5ee}
+.chip:disabled{opacity:.45;cursor:not-allowed}
+
+@media(max-width:820px){
+  .vcards{grid-template-columns:1fr}
+  .excs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .astar{flex-wrap:wrap}
+  .astar .side{flex-direction:row;align-items:center;width:100%;justify-content:flex-end}
+  .staffs{flex-wrap:wrap}
+  .staffs .s{flex:1 1 40%}
+  .vhead{flex-wrap:wrap}
+  .vrow{grid-template-columns:110px minmax(0,1fr)}
+}
+/* 横長の画面でも間延びしないよう、詳細の中身は幅に上限を付けます */
+#detail > *{max-width:1180px}
 #back{display:none;margin-bottom:12px;border:1px solid var(--rule);background:#fff;border-radius:4px;padding:5px 12px;font-size:12px}
 </style>
 </head>
@@ -318,6 +399,7 @@ section > h3{
     <option value="team">並び：担当①</option>
     <option value="kubun">並び：顧問区分</option>
   </select>
+  <button class="chip" id="cFollow" disabled title="担当者を選ぶと使えます。その人がフォロー（不在時）になっている会社も一覧に加えます">フォロー分も表示</button>
   <button class="chip" id="cWage">賃金対象のみ</button>
   <button class="chip" id="cGap">未入力あり</button>
   <button class="chip" id="cNote">特記事項あり</button>
@@ -327,6 +409,7 @@ section > h3{
 <div class="bulkbar" id="bulkbar" style="display:none">
   <select id="bulk1"></select>
   <select id="bulk2"></select>
+  <select id="bulk3"></select>
   <button class="go" id="bulkGo" disabled>選択した0社に反映</button>
   <span class="n" id="bulkN">左の一覧をクリックして選びます</span>
   <span class="spacer" style="flex:1"></span>
@@ -562,6 +645,7 @@ const tagsFor = c => TAGS.filter(t => !TAG_COND[t] || TAG_COND[t](c));
 
 const OTHER = 'その他';   /* 選ぶと隣に自由入力欄が出ます */
 const OTHER_FIELDS = ['keiro','hozon','k_how','d_how'];
+const MULTILINE = ['sokyu','bikou'];   /* 改行して書ける欄 */
 
 const OPTS = {
   kubun:['','手続き','給与計算','手続き・給与計算','相談顧問'],
@@ -579,9 +663,12 @@ const OPTS = {
 const staffOpts = v => [...new Set(['', ...STAFF, v||''])];
 const staffOf = c => [c.shutan, c.fukutan].filter(Boolean);
 const hasStaff = (c,n) => staffOf(c).includes(n);
+/* フォロー（不在時）。担当①②とは別に1名。一覧の担当絞り込みには、ボタンを押したときだけ加えます */
+const isFollow = (c,n) => !!n && c.follow === n && !hasStaff(c,n);
 
 let clients = [], notes = [], sel = null, remote = false;
-const state = {q:'',kubun:'',hoken:'',jimu:'',staff:'',sort:'wage_no',wage:false,gap:false,note:false};
+const state = {q:'',kubun:'',hoken:'',jimu:'',staff:'',sort:'wage_no',wage:false,gap:false,note:false,follow:false};
+let editMode = false;   /* false＝ふだんの閲覧表示、true＝入力欄を出して編集 */
 let noteFilter = '';   /* 詳細画面で特記事項をタグで絞り込むための一時的な状態 */
 
 /* 本文を編集しているあいだの状態。編集できるのは一度に1件だけです。
@@ -862,19 +949,21 @@ function initFilters(){
 
 /* 担当者を追加・削除したあと、プルダウンを作り直す */
 function refreshStaffSelects(){
-  const names=[...new Set([...STAFF, ...clients.flatMap(staffOf)])].filter(Boolean);
+  const names=[...new Set([...STAFF, ...clients.flatMap(staffOf), ...clients.map(c=>c.follow)])].filter(Boolean);
   const ft=document.getElementById('fTeam'), keep=ft.value;
   ft.innerHTML = '<option value="">担当：すべて</option>'
     + names.map(n=>`<option value="${esc(n)}">担当：${esc(n)}</option>`).join('')
     + '<option value="__none__">担当：未設定</option>';
   ft.value = [...ft.options].some(o=>o.value===keep) ? keep : '';
   state.staff = ft.value;
+  syncFollowChip();
   const opt=(sel,keepLabel)=>{
     sel.innerHTML = `<option value="__keep__">${keepLabel}</option><option value="">（空にする）</option>`
       + names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
   };
   opt(document.getElementById('bulk1'),'（担当①はそのまま）');
   opt(document.getElementById('bulk2'),'（担当②はそのまま）');
+  opt(document.getElementById('bulk3'),'（フォローはそのまま）');
 }
 
 /* ---------- モーダル ---------- */
@@ -900,8 +989,9 @@ function staffDialog(){
         退職した方を削除しても、その方が担当のままの顧問先からは名前は消えません。付け替えてから削除してください。</p>
         <div class="slist">${STAFF.map((n,i)=>{
           const cnt = clients.filter(c=>hasStaff(c,n)).length;
+          const fcnt = clients.filter(c=>isFollow(c,n)).length;
           return `<div class="it"><span class="nm">${esc(n)}</span>
-            <span class="cnt">${cnt}社</span>
+            <span class="cnt">${cnt}社${fcnt?'（フォロー'+fcnt+'社）':''}</span>
             <button data-del="${i}">削除</button></div>`;
         }).join('') || '<div class="it"><span class="cnt">担当者が登録されていません</span></div>'}</div>
         <div class="addrow">
@@ -1112,7 +1202,7 @@ function addClientDialog(){
     let id = name, i = 2;
     while(clients.some(c=>c.id===id)) id = name + '_' + (i++);
     const c = {};
-    ['id','name','wage_no','kubun','shutan','fukutan','madoguchi','renraku','sho','koyo',
+    ['id','name','wage_no','kubun','shutan','fukutan','follow','madoguchi','renraku','sho','koyo',
      'hokensha','kenpo_name','jimu','shime','harai','roudou','kojo',
      'sokyu','keiro','dare','keishiki','hozon','k_to','k_how','d_to','d_how','bikou'].forEach(k=>c[k]='');
     c.id=id; c.name=name; c.kenpo_denshi=false; c.sources=[];
@@ -1121,7 +1211,7 @@ function addClientDialog(){
     c.fukutan = box.querySelector('#acS2').value;
     if(!await createClient(c)) return;
     modal.close();
-    sel = c; document.body.classList.add('viewing');
+    sel = c; editMode = true; document.body.classList.add('viewing');
     refreshStaffSelects(); render();
     toast(name + ' を追加しました');
   };
@@ -1164,12 +1254,13 @@ function filtered(){
     if(state.hoken && c.hokensha!==state.hoken) return false;
     if(state.jimu && c.jimu!==state.jimu) return false;
     if(state.staff==='__none__' && staffOf(c).length) return false;
-    if(state.staff && state.staff!=='__none__' && !hasStaff(c,state.staff)) return false;
+    if(state.staff && state.staff!=='__none__' && !hasStaff(c,state.staff)
+       && !(state.follow && isFollow(c,state.staff))) return false;
     if(state.wage && !c.wage_no) return false;
     if(state.gap && !gapsOf(c).length) return false;
     if(state.note && !notesOf(c.id).length) return false;
     if(q){
-      const hay = [c.name,c.wage_no,c.shutan,c.fukutan,c.madoguchi,c.dare,c.k_to,c.d_to,c.sokyu,c.bikou]
+      const hay = [c.name,c.wage_no,c.shutan,c.fukutan,c.follow,c.madoguchi,c.dare,c.k_to,c.d_to,c.sokyu,c.bikou]
         .concat(notesOf(c.id).map(n=>n.body))
         .concat(notesOf(c.id).flatMap(n=>n.tags)).join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
@@ -1197,6 +1288,7 @@ function render(){
       c.sho==='自社で手続き'||c.koyo==='自社で手続き' ? '<span class="fg w">自社</span>' : '',
       c.sho==='対象外'&&c.koyo==='対象外' ? '<span class="fg o">対象外</span>' : '',
       c.hokensha==='健保組合' ? '<span class="fg k">組合</span>' : '',
+      state.follow && isFollow(c,state.staff) ? '<span class="fg f">フォロー</span>' : '',
     ].join('');
     html += `
     <div class="row ${!bulk&&sel&&sel.id===c.id?'sel':''}" data-id="${esc(c.id)}">
@@ -1224,7 +1316,7 @@ function render(){
         picked.has(id) ? picked.delete(id) : picked.add(id);
         render(); return;
       }
-      sel = clients.find(c=>c.id===r.dataset.id); noteFilter=''; tagEditOpen=null;
+      sel = clients.find(c=>c.id===r.dataset.id); noteFilter=''; tagEditOpen=null; editMode=false;
       noteEditOpen=null; noteDraft=''; noteFocus=false;
       document.body.classList.add('viewing'); render();
     };
@@ -1244,7 +1336,8 @@ function syncBulk(){
 async function applyBulk(){
   const v1 = document.getElementById('bulk1').value;
   const v2 = document.getElementById('bulk2').value;
-  if(v1==='__keep__' && v2==='__keep__'){ toast('割り当てる担当を選んでください'); return; }
+  const v3 = document.getElementById('bulk3').value;
+  if(v1==='__keep__' && v2==='__keep__' && v3==='__keep__'){ toast('割り当てる担当を選んでください'); return; }
   const ids = [...picked];
   let ok = 0;
   for(const id of ids){
@@ -1252,6 +1345,7 @@ async function applyBulk(){
     if(!c) continue;
     if(v1!=='__keep__') c.shutan = v1;
     if(v2!=='__keep__') c.fukutan = v2;
+    if(v3!=='__keep__') c.follow = v3;
     if(await saveClient(c, true)) ok++;
   }
   picked.clear();
@@ -1297,6 +1391,121 @@ function field(c,key,label,opts,req){
     `<div class="v${val?'':' empty'}${req?' req':''}" contenteditable data-k="${key}">${esc(val)}</div>`;
 }
 
+/* ===== 閲覧表示 ===== */
+/* 「いつもと違う設定」。標準（事務所で一番多いやり方）と違う値だけを拾います */
+const EXC = [
+  {k:'sho',      l:'社保手続き',       x:v=>v && v!=='当事務所で手続き'},
+  {k:'koyo',     l:'雇保手続き',       x:v=>v && v!=='当事務所で手続き'},
+  {k:'hokensha', l:'保険者',           x:v=>v==='健保組合', sub:c=>c.kenpo_name},
+  {k:'kojo',     l:'社保料控除',       x:v=>v && v!=='翌月'},
+  {k:'roudou',   l:'離職票・年更',     x:v=>v && v!=='調整なし'},
+  {k:'k_how',    l:'社保控除表の送付', x:v=>v && v!=='メール'},
+  {k:'d_how',    l:'公文書の送付',     x:v=>v && v!=='メール'},
+  {k:'sokyu',    l:'総支給額の定義',   x:v=>!!v},
+];
+const isExc = (k,v) => { const e = EXC.find(x=>x.k===k); return !!(e && e.x(v)); };
+
+const VIEW_SECTIONS = [
+  ['基本情報',   [['wage_no','事業所No'],['kubun','顧問区分'],['madoguchi','連絡窓口'],['renraku','連絡方法'],
+                  ['sho','社保手続き'],['koyo','雇保手続き']]],
+  ['社会保険',   [['hokensha','保険者'],['kenpo_name','健保組合名'],['jimu','事務組合'],['kojo','社保料控除月']]],
+  ['賃金入力',   [['shime','締日'],['harai','支払日'],['roudou','離職票・年更'],['sokyu','総支給額の定義']]],
+  ['回収と送付', [['keiro','回収経路'],['dare','回収先（誰から）'],['keishiki','データ形式'],['hozon','保存先'],
+                  ['k_to','社保控除表の送付先'],['k_how','社保控除表の送付方法'],
+                  ['d_to','公文書の送付先'],['d_how','公文書の送付方法'],['bikou','備考']]],
+];
+/* 空でも「未入力」と数えない項目（空＝標準、または書くことがない） */
+const OPTIONAL_EMPTY = ['sokyu','bikou','follow','fukutan'];
+function emptyFields(c){
+  const out = [];
+  const add = (k,l) => { if(!c[k]) out.push({k,l,req:REQUIRED.includes(k)}); };
+  add('shutan','担当①');
+  VIEW_SECTIONS.forEach(([,rows])=>rows.forEach(([k,l])=>{
+    if(OPTIONAL_EMPTY.includes(k)) return;
+    if(k==='kenpo_name' && c.hokensha!=='健保組合') return;
+    add(k,l);
+  }));
+  return out.sort((a,b)=>b.req-a.req);
+}
+
+function viewHtml(c, gaps, ns){
+  const stars = ns.filter(n=>n.star);
+  const excs  = EXC.filter(e=>e.x(c[e.k]||''));
+  const empt  = emptyFields(c);
+  const meta  = [
+    c.kubun,
+    (c.shime||c.harai) ? [c.shime?c.shime+'締め':'', c.harai?c.harai+'払い':''].filter(Boolean).join('・') : '',
+    c.keiro ? '回収：'+c.keiro : '',
+  ].filter(Boolean);
+  const srcMissing = ['カルテ','賃金','ルーティング'].filter(s=>!(c.sources||[]).includes(s));
+
+  const staffBox = (role, v, req) => `<div class="s"><div class="r">${role}</div>`+
+    (v ? `<div class="n">${esc(v)}</div>`
+       : `<div class="n none${req?' req':''}">${req?'要記入':'未設定'}</div>`)+`</div>`;
+
+  const alert = (stars.length || excs.length) ? `
+  <div class="alert">
+    <div class="ah"><b>この会社の注意点</b><span>作業の前にここだけは必ず確認</span></div>
+    ${stars.map(n=>{
+      const li = n.link ? linkInfo(n.link) : null;
+      return `<div class="astar"><span class="mk">★</span>
+        <div class="bd">${esc(n.body)}</div>
+        <div class="side">
+          <div class="tags">${n.tags.map(t=>`<span class="tag ${t==='健保組合'?'kh':''}">${esc(t)}</span>`).join('')}</div>
+          ${li ? `<a class="linkbtn ${li.cls}" href="${esc(n.link)}" target="_blank" rel="noopener">${li.icon} ${li.label}を開く</a>` : ''}
+          <button class="lnk2" data-aedit="${esc(String(n.id))}"${noteEditOpen?' disabled':''}>編集</button>
+        </div></div>`;}).join('')}
+    ${excs.length ? `<div class="sub2"${stars.length?'':' style="margin-top:0"'}>いつもと違う設定</div>
+    <div class="excs">${excs.map(e=>{
+      const sub = e.sub ? e.sub(c) : '';
+      const v = String(c[e.k]||'');
+      const wide = v.length > 14 || v.includes('\n');   /* 長い値は1行ぶん使って読みやすく */
+      return `<div class="exc${wide?' wide':''}"><div class="l">${e.l}</div><div class="v">${esc(c[e.k])}</div>`+
+             (sub ? `<div class="s2">${esc(sub)}</div>` : '')+`</div>`;}).join('')}</div>` : ''}
+  </div>`
+  : `<div class="alert calm"><div class="ah"><b>特別な注意点はありません</b><span>★の特記事項・いつもと違う設定ともになし</span></div></div>`;
+
+  const gapLine = empt.length ? `
+  <div class="gapline"><span class="gd"></span>
+    <span>未入力 ${empt.length}項目：${empt.map(e=>e.req?`<span class="rq">${esc(e.l)}（要記入）</span>`:esc(e.l)).join('・')}</span>
+    <button id="gapEdit">まとめて入力</button></div>` : '';
+
+  const cards = VIEW_SECTIONS.map(([title, rows])=>{
+    let blank = 0;
+    const body = rows.map(([k,l])=>{
+      const v = c[k]||'';
+      if(!v){ if(!OPTIONAL_EMPTY.includes(k) && !(k==='kenpo_name' && c.hokensha!=='健保組合')) blank++; return ''; }
+      return `<div class="vrow"><div class="l">${l}</div><div class="v${isExc(k,v)?' x':''}">${esc(v)}</div></div>`;
+    }).join('');
+    return `<div class="vcard"><div class="ch"><b>${title}</b>${blank?`<span>未入力 ${blank}</span>`:''}</div>`+
+      (body || `<div class="none">まだ入力がありません</div>`)+`</div>`;
+  }).join('');
+
+  return `
+  <button id="back">← 一覧へ</button>
+  <div class="vhead">
+    <div class="vt">
+      <div class="vname">
+        <span class="vno ${c.wage_no?'':'none'}">No.${esc(c.wage_no||'未設定')}</span>
+        <h2>${esc(c.name)}</h2>
+      </div>
+      <div class="vmeta">
+        ${meta.map(esc).join('<span>／</span>')}
+        ${srcMissing.map(s=>`<span class="badge w">${esc(s)}に未登録</span>`).join('')}
+      </div>
+    </div>
+    <button class="editbtn" id="toEdit">編集する</button>
+  </div>
+  <div class="staffs">
+    ${staffBox('担当①', c.shutan, true)}
+    ${staffBox('担当②', c.fukutan)}
+    ${staffBox('フォロー（不在時）', c.follow)}
+  </div>
+  ${alert}
+  ${gapLine}
+  <div class="vcards">${cards}</div>`;
+}
+
 function renderDetail(){
   const d = document.getElementById('detail');
   if(!sel){ d.innerHTML='<div class="empty-state">左の一覧から顧問先を選んでください。</div>'; return; }
@@ -1304,65 +1513,27 @@ function renderDetail(){
   const srcMissing = ['カルテ','賃金','ルーティング'].filter(s=>!(c.sources||[]).includes(s));
   const usedTags  = TAGS.filter(t=>ns.some(n=>n.tags.includes(t)));
   const untagged  = ns.filter(n=>!n.tags.length).length;
+  const starN   = ns.filter(n=>n.star).length;
+  /* ★の付いた特記事項は上の「この会社の注意点」に出すので、ふだんの一覧からは外します。
+     ただし編集中のものは、どの絞り込みでも見えるようにします */
   const shown = ns.filter(n=>
-      !noteFilter ? true
+      noteEditOpen === String(n.id) ? true
+    : !noteFilter ? (starN ? !n.star : true)
+    : noteFilter==='__all__' ? true
     : noteFilter==='__star__' ? n.star
     : noteFilter==='__none__' ? !n.tags.length
     : n.tags.includes(noteFilter));
 
-  d.innerHTML = `
-  <button id="back">← 一覧へ</button>
-  <h2 contenteditable data-k="name" spellcheck="false">${esc(c.name)}</h2>
-  <div class="sub">
-    ${(c.sources||[]).map(s=>`<span class="badge o">${esc(s)}に登録</span>`).join('')}
-    ${srcMissing.map(s=>`<span class="badge w">${esc(s)}に未登録</span>`).join('')}
-    ${gaps.length?`<span class="badge w">要記入 ${gaps.length}項目</span>`:''}
-  </div>
-
-  <section><h3>基本情報</h3><div class="grid">
-    ${field(c,'wage_no','事業所No（ろうむinOne）')}
-    ${field(c,'kubun','顧問区分',OPTS.kubun)}
-    ${field(c,'shutan','担当①',staffOpts(c.shutan),true)}
-    ${field(c,'fukutan','担当②',staffOpts(c.fukutan))}
-    ${field(c,'madoguchi','連絡窓口')}
-    ${field(c,'renraku','連絡方法')}
-    ${field(c,'sho','社保手続き',[...new Set([...OPTS.tetsuzuki, c.sho||''])])}
-    ${field(c,'koyo','雇保手続き',[...new Set([...OPTS.tetsuzuki, c.koyo||''])])}
-  </div></section>
-
-  <section><h3>社会保険</h3><div class="grid">
-    ${field(c,'hokensha','保険者',OPTS.hokensha)}
-    ${field(c,'kenpo_name','健保組合名',null,c.hokensha==='健保組合')}
-    ${field(c,'jimu','事務組合',OPTS.jimu)}
-    ${field(c,'kojo','社保料控除月',OPTS.kojo)}
-  </div></section>
-
-  <section><h3>賃金入力</h3><div class="grid">
-    ${field(c,'shime','締日',null,true)}
-    ${field(c,'harai','支払日')}
-    ${field(c,'roudou','離職票・年更',OPTS.rishoku)}
-    ${field(c,'sokyu','総支給額の定義')}
-  </div></section>
-
-  <section><h3>回収と送付</h3><div class="grid">
-    ${field(c,'keiro','回収経路',OPTS.keiro,true)}
-    ${field(c,'dare','回収先（誰から）')}
-    ${field(c,'keishiki','データ形式')}
-    ${field(c,'hozon','保存先',OPTS.hozon)}
-    ${field(c,'k_to','社保控除表の送付先')}
-    ${field(c,'k_how','社保控除表の送付方法',OPTS.k_how)}
-    ${field(c,'d_to','公文書の送付先')}
-    ${field(c,'d_how','公文書の送付方法',OPTS.d_how)}
-    ${field(c,'bikou','備考')}
-  </div></section>
-
+  const notesHtml = `
   <section class="notes"><h3>特記事項・イレギュラー（${ns.length}件）</h3>
     ${ns.length ? `<div class="notefilter">
-      <button class="tgl ${noteFilter?'':'on'}" data-nf=""${noteEditOpen?' disabled':''}>すべて（${ns.length}）</button>
-      ${ns.some(n=>n.star)?`<button class="tgl ${noteFilter==='__star__'?'on':''}" data-nf="__star__"${noteEditOpen?' disabled':''}>★（${ns.filter(n=>n.star).length}）</button>`:''}
+      <button class="tgl ${noteFilter?'':'on'}" data-nf=""${noteEditOpen?' disabled':''}>${starN?'★以外（'+(ns.length-starN)+'）':'すべて（'+ns.length+'）'}</button>
+      ${starN?`<button class="tgl ${noteFilter==='__star__'?'on':''}" data-nf="__star__"${noteEditOpen?' disabled':''}>★（${starN}）</button>
+      <button class="tgl ${noteFilter==='__all__'?'on':''}" data-nf="__all__"${noteEditOpen?' disabled':''}>すべて（${ns.length}）</button>`:''}
       ${usedTags.map(t=>`<button class="tgl ${noteFilter===t?'on':''}" data-nf="${esc(t)}"${noteEditOpen?' disabled':''}>${esc(t)}（${ns.filter(n=>n.tags.includes(t)).length}）</button>`).join('')}
       ${untagged?`<button class="tgl ${noteFilter==='__none__'?'on':''}" data-nf="__none__"${noteEditOpen?' disabled':''}>タグ未設定（${untagged}）</button>`:''}
     </div>` : ''}
+    ${starN && !noteFilter ? `<div class="starinfo">★の付いた${starN}件は、上の「この会社の注意点」に出しています。直すときは「★」で絞り込んでください。</div>` : ''}
     <div class="nbody">
     ${shown.map(n=>{
       const age = daysAgo(n.checked);
@@ -1420,14 +1591,92 @@ function renderDetail(){
     </div>
   </div>
 
-  <div class="dz"><button id="delClient">この顧問先を削除</button></div>`;
+`;
+  d.innerHTML = editMode
+    ? `
+  <button id="back">← 一覧へ</button>
+  <div class="editbar"><span>編集中です。入力した内容はその場で保存されます。</span>
+    <button class="editbtn ghost" id="toView">編集を終える</button></div>
+  <h2 contenteditable data-k="name" spellcheck="false">${esc(c.name)}</h2>
+  <div class="sub">
+    ${(c.sources||[]).map(s=>`<span class="badge o">${esc(s)}に登録</span>`).join('')}
+    ${srcMissing.map(s=>`<span class="badge w">${esc(s)}に未登録</span>`).join('')}
+    ${gaps.length?`<span class="badge w">要記入 ${gaps.length}項目</span>`:''}
+  </div>
 
-  d.querySelector('#delClient').onclick = async ()=>{
+  <section><h3>基本情報</h3><div class="grid">
+    ${field(c,'wage_no','事業所No（ろうむinOne）')}
+    ${field(c,'kubun','顧問区分',OPTS.kubun)}
+    ${field(c,'shutan','担当①',staffOpts(c.shutan),true)}
+    ${field(c,'fukutan','担当②',staffOpts(c.fukutan))}
+    ${field(c,'follow','フォロー（不在時）',staffOpts(c.follow))}
+    ${field(c,'madoguchi','連絡窓口')}
+    ${field(c,'renraku','連絡方法')}
+    ${field(c,'sho','社保手続き',[...new Set([...OPTS.tetsuzuki, c.sho||''])])}
+    ${field(c,'koyo','雇保手続き',[...new Set([...OPTS.tetsuzuki, c.koyo||''])])}
+  </div></section>
+
+  <section><h3>社会保険</h3><div class="grid">
+    ${field(c,'hokensha','保険者',OPTS.hokensha)}
+    ${field(c,'kenpo_name','健保組合名',null,c.hokensha==='健保組合')}
+    ${field(c,'jimu','事務組合',OPTS.jimu)}
+    ${field(c,'kojo','社保料控除月',OPTS.kojo)}
+  </div></section>
+
+  <section><h3>賃金入力</h3><div class="grid">
+    ${field(c,'shime','締日',null,true)}
+    ${field(c,'harai','支払日')}
+    ${field(c,'roudou','離職票・年更',OPTS.rishoku)}
+    ${field(c,'sokyu','総支給額の定義')}
+  </div></section>
+
+  <section><h3>回収と送付</h3><div class="grid">
+    ${field(c,'keiro','回収経路',OPTS.keiro,true)}
+    ${field(c,'dare','回収先（誰から）')}
+    ${field(c,'keishiki','データ形式')}
+    ${field(c,'hozon','保存先',OPTS.hozon)}
+    ${field(c,'k_to','社保控除表の送付先')}
+    ${field(c,'k_how','社保控除表の送付方法',OPTS.k_how)}
+    ${field(c,'d_to','公文書の送付先')}
+    ${field(c,'d_how','公文書の送付方法',OPTS.d_how)}
+    ${field(c,'bikou','備考')}
+  </div></section>
+
+` + notesHtml + `
+  <div class="dz"><button id="delClient">この顧問先を削除</button></div>`
+    : viewHtml(c, gaps, ns) + notesHtml;
+
+  const delBtn = d.querySelector('#delClient');
+  if(delBtn) delBtn.onclick = async ()=>{
     if(!confirm(c.name + ' を削除します。\n特記事項もまとめて消え、元に戻せません。よろしいですか？')) return;
     if(!await deleteClient(c)) return;
     sel = null; document.body.classList.remove('viewing');
     refreshStaffSelects(); render(); toast(c.name + ' を削除しました');
   };
+
+  const goEdit = ()=>{ editMode = true; renderDetail(); d.scrollTop = 0; };
+  d.querySelector('#toEdit') && (d.querySelector('#toEdit').onclick = goEdit);
+  d.querySelector('#gapEdit') && (d.querySelector('#gapEdit').onclick = goEdit);
+  /* 入力欄にカーソルがあるまま押すと、先に保存→描き直しが走ってクリックが空振りするため、
+     押した瞬間にフォーカスが移らないようにしておきます */
+  d.querySelector('#toView') && (d.querySelector('#toView').onmousedown = e=>e.preventDefault());
+  d.querySelector('#toView') && (d.querySelector('#toView').onclick = ()=>{
+    /* 入力中の欄があれば、先に保存（blur）させてから閲覧に戻します */
+    if(document.activeElement && d.contains(document.activeElement)) document.activeElement.blur();
+    editMode = false; render(); d.scrollTop = 0;
+  });
+  /* 注意点の★から「編集」：★で絞り込んで、その特記事項を編集状態にします */
+  d.querySelectorAll('.astar [data-aedit]').forEach(b=>{
+    b.onclick=()=>{
+      if(noteEditOpen) return;
+      const n = ns.find(x=>String(x.id)===b.dataset.aedit);
+      if(!n) return;
+      noteFilter='__star__'; noteEditOpen=String(n.id); noteDraft=n.body; noteFocus=true;
+      renderDetail();
+      const el = d.querySelector('.note.editing');
+      if(el) el.scrollIntoView({block:'center'});
+    };
+  });
 
   d.querySelector('#back').onclick=()=>{
     if(noteEditOpen && noteDraft.trim() !== (ns.find(x=>String(x.id)===noteEditOpen)||{}).body
@@ -1437,8 +1686,14 @@ function renderDetail(){
   };
 
   d.querySelectorAll('[contenteditable][data-k]').forEach(el=>{
+    /* 改行してよい欄（総支給額の定義・備考）は改行を残し、それ以外は1行にまとめます。
+       以前は textContent で読んでいたため、Enterで入れた改行が保存時に消えていました */
+    const multi = MULTILINE.includes(el.dataset.k);
+    if(!multi) el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); el.blur(); } });
     el.addEventListener('blur',()=>{
-      const v = el.textContent.trim();
+      let v = el.innerText.replace(/\u00a0/g,' ').replace(/\r/g,'');
+      v = multi ? v.split('\n').map(x=>x.replace(/\s+$/,'')).join('\n').replace(/\n{3,}/g,'\n\n').trim()
+                : v.replace(/\s*\n\s*/g,' ').trim();
       if(v === (c[el.dataset.k]||'')) return;
       if(el.dataset.k==='name' && !v){ el.textContent = c.name; toast('会社名は空にできません'); return; }
       c[el.dataset.k]=v; saveClient(c); render();
@@ -1588,7 +1843,16 @@ document.getElementById('fJimu').onchange = e=>{state.jimu=e.target.value;render
 document.getElementById('staffCfg').onclick = staffDialog;
 document.getElementById('importBtn').onclick = importDialog;
 document.getElementById('addClient').onclick = addClientDialog;
-document.getElementById('fTeam').onchange = e=>{state.staff=e.target.value;render();};
+document.getElementById('fTeam').onchange = e=>{state.staff=e.target.value;syncFollowChip();render();};
+/* 「フォロー分も表示」は、特定の担当者を選んでいるときだけ押せます */
+function syncFollowChip(){
+  const b = document.getElementById('cFollow');
+  const usable = !!state.staff && state.staff !== '__none__';
+  b.disabled = !usable;
+  if(!usable) state.follow = false;
+  b.classList.toggle('on', state.follow);
+}
+document.getElementById('cFollow').onclick = ()=>{ state.follow = !state.follow; syncFollowChip(); render(); };
 document.getElementById('sortBy').onchange = e=>{state.sort=e.target.value;render();};
 document.getElementById('cBulk').onclick = e=>{
   bulk=!bulk; picked.clear();
@@ -1606,7 +1870,7 @@ document.getElementById('bulkNone').onclick = ()=>{ picked.clear(); render(); };
 });
 
 document.getElementById('csv').onclick = ()=>{
-  const cols = [['name','会社名'],['wage_no','事業所No'],['kubun','顧問区分'],['shutan','担当①'],['fukutan','担当②'],['madoguchi','連絡窓口'],
+  const cols = [['name','会社名'],['wage_no','事業所No'],['kubun','顧問区分'],['shutan','担当①'],['fukutan','担当②'],['follow','フォロー（不在時）'],['madoguchi','連絡窓口'],
     ['renraku','連絡方法'],['sho','社保手続き'],['koyo','雇保手続き'],['hokensha','保険者'],
     ['kenpo_name','健保組合名'],['jimu','事務組合'],['kojo','社保料控除月'],['shime','締日'],['harai','支払日'],
     ['roudou','離職票・年更'],
@@ -1627,6 +1891,20 @@ document.getElementById('csv').onclick = ()=>{
   a.download = '顧客マスタ_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 };
+
+/* 見出し帯（ヘッダー＋絞り込み）が画面幅で2段になっても、一覧の上端がその下に来るようにします */
+(function(){
+  const hd = document.querySelector('header'), fl = document.querySelector('.filters'), bb = document.getElementById('bulkbar');
+  const sync = ()=>{
+    const r = document.documentElement.style;
+    r.setProperty('--hh', hd.offsetHeight + 'px');
+    r.setProperty('--stick', (hd.offsetHeight + fl.offsetHeight) + 'px');
+    if(bb.offsetHeight) r.setProperty('--bb', bb.offsetHeight + 'px');
+  };
+  sync();
+  if(window.ResizeObserver){ const ro = new ResizeObserver(sync); ro.observe(hd); ro.observe(fl); ro.observe(bb); }
+  else window.addEventListener('resize', sync);
+})();
 
 boot();
 </script>
