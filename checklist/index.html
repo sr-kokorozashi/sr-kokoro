@@ -103,6 +103,19 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 
 /* 待ち中情報 */
 .waiting-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+.pm-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+.pm{font-size:10px;padding:1px 6px;border-radius:4px;background:#F8FAFC;color:#64748B;border:1px solid #E2E8F0;font-weight:700;white-space:nowrap;}
+.pm.on{background:#F0FDF4;color:#15803D;border-color:#86EFAC;}
+.remind-row{font-size:10px;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:2px 7px;margin-top:5px;font-weight:600;display:inline-block;}
+.remind-box{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.remind-label{font-size:11px;font-weight:700;color:#1D4ED8;}
+.remind-list{display:flex;gap:4px;flex-wrap:wrap;}
+.remind-chip{font-size:10px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:4px;padding:1px 4px 1px 7px;font-weight:600;display:inline-flex;align-items:center;gap:2px;}
+.remind-chip button{border:none;background:none;color:#93C5FD;cursor:pointer;font-size:11px;padding:0 2px;line-height:1;}
+.remind-chip button:hover{color:#DC2626;}
+.remind-date{font-size:11px;font-family:inherit;border:1px solid #BFDBFE;border-radius:5px;padding:3px 6px;background:#fff;color:#1E3A8A;}
+.remind-add{background:#2563EB;border:none;color:#fff;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;}
+#test-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9999;background:#DC2626;color:#fff;font-size:11px;font-weight:700;padding:3px 14px;border-radius:0 0 6px 6px;}
 .wchip{font-size:9px;padding:2px 7px;border-radius:4px;background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;font-weight:600;}
 
 /* ステータスドロップダウン */
@@ -340,6 +353,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
           <label>メモ（何を待っているか具体的に）</label>
           <textarea id="wait-memo" placeholder="例：○○様からの出勤簿が未着" oninput="saveWaitMemo(this.value)"></textarea>
         </div>
+        <div class="remind-box">
+          <span class="remind-label">📧 リマインド送信日：</span>
+          <span id="remind-list" class="remind-list"></span>
+          <input type="date" id="remind-date" class="remind-date">
+          <button class="remind-add" onclick="addRemind()">記録</button>
+        </div>
       </div>
       <!-- 担当者パネル -->
       <div id="tantosha-panel">
@@ -356,11 +375,18 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
         <span id="tsukihen-note" style="font-size:10px;color:#64748B;"></span>
       </div>
       <!-- 社会保険加入あり/なしパネル -->
-      <div id="shaho-panel" style="display:none;padding:8px 18px;background:#ECFEFF;border-bottom:1px solid #A5F3FC;flex-shrink:0;align-items:center;gap:10px;">
+      <div id="shaho-panel" style="display:none;padding:8px 18px;background:#ECFEFF;border-bottom:1px solid #A5F3FC;flex-shrink:0;align-items:center;gap:10px;flex-wrap:wrap;">
         <span style="font-size:11px;color:#0E7490;font-weight:600;">保険加入：</span>
-        <button id="shaho-yes-btn" onclick="setShaho(true)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">社会保険＋雇用保険</button>
-        <button id="shaho-no-btn" onclick="setShaho(false)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">雇用保険のみ</button>
-        <span style="font-size:10px;color:#64748B;">※雇用保険のみの場合、社会保険関連のタスクを非表示にします</span>
+        <button id="shaho-yes-btn" onclick="setInsurance('both')" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">社会保険＋雇用保険</button>
+        <button id="shaho-no-btn" onclick="setInsurance('koyo')" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">雇用保険のみ</button>
+        <button id="shaho-only-btn" onclick="setInsurance('shaho')" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">社会保険のみ</button>
+        <span id="risho-panel" style="display:none;align-items:center;gap:8px;margin-left:8px;padding-left:12px;border-left:1px solid #A5F3FC;">
+          <span style="font-size:11px;color:#0E7490;font-weight:600;">離職票：</span>
+          <button id="risho-yes-btn" onclick="setRisho(true)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">あり</button>
+          <button id="risho-no-btn" onclick="setRisho(false)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">なし</button>
+          <span id="risho-note" style="font-size:10px;color:#64748B;"></span>
+        </span>
+        <span style="font-size:10px;color:#64748B;width:100%;">※選ばなかった保険のタスクは非表示になります（チェック状態は残ります）</span>
       </div>
       <!-- 案件メモパネル -->
       <div id="case-memo-panel">
@@ -430,12 +456,26 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
     </div>
     <div id="shaho-select-area" style="display:none;margin-bottom:12px;">
       <label class="fl">保険加入</label>
-      <div style="display:flex;gap:8px;margin-top:4px;">
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="shaho-yes-label">
           <input type="radio" name="shaho-radio" id="shaho-yes" value="yes" checked onchange="updateShahoSelect()"> 社会保険＋雇用保険
         </label>
         <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="shaho-no-label">
           <input type="radio" name="shaho-radio" id="shaho-no" value="no" onchange="updateShahoSelect()"> 雇用保険のみ
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="shaho-only-label">
+          <input type="radio" name="shaho-radio" id="shaho-only" value="shaho" onchange="updateShahoSelect()"> 社会保険のみ
+        </label>
+      </div>
+    </div>
+    <div id="risho-select-area" style="display:none;margin-bottom:12px;">
+      <label class="fl">離職票</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="risho-yes-label">
+          <input type="radio" name="risho-radio" id="risho-yes" value="yes" checked onchange="updateShahoSelect()"> あり（離職票を発行）
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;" id="risho-no-label">
+          <input type="radio" name="risho-radio" id="risho-no" value="no" onchange="updateShahoSelect()"> なし（雇用保険喪失のみ）
         </label>
       </div>
     </div>
@@ -519,7 +559,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 // ============================================================
 const SB_URL = 'https://mmcgxgzplvtenlyzxhty.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tY2d4Z3pwbHZ0ZW5seXp4aHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODAwMTMsImV4cCI6MjA4OTM1NjAxM30.0qaVx5ymqB63YJ7rHQe0I56sqp3M8CVv4ZwRVmhjHWU';
-const TABLE = 'checklist_cases';
+/* ?table=test を付けて開くと、テスト用テーブル（checklist_cases_test）を使います。
+   本番データには一切書き込みません。画面上部に「テスト用」の帯が出ます。 */
+const TEST_MODE = new URLSearchParams(location.search).get('table') === 'test';
+const TABLE = TEST_MODE ? 'checklist_cases_test' : 'checklist_cases';
+const LS_KEY = TEST_MODE ? 'cl-cases-test' : 'cl-cases';
 
 /* ============================================================
    ログイン機能（こころざし経営労務事務所 共通）
@@ -843,7 +887,7 @@ const PROC_KEYS = ["入社","入社（健保組合）","退職","退職（健保
 
 const P = {
 
-"入社":{color:"#2563EB",icon:"👤",hasFuyo:true,hasShaho:true,sections:[
+"入社":{color:"#2563EB",icon:"👤",hasFuyo:true,hasShaho:true,hasKoyo:true,sections:[
   {title:"入社手続き前にやること",tasks:[
     {id:"n1",label:"お客様へ入社連絡票受領の連絡",note:"",warn:null},
     {id:"n2",label:"入社連絡票のドキュ",note:"",warn:null},
@@ -853,14 +897,14 @@ const P = {
     {id:"n6",label:"社会保険料控除表をメールで送る",note:"",warn:null,shahoOnly:true},
   ]},
   {title:"手続き",tasks:[
-    {id:"n7",label:"雇用保険資格取得手続き",note:"",warn:"⚠️ 入社後に取得した場合、個マスタの労保画面に✓を入れる"},
+    {id:"n7",koyoOnly:true,label:"雇用保険資格取得手続き",note:"",warn:"⚠️ 入社後に取得した場合、個マスタの労保画面に✓を入れる"},
     {id:"n8",label:"社会保険資格取得手続き",note:"",warn:"⚠️ 70歳以上該当者",shahoOnly:true},
     {id:"n9",label:"被扶養者手続き",note:"",warn:"⚠️ 個マスタ登録する(扶養手続きを紙で提出する時、要注意）",fuyoOnly:true,shahoOnly:true},
     {id:"n10",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書取得・整理",tasks:[
-    {id:"n11",label:"雇用保険公文書取得",note:"",warn:null},
-    {id:"n12",label:"雇用保険公文書のドキュ",note:"",warn:null},
+    {id:"n11",koyoOnly:true,label:"雇用保険公文書取得",note:"",warn:null},
+    {id:"n12",koyoOnly:true,label:"雇用保険公文書のドキュ",note:"",warn:null},
     {id:"n13",label:"社会保険公文書取得",note:"",warn:null,shahoOnly:true},
     {id:"n14",label:"社会保険公文書のドキュ",note:"",warn:null,shahoOnly:true},
     {id:"n15",label:"被扶養者公文書取得",note:"",warn:null,fuyoOnly:true,shahoOnly:true},
@@ -869,56 +913,56 @@ const P = {
     {id:"n18",label:"入社ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"n19",label:"雇用保険公文書の送付",note:"",warn:null},
+    {id:"n19",koyoOnly:true,label:"雇用保険公文書の送付",note:"",warn:null},
     {id:"n20",label:"社会保険公文書の送付",note:"",warn:null,shahoOnly:true},
     {id:"n21",label:"被扶養者公文書の送付",note:"",warn:null,fuyoOnly:true,shahoOnly:true},
     {id:"n22",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
-"入社（健保組合）":{color:"#2563EB",icon:"👤",hasFuyo:true,sections:[
+"入社（健保組合）":{color:"#2563EB",icon:"👤",hasFuyo:true,hasShaho:true,hasKoyo:true,sections:[
   {title:"入社手続き前にやること",tasks:[
     {id:"nk1",label:"お客様へ入社連絡票受領の連絡",note:"",warn:null},
     {id:"nk2",label:"入社連絡票のドキュ",note:"",warn:null},
     {id:"nk3",label:"ドキュの名前の変更",note:"",warn:null},
     {id:"nk4",label:"入社連絡票の内容を確認",note:"",warn:null},
     {id:"nk5",label:"個人マスタの入力",note:"",warn:"⚠️ 社会保険に加入しない場合は健保番号、厚年番号を消去"},
-    {id:"nk6",label:"社会保険料控除表をメールで送る",note:"",warn:null},
+    {id:"nk6",shahoOnly:true,label:"社会保険料控除表をメールで送る",note:"",warn:null},
   ]},
   {title:"手続き",tasks:[
-    {id:"nk7",label:"雇用保険資格取得手続き",note:"",warn:"⚠️ 入社後に取得した場合、個マスタの労保画面に✓を入れる"},
-    {id:"nk8",label:"健康保険資格取得手続き",note:"健保組合",warn:null},
-    {id:"nk9",label:"厚生年金保険手続き",note:"",warn:null},
-    {id:"nk10",label:"被扶養者手続き",note:"健保組合（電子申請不可、添付書類確認）",warn:"⚠️ 個マスタ登録する(扶養手続きを紙で提出する時、要注意）",fuyoOnly:true},
-    {id:"nk11",label:"3号手続き",note:"電子申請可能（単独申請）",warn:null,fuyoOnly:true},
+    {id:"nk7",koyoOnly:true,label:"雇用保険資格取得手続き",note:"",warn:"⚠️ 入社後に取得した場合、個マスタの労保画面に✓を入れる"},
+    {id:"nk8",shahoOnly:true,label:"健康保険資格取得手続き",note:"健保組合",warn:null},
+    {id:"nk9",shahoOnly:true,label:"厚生年金保険手続き",note:"",warn:null},
+    {id:"nk10",shahoOnly:true,label:"被扶養者手続き",note:"健保組合（電子申請不可、添付書類確認）",warn:"⚠️ 個マスタ登録する(扶養手続きを紙で提出する時、要注意）",fuyoOnly:true},
+    {id:"nk11",shahoOnly:true,label:"3号手続き",note:"電子申請可能（単独申請）",warn:null,fuyoOnly:true},
     {id:"nk12",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書取得・整理",tasks:[
-    {id:"nk13",label:"雇用保険公文書取得",note:"",warn:null},
-    {id:"nk14",label:"雇用保険公文書のドキュ",note:"",warn:null},
-    {id:"nk15",label:"健康保険公文書取得",note:"",warn:null},
-    {id:"nk16",label:"健康保険公文書のドキュ",note:"",warn:null},
-    {id:"nk17",label:"厚生年金保険公文書取得",note:"",warn:null},
-    {id:"nk18",label:"厚生年金保険公文書のドキュ",note:"",warn:null},
-    {id:"nk19",label:"被扶養者公文書取得",note:"",warn:null,fuyoOnly:true},
-    {id:"nk20",label:"被扶養者公文書のドキュ",note:"",warn:null,fuyoOnly:true},
-    {id:"nk21",label:"第３号公文書取得",note:"□e-Gov",warn:null,fuyoOnly:true},
-    {id:"nk22",label:"第３号公文書のドキュ",note:"",warn:null,fuyoOnly:true},
-    {id:"nk23",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
+    {id:"nk13",koyoOnly:true,label:"雇用保険公文書取得",note:"",warn:null},
+    {id:"nk14",koyoOnly:true,label:"雇用保険公文書のドキュ",note:"",warn:null},
+    {id:"nk15",shahoOnly:true,label:"健康保険公文書取得",note:"",warn:null},
+    {id:"nk16",shahoOnly:true,label:"健康保険公文書のドキュ",note:"",warn:null},
+    {id:"nk17",shahoOnly:true,label:"厚生年金保険公文書取得",note:"",warn:null},
+    {id:"nk18",shahoOnly:true,label:"厚生年金保険公文書のドキュ",note:"",warn:null},
+    {id:"nk19",shahoOnly:true,label:"被扶養者公文書取得",note:"",warn:null,fuyoOnly:true},
+    {id:"nk20",shahoOnly:true,label:"被扶養者公文書のドキュ",note:"",warn:null,fuyoOnly:true},
+    {id:"nk21",shahoOnly:true,label:"第３号公文書取得",note:"□e-Gov",warn:null,fuyoOnly:true},
+    {id:"nk22",shahoOnly:true,label:"第３号公文書のドキュ",note:"",warn:null,fuyoOnly:true},
+    {id:"nk23",shahoOnly:true,label:"社会保険料控除表送付済みか確認",note:"",warn:null},
     {id:"nk24",label:"入社ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"nk25",label:"雇用保険公文書の送付",note:"",warn:null},
-    {id:"nk26",label:"健康保険公文書の送付",note:"",warn:null},
-    {id:"nk27",label:"厚生年金保険公文書の送付",note:"",warn:null},
-    {id:"nk28",label:"被扶養者公文書の送付",note:"",warn:null,fuyoOnly:true},
+    {id:"nk25",koyoOnly:true,label:"雇用保険公文書の送付",note:"",warn:null},
+    {id:"nk26",shahoOnly:true,label:"健康保険公文書の送付",note:"",warn:null},
+    {id:"nk27",shahoOnly:true,label:"厚生年金保険公文書の送付",note:"",warn:null},
+    {id:"nk28",shahoOnly:true,label:"被扶養者公文書の送付",note:"",warn:null,fuyoOnly:true},
     {id:"nk29",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
-"退職":{color:"#DC2626",icon:"🚪",hasShaho:true,sections:[
+"退職":{color:"#DC2626",icon:"🚪",hasShaho:true,hasKoyo:true,hasRisho:true,sections:[
   {title:"退職手続き前にやること",tasks:[
     {id:"t1",label:"お客様へ退職連絡票受領の連絡",note:"",warn:null},
-    {id:"t2",label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分",warn:"⚠️ 離職票急ぎの場合は、賃金台帳を依頼してください"},
-    {id:"t3",label:"退職理由に応じて必要な添付書類を依頼",note:"契約期間満了：最後の契約書（雇止めの明示があるときは最終を含む直近２回分）",warn:null},
+    {id:"t2",rishoOnly:true,label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分",warn:"⚠️ 離職票急ぎの場合は、賃金台帳を依頼してください"},
+    {id:"t3",rishoOnly:true,label:"退職理由に応じて必要な添付書類を依頼",note:"契約期間満了：最後の契約書（雇止めの明示があるときは最終を含む直近２回分）",warn:null},
     {id:"t4",label:"退職連絡票のドキュ",note:"",warn:null},
     {id:"t5",label:"ドキュの名前の変更",note:"",warn:null},
     {id:"t6",label:"退職連絡票の内容を確認",note:"",warn:null},
@@ -927,54 +971,54 @@ const P = {
     {id:"t9",label:"保険証回収の依頼",note:"",warn:null,shahoOnly:true},
   ]},
   {title:"退職手続き",tasks:[
-    {id:"t10",label:"雇用保険喪失手続き or 離職票発行手続き",note:"",warn:"⚠️ 退職ではないのに喪失した場合、個マスタの労保画面の✓を外す　□ショウ企画は、退職時現在の所属を確認し、違っていたら転勤届を出す"},
+    {id:"t10",labelRisho:"離職票発行手続き（雇用保険喪失）",labelNoRisho:"雇用保険喪失手続き",koyoOnly:true,label:"雇用保険喪失手続き or 離職票発行手続き",note:"",warn:"⚠️ 退職ではないのに喪失した場合、個マスタの労保画面の✓を外す　□ショウ企画は、退職時現在の所属を確認し、違っていたら転勤届を出す"},
     {id:"t11",label:"社会保険資格喪失手続き",note:"",warn:null,shahoOnly:true},
     {id:"t12",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"手続き後",tasks:[
-    {id:"t13",label:"離職票or雇喪確認通知書　公文書取得",note:"",warn:null},
-    {id:"t14",label:"離職票or雇喪認通知書公文書ドキュ",note:"",warn:null},
+    {id:"t13",labelRisho:"離職票　公文書取得",labelNoRisho:"雇喪確認通知書　公文書取得",koyoOnly:true,label:"離職票or雇喪確認通知書　公文書取得",note:"",warn:null},
+    {id:"t14",labelRisho:"離職票公文書のドキュ",labelNoRisho:"雇喪確認通知書公文書のドキュ",koyoOnly:true,label:"離職票or雇喪認通知書公文書ドキュ",note:"",warn:null},
     {id:"t15",label:"社会保険公文書取得",note:"",warn:null,shahoOnly:true},
     {id:"t16",label:"社会保険公文書のドキュ",note:"",warn:null,shahoOnly:true},
     {id:"t17",label:"退職ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"t18",label:"離職票or雇喪認通知書公文書の送付",note:"",warn:null},
+    {id:"t18",labelRisho:"離職票公文書の送付",labelNoRisho:"雇喪確認通知書公文書の送付",koyoOnly:true,label:"離職票or雇喪認通知書公文書の送付",note:"",warn:null},
     {id:"t19",label:"社会保険公文書の送付orアップ",note:"",warn:null,shahoOnly:true},
     {id:"t20",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
-"退職（健保組合）":{color:"#DC2626",icon:"🚪",sections:[
+"退職（健保組合）":{color:"#DC2626",icon:"🚪",hasShaho:true,hasKoyo:true,hasRisho:true,sections:[
   {title:"退職手続き前にやること",tasks:[
     {id:"tk1",label:"お客様へ退職連絡票受領の連絡",note:"",warn:null},
-    {id:"tk2",label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分",warn:"⚠️ 離職票急ぎの場合は、賃金台帳を依頼してください"},
-    {id:"tk3",label:"退職理由に応じて必要な添付書類を依頼",note:"契約期間満了：最後の契約書（雇止めの明示があるときは最終を含む直近２回分）",warn:null},
+    {id:"tk2",rishoOnly:true,label:"時給者・日給者の場合は出勤簿を依頼",note:"原則、退職日から遡る13か月分",warn:"⚠️ 離職票急ぎの場合は、賃金台帳を依頼してください"},
+    {id:"tk3",rishoOnly:true,label:"退職理由に応じて必要な添付書類を依頼",note:"契約期間満了：最後の契約書（雇止めの明示があるときは最終を含む直近２回分）",warn:null},
     {id:"tk4",label:"退職連絡票のドキュ",note:"",warn:null},
     {id:"tk5",label:"ドキュの名前の変更",note:"",warn:null},
     {id:"tk6",label:"退職連絡票の内容を確認",note:"",warn:null},
     {id:"tk7",label:"個人マスタに退職内容を入力",note:"",warn:null},
-    {id:"tk8",label:"健康保険資格喪失証明書と退職後の健康保険のお知らせを送る",note:"",warn:null},
-    {id:"tk9",label:"保険証回収の依頼",note:"",warn:null},
+    {id:"tk8",shahoOnly:true,label:"健康保険資格喪失証明書と退職後の健康保険のお知らせを送る",note:"",warn:null},
+    {id:"tk9",shahoOnly:true,label:"保険証回収の依頼",note:"",warn:null},
   ]},
   {title:"退職手続き",tasks:[
-    {id:"tk10",label:"雇用保険喪失手続き or 離職票発行手続き",note:"",warn:"⚠️ 退職ではないのに喪失した場合、個マスタの労保画面の✓を外す"},
-    {id:"tk11",label:"健康保険資格喪失手続き",note:"健保組合",warn:null},
-    {id:"tk12",label:"厚生年金保険資格喪失手続き",note:"",warn:null},
+    {id:"tk10",labelRisho:"離職票発行手続き（雇用保険喪失）",labelNoRisho:"雇用保険喪失手続き",koyoOnly:true,label:"雇用保険喪失手続き or 離職票発行手続き",note:"",warn:"⚠️ 退職ではないのに喪失した場合、個マスタの労保画面の✓を外す"},
+    {id:"tk11",shahoOnly:true,label:"健康保険資格喪失手続き",note:"健保組合",warn:null},
+    {id:"tk12",shahoOnly:true,label:"厚生年金保険資格喪失手続き",note:"",warn:null},
     {id:"tk13",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"手続き後",tasks:[
-    {id:"tk14",label:"離職票or雇喪確認通知書　公文書取得",note:"",warn:null},
-    {id:"tk15",label:"離職票or雇喪認通知書公文書ドキュ",note:"",warn:null},
-    {id:"tk16",label:"健康保険公文書取得",note:"健保組合",warn:null},
-    {id:"tk17",label:"健康保険公文書のドキュ",note:"",warn:null},
-    {id:"tk18",label:"厚生年金保険公文書取得",note:"",warn:null},
-    {id:"tk19",label:"厚生年金保険公文書のドキュ",note:"",warn:null},
+    {id:"tk14",labelRisho:"離職票　公文書取得",labelNoRisho:"雇喪確認通知書　公文書取得",koyoOnly:true,label:"離職票or雇喪確認通知書　公文書取得",note:"",warn:null},
+    {id:"tk15",labelRisho:"離職票公文書のドキュ",labelNoRisho:"雇喪確認通知書公文書のドキュ",koyoOnly:true,label:"離職票or雇喪認通知書公文書ドキュ",note:"",warn:null},
+    {id:"tk16",shahoOnly:true,label:"健康保険公文書取得",note:"健保組合",warn:null},
+    {id:"tk17",shahoOnly:true,label:"健康保険公文書のドキュ",note:"",warn:null},
+    {id:"tk18",shahoOnly:true,label:"厚生年金保険公文書取得",note:"",warn:null},
+    {id:"tk19",shahoOnly:true,label:"厚生年金保険公文書のドキュ",note:"",warn:null},
     {id:"tk20",label:"退職ドキュを整理する",note:"",warn:null},
   ]},
   {title:"公文書の送付",tasks:[
-    {id:"tk21",label:"離職票or雇喪認通知書公文書の送付",note:"",warn:null},
-    {id:"tk22",label:"健康保険公文書の送付orアップ",note:"",warn:null},
-    {id:"tk23",label:"厚生年金保険公文書の送付orアップ",note:"",warn:null},
+    {id:"tk21",labelRisho:"離職票公文書の送付",labelNoRisho:"雇喪確認通知書公文書の送付",koyoOnly:true,label:"離職票or雇喪認通知書公文書の送付",note:"",warn:null},
+    {id:"tk22",shahoOnly:true,label:"健康保険公文書の送付orアップ",note:"",warn:null},
+    {id:"tk23",shahoOnly:true,label:"厚生年金保険公文書の送付orアップ",note:"",warn:null},
     {id:"tk24",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
 ]},
@@ -1670,7 +1714,60 @@ function gp(c) { return P[c.proc] || P['入社']; }
 function taskVisible(t, c) {
   return (!t.fuyoOnly     || c.hasFuyo     !== false)
       && (!t.tsukihenOnly || c.hasTsukihen !== false)
-      && (!t.shahoOnly    || c.hasShaho    !== false);
+      && (!t.shahoOnly    || c.hasShaho    !== false)
+      && (!t.koyoOnly     || c.hasKoyo     !== false)
+      && (!t.rishoOnly    || (c.hasKoyo !== false && c.hasRisho !== false));
+}
+// 離職票あり／なしでタスク名を切り替える（未選択＝従来の「or」表記のまま）
+function taskLabel(t, c) {
+  if (c && c.hasRisho === true  && t.labelRisho)   return t.labelRisho;
+  if (c && c.hasRisho === false && t.labelNoRisho) return t.labelNoRisho;
+  return t.label;
+}
+// 保険加入の区分：both=社保＋雇保 / koyo=雇用保険のみ / shaho=社会保険のみ
+function insKind(c) {
+  if (c.hasShaho === false) return 'koyo';
+  if (c.hasKoyo === false)  return 'shaho';
+  return 'both';
+}
+
+// ============================================================
+// 手続き済マーク（一覧カード用）
+// 「〇〇手続き」のタスクにチェックが入ったら☑。非表示のタスクはマークも出さない
+// ============================================================
+const PROC_MARKS = {
+  '入社':               [{l:'雇',id:'n7'},{l:'社',id:'n8'},{l:'扶',id:'n9'}],
+  '入社（健保組合）':     [{l:'雇',id:'nk7'},{l:'健',id:'nk8'},{l:'厚',id:'nk9'},{l:'扶',id:'nk10'}],
+  '退職':               [{l:'離',lNo:'雇喪',id:'t10'},{l:'社',id:'t11'}],
+  '退職（健保組合）':     [{l:'離',lNo:'雇喪',id:'tk10'},{l:'健',id:'tk11'},{l:'厚',id:'tk12'}],
+  '同日得喪':            [{l:'喪',id:'d6'},{l:'取',id:'d10'}],
+  '同日得喪（健保組合）':  [{l:'健喪',id:'dk6'},{l:'厚喪',id:'dk7'},{l:'健取',id:'dk13'},{l:'厚取',id:'dk14'}],
+};
+function procMarksHtml(c) {
+  const defs = PROC_MARKS[c.proc];
+  if (!defs) return '';
+  const visible = new Set(allTasks(c).map(t => t.id));
+  const items = defs.filter(m => visible.has(m.id)).map(m => {
+    const on = !!(c.checks && c.checks[m.id]);
+    const lab = (c.hasRisho === false && m.lNo) ? m.lNo : m.l;
+    return `<span class="pm${on?' on':''}" title="${on?'手続き済':'未手続'}">${on?'☑':'□'}${lab}</span>`;
+  });
+  return items.length ? `<div class="pm-row">${items.join('')}</div>` : '';
+}
+
+// ============================================================
+// リマインド日（書類・情報待ちでお客様に催促した日）
+// ============================================================
+function fmtMD(d) { const m = String(d||'').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}/${+m[2]}` : esc(d); }
+function todayISO() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function remindHtml(c) {
+  const ds = (c.remindDates || []).slice().sort();
+  if (!ds.length) return '';
+  const last = ds[ds.length-1];
+  const days = Math.round((new Date(todayISO()) - new Date(last)) / 86400000);
+  const shown = ds.length > 3 ? '…' + ds.slice(-3).map(fmtMD).join('・') : ds.map(fmtMD).join('・');
+  const ago = days <= 0 ? '今日' : `${days}日前`;
+  return `<div class="remind-row" title="リマインド送信日：${ds.join(', ')}">📧 リマインド ${shown}（${ds.length}回・最終${ago}）</div>`;
 }
 function allTasks(c) {
   const p = gp(c);
@@ -1700,7 +1797,7 @@ async function loadData() {
   const rows = await sbGet();
   if (rows === null) {
     setSyncStatus('❌ 接続失敗（ローカルで動作中）');
-    const local = localStorage.getItem('cl-cases');
+    const local = localStorage.getItem(LS_KEY);
     if (local) cases = JSON.parse(local);
   } else {
     cases = rows.map(r => ({
@@ -1721,6 +1818,9 @@ async function loadData() {
       hasCalc: r.has_calc !== null ? r.has_calc : null,
       hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
       hasShaho: r.has_shaho !== false,
+      hasKoyo: r.has_koyo !== false,
+      hasRisho: (r.has_rishokuhyo === true || r.has_rishokuhyo === false) ? r.has_rishokuhyo : null,
+      remindDates: Array.isArray(r.remind_dates) ? r.remind_dates : [],
       freeLabels: r.free_labels || {},
     }));
     _lastSync = Date.now();
@@ -1730,7 +1830,7 @@ async function loadData() {
 }
 
 async function saveCase(c) {
-  localStorage.setItem('cl-cases', JSON.stringify(cases));
+  localStorage.setItem(LS_KEY, JSON.stringify(cases));
   const payload = {
     company: c.company,
     name: c.name,
@@ -1750,6 +1850,9 @@ async function saveCase(c) {
     ha_fuyo: c.hasFuyo !== false,
     has_calc: c.hasCalc !== null ? c.hasCalc : null,
     has_shaho: c.hasShaho !== false,
+    has_koyo: c.hasKoyo !== false,
+    has_rishokuhyo: (c.hasRisho === true || c.hasRisho === false) ? c.hasRisho : null,
+    remind_dates: c.remindDates || [],
     free_labels: c.freeLabels || {},
     updated_at: new Date().toISOString(),
   };
@@ -1777,7 +1880,7 @@ async function insertCase(c) {
   const row = await sbInsert(payload);
   if (row) {
     c.id = String(row.id);
-    localStorage.setItem('cl-cases', JSON.stringify(cases));
+    localStorage.setItem(LS_KEY, JSON.stringify(cases));
     _lastSync = Date.now();
     setSyncStatus('☁️ 保存済');
     return true;
@@ -1788,7 +1891,7 @@ async function insertCase(c) {
 
 async function removeCase(id) {
   cases = cases.filter(c => c.id !== id);
-  localStorage.setItem('cl-cases', JSON.stringify(cases));
+  localStorage.setItem(LS_KEY, JSON.stringify(cases));
   await sbDelete(id);
   setSyncStatus('☁️ 削除済');
 }
@@ -1816,6 +1919,9 @@ setInterval(async () => {
       hasCalc: r.has_calc !== null ? r.has_calc : null,
       hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
       hasShaho: r.has_shaho !== false,
+      hasKoyo: r.has_koyo !== false,
+      hasRisho: (r.has_rishokuhyo === true || r.has_rishokuhyo === false) ? r.has_rishokuhyo : null,
+      remindDates: Array.isArray(r.remind_dates) ? r.remind_dates : [],
       freeLabels: r.free_labels || {},
       freeName: r.free_name || '',
       procDate: r.proc_date || '',
@@ -1842,6 +1948,8 @@ function showView(v) {
 function openChecklist(id) {
   currentId = id;
   expanded = {};
+  const rdEl = document.getElementById('remind-date');
+  if (rdEl) rdEl.value = '';
   showView('c');
   renderSidebar();
 }
@@ -1982,6 +2090,9 @@ function renderDash() {
     const ageBadge = (ageDays === null || (c.status||'none') === 'shinsei')
       ? '' : `<span class="age-badge">登録から ${ageDays}日</span>`;
     const apBadge = applyBadge(c);
+    // リマインド日も待ちチップと同じく「書類・情報待ち」のときだけ表示
+    const remindRow = (c.status||'none') === 'wait' ? remindHtml(c) : '';
+    const marks = procMarksHtml(c);
     const badgeRow = (ageBadge || apBadge) ? `<div class="badge-row">${ageBadge}${apBadge}</div>` : '';
 
     return `<div class="dc" onclick="openChecklist('${c.id}')">
@@ -1994,7 +2105,9 @@ function renderDash() {
         </div>
       </div>
       ${badgeRow}
+      ${marks}
       ${waitChips}
+      ${remindRow}
       <div class="dc-bar"><div class="dc-bar-fill" style="width:${pt}%;background:${p.color}"></div></div>
       ${tantoLast}
       ${c.caseMemo ? '<div style="font-size:11px;color:#92400E;font-weight:700;margin-top:8px;padding:5px 8px;background:#FEF3C7;border-radius:4px;border-left:3px solid #F59E0B;line-height:1.5;">' + esc(c.caseMemo) + '</div>' : ''}
@@ -2227,6 +2340,12 @@ function renderChecklist() {
       </label>`
     ).join('');
     document.getElementById('wait-memo').value = c.waitMemo || '';
+    const rds = (c.remindDates || []).slice().sort();
+    document.getElementById('remind-list').innerHTML = rds.length
+      ? rds.map(d => `<span class="remind-chip">${fmtMD(d)}<button title="この日付を削除" onclick="delRemind('${esc(d)}')">×</button></span>`).join('')
+      : '<span style="font-size:10px;color:#94A3B8;">まだ記録なし</span>';
+    const rdEl = document.getElementById('remind-date');
+    if (rdEl && !rdEl.value) rdEl.value = todayISO();
   }
 
   // 担当者パネル
@@ -2258,11 +2377,21 @@ function renderChecklist() {
   if (shahoPanel) {
     if (gp(c).hasShaho) {
       shahoPanel.style.display = 'flex';
-      const on = c.hasShaho !== false;
-      document.getElementById('shaho-yes-btn').style.background = on ? '#0891B2' : '#E2E8F0';
-      document.getElementById('shaho-yes-btn').style.color = on ? '#fff' : '#475569';
-      document.getElementById('shaho-no-btn').style.background = !on ? '#6B7280' : '#E2E8F0';
-      document.getElementById('shaho-no-btn').style.color = !on ? '#fff' : '#475569';
+      const kind = insKind(c);
+      const paint = (id, on, col) => { const b = document.getElementById(id); b.style.background = on ? col : '#E2E8F0'; b.style.color = on ? '#fff' : '#475569'; };
+      paint('shaho-yes-btn',  kind === 'both',  '#0891B2');
+      paint('shaho-no-btn',   kind === 'koyo',  '#6B7280');
+      paint('shaho-only-btn', kind === 'shaho', '#6B7280');
+      // 離職票あり／なし（退職で雇用保険を含むときだけ）
+      const rp = document.getElementById('risho-panel');
+      if (gp(c).hasRisho && c.hasKoyo !== false) {
+        rp.style.display = 'inline-flex';
+        paint('risho-yes-btn', c.hasRisho === true,  '#DC2626');
+        paint('risho-no-btn',  c.hasRisho === false, '#6B7280');
+        document.getElementById('risho-note').textContent = (c.hasRisho === null || c.hasRisho === undefined) ? '未選択（従来の表記のまま）' : '';
+      } else {
+        rp.style.display = 'none';
+      }
     } else {
       shahoPanel.style.display = 'none';
     }
@@ -2295,8 +2424,11 @@ function renderChecklist() {
   // 第〇回バッジ表示
   const roundBadge = c.round ? `<span style="background:#FEF9C3;color:#B45309;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">${esc(c.round)}</span>` : '';
   const fuyoBadge = (gp(c).hasFuyo && c.hasFuyo === false && c.hasShaho !== false) ? '<span style="background:#F1F5F9;color:#94A3B8;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">扶養なし</span>' : '';
-  const shahoBadge = (gp(c).hasShaho && c.hasShaho === false) ? '<span style="background:#ECFEFF;color:#0E7490;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">雇用保険のみ</span>' : '';
-  document.getElementById('cl-name').innerHTML = esc(c.name || '') + roundBadge + shahoBadge + fuyoBadge;
+  const insLabel = gp(c).hasShaho ? ({koyo:'雇用保険のみ', shaho:'社会保険のみ'})[insKind(c)] : '';
+  const shahoBadge = insLabel ? '<span style="background:#ECFEFF;color:#0E7490;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">' + insLabel + '</span>' : '';
+  const rishoBadge = (gp(c).hasRisho && c.hasKoyo !== false && (c.hasRisho === true || c.hasRisho === false))
+    ? '<span style="background:#FEF2F2;color:#B91C1C;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;margin-left:4px;">' + (c.hasRisho ? '離職票あり' : '離職票なし') + '</span>' : '';
+  document.getElementById('cl-name').innerHTML = esc(c.name || '') + roundBadge + shahoBadge + rishoBadge + fuyoBadge;
 
   // チェックリスト本体
   let sn = 0, html = '';
@@ -2331,6 +2463,8 @@ function renderChecklist() {
       // フリー手続きの場合はラベルをfreeLabelから復元
       if (p.isFree && c.freeLabels && c.freeLabels[task.id]) {
         task = {...task, label: c.freeLabels[task.id]};
+      } else if (task.labelRisho) {
+        task = {...task, label: taskLabel(task, c)};
       }
       sn++;
       const ck = !!c.checks[task.id], ex = !!expanded[task.id];
@@ -2429,17 +2563,77 @@ function saveFreeTaskLabel(taskId, val) {
   saveCase(c);
 }
 
-async function setShaho(val) {
+async function setInsurance(kind) {
   const c = cases.find(x => x.id === currentId);
   if (!c) return;
-  if (c.hasShaho !== false === val) return;
-  if (!val && !confirm('雇用保険のみに切り替えます。\n社会保険関連のタスクがチェックリストから非表示になります。\n（チェック状態は保持され、社会保険ありに戻せば復元されます）\n\nよろしいですか？')) return;
-  c.hasShaho = val;
-  await sbUpdate(c.id, { has_shaho: val, updated_at: new Date().toISOString() });
-  localStorage.setItem('cl-cases', JSON.stringify(cases));
+  if (insKind(c) === kind) return;
+  const msg = {
+    both:  '社会保険＋雇用保険に切り替えます。',
+    koyo:  '雇用保険のみに切り替えます。\n社会保険関連のタスクがチェックリストから非表示になります。',
+    shaho: '社会保険のみに切り替えます。\n雇用保険（離職票を含む）関連のタスクがチェックリストから非表示になります。',
+  }[kind];
+  if (kind !== 'both' && !confirm(msg + '\n（チェック状態は保持され、元に戻せば復元されます）\n\nよろしいですか？')) return;
+  const prev = { hasShaho: c.hasShaho, hasKoyo: c.hasKoyo };
+  c.hasShaho = kind !== 'koyo';
+  c.hasKoyo  = kind !== 'shaho';
+  const ok = await sbUpdate(c.id, { has_shaho: c.hasShaho, has_koyo: c.hasKoyo, updated_at: new Date().toISOString() });
+  if (!ok) {
+    Object.assign(c, prev);
+    setSyncStatus('⚠️ 保存失敗');
+    toast('⚠️ 保存できませんでした。もう一度お試しください');
+    renderChecklist();
+    return;
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify(cases));
   renderChecklist();
   renderSidebar();
-  toast(val ? '🔵 社会保険＋雇用保険に切り替えました' : '✅ 雇用保険のみ。社会保険のタスクを非表示にします');
+  toast({ both:'🔵 社会保険＋雇用保険に切り替えました', koyo:'✅ 雇用保険のみ。社会保険のタスクを非表示にします', shaho:'✅ 社会保険のみ。雇用保険のタスクを非表示にします' }[kind]);
+}
+// 互換用（旧ボタン名）
+function setShaho(val) { return setInsurance(val ? 'both' : 'koyo'); }
+
+async function setRisho(val) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  if (c.hasRisho === val) return;
+  const prev = c.hasRisho;
+  c.hasRisho = val;
+  const ok = await sbUpdate(c.id, { has_rishokuhyo: val, updated_at: new Date().toISOString() });
+  if (!ok) {
+    c.hasRisho = prev;
+    setSyncStatus('⚠️ 保存失敗');
+    toast('⚠️ 保存できませんでした。もう一度お試しください');
+    renderChecklist();
+    return;
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify(cases));
+  renderChecklist();
+  renderSidebar();
+  toast(val ? '📄 離職票ありにしました' : '📄 離職票なし（雇用保険喪失のみ）にしました');
+}
+
+async function addRemind() {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  const el = document.getElementById('remind-date');
+  const d = (el && el.value) || todayISO();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { toast('日付を選んでください'); return; }
+  if (!c.remindDates) c.remindDates = [];
+  if (c.remindDates.includes(d)) { toast('その日付はすでに記録されています'); return; }
+  c.remindDates = c.remindDates.concat(d).sort();
+  if (el) el.value = '';
+  renderChecklist();
+  await saveCase(c);
+  toast(`📧 ${fmtMD(d)} のリマインドを記録しました`);
+}
+
+async function delRemind(d) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  if (!confirm(`${fmtMD(d)} のリマインド記録を削除しますか？`)) return;
+  c.remindDates = (c.remindDates || []).filter(x => x !== d);
+  renderChecklist();
+  await saveCase(c);
 }
 
 async function setTsukihen(val) {
@@ -2611,6 +2805,7 @@ function selP(idx) {
     if (P[selProc] && P[selProc].hasShaho) {
       sArea.style.display = '';
       document.getElementById('shaho-yes').checked = true;
+      document.getElementById('risho-yes').checked = true;
     } else {
       sArea.style.display = 'none';
     }
@@ -2638,6 +2833,18 @@ function updateShahoSelect() {
   document.getElementById('shaho-yes-label').style.color = yes.checked ? '#0891B2' : '';
   document.getElementById('shaho-no-label').style.borderColor = noEl.checked ? '#0891B2' : '#E2E8F0';
   document.getElementById('shaho-no-label').style.color = noEl.checked ? '#0891B2' : '';
+  const onlyEl = document.getElementById('shaho-only');
+  document.getElementById('shaho-only-label').style.borderColor = onlyEl.checked ? '#0891B2' : '#E2E8F0';
+  document.getElementById('shaho-only-label').style.color = onlyEl.checked ? '#0891B2' : '';
+  // 離職票の選択：退職系で、雇用保険を含むときだけ表示
+  const rArea = document.getElementById('risho-select-area');
+  const showRisho = !!(P[selProc] && P[selProc].hasRisho) && document.getElementById('shaho-select-area').style.display !== 'none' && !onlyEl.checked;
+  if (rArea) rArea.style.display = showRisho ? '' : 'none';
+  const ry = document.getElementById('risho-yes'), rn = document.getElementById('risho-no');
+  document.getElementById('risho-yes-label').style.borderColor = ry.checked ? '#DC2626' : '#E2E8F0';
+  document.getElementById('risho-yes-label').style.color = ry.checked ? '#DC2626' : '';
+  document.getElementById('risho-no-label').style.borderColor = rn.checked ? '#DC2626' : '#E2E8F0';
+  document.getElementById('risho-no-label').style.color = rn.checked ? '#DC2626' : '';
   // 雇用保険のみの場合、扶養の選択は不要なので隠す
   const sArea = document.getElementById('shaho-select-area');
   const fArea = document.getElementById('fuyo-select-area');
@@ -2756,7 +2963,11 @@ async function createCase() {
   const fuyoYes = document.getElementById('fuyo-yes');
   const hasFuyo = (!fuyoYes || !document.getElementById('fuyo-select-area') || document.getElementById('fuyo-select-area').style.display === 'none') ? true : fuyoYes.checked;
   const shahoYes = document.getElementById('shaho-yes');
-  const hasShaho = (!shahoYes || !document.getElementById('shaho-select-area') || document.getElementById('shaho-select-area').style.display === 'none') ? true : shahoYes.checked;
+  const shahoAreaOn = !!(shahoYes && document.getElementById('shaho-select-area') && document.getElementById('shaho-select-area').style.display !== 'none');
+  const hasShaho = shahoAreaOn ? !document.getElementById('shaho-no').checked : true;
+  const hasKoyo  = shahoAreaOn ? !document.getElementById('shaho-only').checked : true;
+  const rArea = document.getElementById('risho-select-area');
+  const hasRisho = (rArea && rArea.style.display !== 'none') ? document.getElementById('risho-yes').checked : null;
   const calcYes = document.getElementById('calc-yes');
   const hasCalc = (!calcYes || !document.getElementById('calc-select-area') || document.getElementById('calc-select-area').style.display === 'none') ? null : calcYes.checked;
   if (!co || !selProc) return;
@@ -2786,6 +2997,8 @@ async function createCase() {
   if (document.getElementById('fuyo-select-area')) document.getElementById('fuyo-select-area').style.display = 'none';
   if (document.getElementById('shaho-yes')) document.getElementById('shaho-yes').checked = true;
   if (document.getElementById('shaho-select-area')) document.getElementById('shaho-select-area').style.display = 'none';
+  if (document.getElementById('risho-yes')) document.getElementById('risho-yes').checked = true;
+  if (document.getElementById('risho-select-area')) document.getElementById('risho-select-area').style.display = 'none';
   selProc = null;
   document.getElementById('n-submit').disabled = true;
   setSyncStatus('🔄 保存中...');
@@ -2798,6 +3011,7 @@ async function createCase() {
     rousai_shoshiki: rousaiShoshiki,
     case_memo: '', task_memos: {}, round: round, ha_fuyo: hasFuyo,
     has_calc: hasCalc, has_tsukihen: null, has_shaho: hasShaho,
+    has_koyo: hasKoyo, has_rishokuhyo: hasRisho, remind_dates: [],
     free_labels: {},
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   };
@@ -2821,10 +3035,13 @@ async function createCase() {
       hasCalc: row.has_calc !== null ? row.has_calc : null,
       hasTsukihen: row.has_tsukihen !== null ? row.has_tsukihen : null,
       hasShaho: row.has_shaho !== false,
+      hasKoyo: row.has_koyo !== false,
+      hasRisho: (row.has_rishokuhyo === true || row.has_rishokuhyo === false) ? row.has_rishokuhyo : null,
+      remindDates: Array.isArray(row.remind_dates) ? row.remind_dates : [],
       freeLabels: row.free_labels || {},
     };
     cases.push(c);
-    localStorage.setItem('cl-cases', JSON.stringify(cases));
+    localStorage.setItem(LS_KEY, JSON.stringify(cases));
     _lastSync = Date.now();
     setSyncStatus('☁️ 保存済');
     toast('✅ 案件を作成しました');
@@ -2933,6 +3150,9 @@ async function restoreData(event) {
         ha_fuyo: c.hasFuyo !== false,
     has_calc: c.hasCalc !== null ? c.hasCalc : null,
         has_shaho: c.hasShaho !== false,
+        has_koyo: (c.hasKoyo !== undefined ? c.hasKoyo : c.has_koyo) !== false,
+        has_rishokuhyo: [c.hasRisho, c.has_rishokuhyo].find(v => v === true || v === false) ?? null,
+        remind_dates: c.remindDates || c.remind_dates || [],
         has_tsukihen: (c.hasTsukihen !== undefined ? c.hasTsukihen
                      : (c.has_tsukihen !== undefined ? c.has_tsukihen : null)),
         free_labels: c.freeLabels || c.free_labels || {},
@@ -3005,7 +3225,7 @@ function openPrintWindow() {
         <td class="num-cell">${sn}</td>
         <td class="check-cell">${ck ? '✓' : '□'}</td>
         <td class="label-cell">
-          <div class="task-label">${task.label}</div>
+          <div class="task-label">${taskLabel(task, c)}</div>
           ${task.warn ? `<div class="task-warn">${task.warn}</div>` : ''}
           ${memo ? `<div class="task-memo">${memo}</div>` : ''}
         </td>
@@ -3080,6 +3300,12 @@ function renderAll() {
 // ============================================================
 // 初期化
 // ============================================================
+if (TEST_MODE) {
+  const tb = document.createElement('div');
+  tb.id = 'test-banner';
+  tb.textContent = '🧪 テスト用テーブル（checklist_cases_test）で動作中';
+  document.body.appendChild(tb);
+}
 (async () => {
   await loadData();
 })();
