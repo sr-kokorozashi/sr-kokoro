@@ -1283,14 +1283,89 @@ function getProcMemo(c, procId) {
 }
 function setProcSt(c, procId, status, date) {
   if (!c.procStatus) c.procStatus = {};
-  const existingMemo = getProcMemo(c, procId);
+  // 公文書・引継ぎ項目など、状態以外の記録は消さずに引き継ぐ
+  const v = c.procStatus[procId];
+  const keep = (v && typeof v === 'object') ? Object.assign({}, v) : { memo: '' };
+  if (keep.memo == null) keep.memo = '';
   if (status === '済') {
-    c.procStatus[procId] = { status: '済', date: date || today(), memo: existingMemo };
+    keep.status = '済'; keep.date = date || today();
   } else if (status === '不要') {
-    c.procStatus[procId] = { status: '不要', date: null, memo: existingMemo };
+    keep.status = '不要'; keep.date = null;
   } else {
-    c.procStatus[procId] = { status: '未', date: null, memo: existingMemo };
+    keep.status = '未'; keep.date = null;
   }
+  // 「確認のうえ済で正しい」の記録は、状態が変わったら取り消す
+  delete keep.checkOk;
+  c.procStatus[procId] = keep;
+}
+
+// ===== 押し間違いチェック =====
+// 公文書ボタンを押すつもりで、次回の申請ボタンを押してしまう事故を防ぐ。
+// ・順番チェック：給付金の連続する回で、前回の申請または公文書が「未」のまま次回を「済」にしていないか
+// ・時期チェック：申請可能日（支給対象期間の翌日）より前に「済」にしていないか
+// 給付金の連続する回（同じ並びの中で、前の行が「前回」）
+const KYUFU_CHAINS = [
+  /^(f-jukyushikaku|f-kyufu\d+)$/,          // 女性：育児休業給付金（受給資格確認・第1回 → 第2回 → …）
+  /^(f-jitan-shikaku|f-jitan-kyufu\d+)$/,   // 女性：育児時短就業給付金
+  /^m-ikukyu1-kyufu\d+$/,                   // 男性：育休（1回目）の給付金
+  /^m-ikukyu2-kyufu\d+$/                    // 男性：育休（2回目）の給付金
+];
+function findProc(c, procId) {
+  return getProcedures(c).find(p => !p.isSectionHeader && p.id === procId) || null;
+}
+function prevKyufuProc(c, p, procs) {
+  if (!p) return null;
+  const re = KYUFU_CHAINS.find(r => r.test(p.id));
+  if (!re) return null;
+  const chain = (procs || getProcedures(c)).filter(x => !x.isSectionHeader && re.test(x.id));
+  const i = chain.findIndex(x => x.id === p.id);
+  return i > 0 ? chain[i - 1] : null;
+}
+// 前回の状況　{type:'apply'}=前回の申請が未　{type:'kobunsho'}=前回の公文書が未　null=問題なし
+function prevKyufuPending(c, p, procs) {
+  const prev = prevKyufuProc(c, p, procs);
+  if (!prev) return null;
+  const st = getProcSt(c, prev.id);
+  if (st === '不要') return null;
+  if (st !== '済') return { type: 'apply', prev: prev };
+  if (isKobunshoRequired(prev.id) && getKobunsho(c, prev.id) === '未') return { type: 'kobunsho', prev: prev };
+  return null;
+}
+// 「済」にすると不自然になる理由を文章で返す（なければ空）
+function doneIssues(c, p, date, procs) {
+  const out = [];
+  if (!p) return out;
+  const pend = prevKyufuPending(c, p, procs);
+  if (pend && pend.type === 'kobunsho') out.push('前回「' + pend.prev.name + '」の公文書がまだ「未」です。公文書が戻ってきた場合は、前回の行の「公文書」ボタンを押してください。');
+  if (!pend) {
+    const prev = prevKyufuProc(c, p, procs);
+    const kd = prev && c.procStatus && c.procStatus[prev.id] && c.procStatus[prev.id].kobunshoDate;
+    if (kd && date && getKobunsho(c, prev.id) === '済' && date < kd) out.push('前回「' + prev.name + '」の公文書を受け取った日（' + fmtDate(kd) + '）より前に「済」になっています。');
+  }
+  if (pend && pend.type === 'apply') out.push('前回「' + pend.prev.name + '」の申請がまだ「未」です。前回の申請ボタンを押すつもりではありませんか？');
+  if (p.availableDate && date && date < p.availableDate) out.push('申請可能日は ' + fmtDate(p.availableDate) + ' です（完了日 ' + fmtDate(date) + ' は申請可能日より前です）。');
+  return out;
+}
+// すでに「済」になっている行で、確認が必要なもの
+function needsDoneCheck(c, p, procs) {
+  if (!p || getProcSt(c, p.id) !== '済') return false;
+  const v = c.procStatus && c.procStatus[p.id];
+  if (v && typeof v === 'object' && v.checkOk) return false;
+  return doneIssues(c, p, getProcDate(c, p.id), procs).length > 0;
+}
+// 次回がまだ「未」で、前回の公文書が届いていないもの（申請前に通知書の確認が必要）
+function prevKobunshoWaiting(c, p, procs) {
+  if (!p) return false;
+  const st = getProcSt(c, p.id);
+  if (st === '済' || st === '不要') return false;
+  const pend = prevKyufuPending(c, p, procs);
+  return !!pend && pend.type === 'kobunsho';
+}
+function doneConfirmMessage(p, issues) {
+  return '⚠ 押し間違いではありませんか？\n\n' +
+    '「' + p.name + '」を「済」にしようとしています。\n\n' +
+    issues.map(t => '・' + t).join('\n') +
+    '\n\n本当にこの手続きを「済」にしますか？';
 }
 function getKobunsho(c, procId) {
   var v = c.procStatus && c.procStatus[procId];
@@ -1308,6 +1383,9 @@ async function updateKobunsho(procId, caseId, val, e) {
   } else {
     c.procStatus[procId] = { status: v || '未', date: null, memo: '', kobunsho: val };
   }
+  // 公文書を受け取った日を記録（次回の申請がそれより前に「済」になっていないかの確認に使う）
+  if (val === '済') c.procStatus[procId].kobunshoDate = today();
+  else delete c.procStatus[procId].kobunshoDate;
   await save();
   renderAll();
   openCaseDetail(caseId);
@@ -2349,10 +2427,12 @@ function getAlerts(c) {
   if (needsBirthCheck(c)) alerts.push({ type: 'birthcheck', proc: null });
   procs.forEach(p => {
     const status = getProcSt(c, p.id);
+    if (needsDoneCheck(c, p, procs)) { alerts.push({ type: 'check', proc: p }); return; }
     if (status === '済' || status === '不要') return;
-    if (p.deadline && p.deadline < t) alerts.push({ type: 'overdue', proc: p });
-    else if (p.deadline && daysUntil(p.deadline) <= 7) alerts.push({ type: 'soon', proc: p });
-    else if (p.availableDate && p.availableDate <= t) alerts.push({ type: 'available', proc: p });
+    const wait = prevKobunshoWaiting(c, p, procs); // 前回の公文書が未着
+    if (p.deadline && p.deadline < t) alerts.push({ type: 'overdue', proc: p, prevWait: wait });
+    else if (p.deadline && daysUntil(p.deadline) <= 7) alerts.push({ type: 'soon', proc: p, prevWait: wait });
+    else if (p.availableDate && p.availableDate <= t) alerts.push({ type: 'available', proc: p, prevWait: wait });
   });
   return alerts;
 }
@@ -2542,6 +2622,8 @@ function renderCaseTable() {
       <td class="date-display" style="font-size:11px;">${nextDeadline}</td>
       <td><div class="alert-row">
         ${birthCheck ? '<span class="alert-chip red">🔔 出産確認</span>' : ''}
+        ${alerts.some(a => a.type === 'check') ? `<span class="alert-chip red">⚠ 押し間違い？${alerts.filter(a => a.type === 'check').length}件</span>` : ''}
+        ${!kobunshoChips && alerts.some(a => a.prevWait) ? `<span class="alert-chip red">📬 前回公文書未着${alerts.filter(a => a.prevWait).length}件</span>` : ''}
         ${kobunshoChips}
         ${!kobunshoChips && overdue > 0 ? `<span class="alert-chip red">超過${overdue}件</span>` : ''}
         ${!kobunshoChips && soon > 0 ? `<span class="alert-chip orange">7日内${soon}件</span>` : ''}
@@ -2749,6 +2831,8 @@ function openCaseDetail(id) {
           ${st !== '不要' ? `<button class="status-btn 不要" style="font-size:10px;" onclick="setIryo('${p.id}','${id}',event)">不要</button>` : ''}
           ${dateInput}
         </div>
+        ${needsDoneCheck(c, p, procs) ? `<div style="margin-top:5px;padding:5px 8px;border-radius:4px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:600;line-height:1.5;" onclick="event.stopPropagation()">⚠ 押し間違いの可能性があります<br>${doneIssues(c, p, stDate, procs).map(x => '・' + escH(x)).join('<br>')}<br>押し間違いなら状態ボタンで「未」に戻してください。<br><button class="btn btn-ghost btn-sm" style="margin-top:3px;padding:1px 8px;font-size:10px;" onclick="confirmDoneCheck('${p.id}','${id}',event)">これで正しい</button></div>` : ''}
+        ${prevKobunshoWaiting(c, p, procs) && p.availableDate && p.availableDate <= t ? `<div style="margin-top:5px;padding:5px 8px;border-radius:4px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:600;line-height:1.5;">📬 前回「${escH(prevKyufuProc(c, p, procs).name)}」の公文書がまだ「未」です。通知書が届いているか確認してから申請してください。</div>` : ''}
         ${kobunshoCell}
         ${memoInput}
         ${hikitsugiInput}
@@ -2857,10 +2941,27 @@ async function toggleStatus(procId, caseId, e) {
   if (!c) return;
   const cur = getProcSt(c, procId);
   if (cur === '未' || cur === '期限超過') {
-    setProcSt(c, procId, '済', today());
+    const p = findProc(c, procId);
+    const t = today();
+    const issues = doneIssues(c, p, t);
+    if (issues.length) {
+      if (!confirm(doneConfirmMessage(p, issues))) return;
+      setProcSt(c, procId, '済', t);
+      c.procStatus[procId].checkOk = true; // 承知のうえで済にした
+    } else {
+      setProcSt(c, procId, '済', t);
+    }
   } else {
     setProcSt(c, procId, '未');
   }
+  await save(); renderAll(); openCaseDetail(caseId);
+}
+async function confirmDoneCheck(procId, caseId, e) {
+  if (e) e.stopPropagation();
+  const c = cases.find(x => x.id === caseId);
+  if (!c || !c.procStatus || typeof c.procStatus[procId] !== 'object') return;
+  if (!confirm('この手続きは「済」で正しいですか？\n（押し間違いの場合は「キャンセル」を押し、状態ボタンで「未」に戻してください）')) return;
+  c.procStatus[procId].checkOk = true;
   await save(); renderAll(); openCaseDetail(caseId);
 }
 async function setIryo(procId, caseId, e) {
@@ -2875,8 +2976,17 @@ async function updateProcDate(procId, caseId, date, e) {
   if (e) e.stopPropagation();
   const c = cases.find(x => x.id === caseId);
   if (!c) return;
+  const p = findProc(c, procId);
+  let ok = false;
+  if (p && p.availableDate && date && date < p.availableDate) {
+    if (!confirm(doneConfirmMessage(p, ['申請可能日は ' + fmtDate(p.availableDate) + ' です（完了日 ' + fmtDate(date) + ' は申請可能日より前です）。']))) { openCaseDetail(caseId); return; }
+    ok = true;
+  }
+  const wasOk = c.procStatus && c.procStatus[procId] && c.procStatus[procId].checkOk;
   setProcSt(c, procId, '済', date);
+  if (ok || wasOk) c.procStatus[procId].checkOk = true;
   await save();
+  renderAll(); openCaseDetail(caseId);
   showToast('📅 手続き日を更新しました');
 }
 
@@ -3014,6 +3124,28 @@ async function deleteCurrentCase() {
 
 // ===== 出産確認を期限一覧に並べるための共通部品 =====
 // 期限カレンダー・ダッシュボードの両方で同じ形の項目として扱う
+function doneCheckItems() {
+  const items = [];
+  cases.forEach(c => {
+    const procs = getProcedures(c);
+    procs.filter(p => !p.isSectionHeader).forEach(p => {
+      if (needsDoneCheck(c, p, procs)) items.push({ c: c, p: p, days: -99999, type: 'check' });
+    });
+  });
+  return items;
+}
+function doneCheckItemHtml(c, p) {
+  const gIcon = c.gender === 'male' ? '♂' : '♀';
+  const why = doneIssues(c, p, getProcDate(c, p.id)).map(x => x.split('。')[0]).join('／');
+  return `<div class="upcoming-item urgent" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
+      <div class="upcoming-date"><div class="day">要確認</div><div style="font-size:10px;margin-top:3px;">完了日 ${fmtDate(getProcDate(c, p.id))}</div></div>
+      <div style="flex:1;">
+        <div class="upcoming-title">${gIcon} ⚠ 押し間違いの可能性：${p.name}</div>
+        <div class="upcoming-meta">${c.company} / ${c.name}　${escH(why)}</div>
+      </div>
+      <span class="badge 期限超過">要確認</span>
+    </div>`;
+}
 function birthCheckItems() {
   return cases.filter(c => needsBirthCheck(c))
     .map(c => ({ c: c, p: null, days: daysUntil(c.dueDate), type: 'birthcheck' }));
@@ -3068,6 +3200,7 @@ function renderDashboard() {
   if (document.getElementById('stat-birthcheck')) document.getElementById('stat-birthcheck').textContent = birthCheck;
   // 出産確認も「対応が必要なもの」として同じ一覧に並べる
   upcomingItems.push(...birthCheckItems());
+  upcomingItems.push(...doneCheckItems());
   document.getElementById('badge-cases').textContent = cases.length;
   document.getElementById('badge-upcoming').textContent = upcomingItems.length;
   // 引継ぎメモのバッジ（未済項目がある案件数）
@@ -3087,14 +3220,16 @@ function renderDashboard() {
   }
   el.innerHTML = `<div class="upcoming-list">${upcomingItems.slice(0,10).map(({c,p,days,type}) => {
     if (type === 'birthcheck') return birthCheckItemHtml(c, days);
+    if (type === 'check') return doneCheckItemHtml(c, p);
     const isAvailable = type === 'available';
-    const cls = days < 0 ? 'urgent' : isAvailable ? 'soon' : '';
+    const wait = prevKobunshoWaiting(c, p);
+    const cls = (days < 0 || wait) ? 'urgent' : isAvailable ? 'soon' : '';
     const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : isAvailable ? '申請可能' : `あと${days}日`;
     const gIcon = c.gender === 'male' ? '♂' : '♀';
     return `<div class="upcoming-item ${cls}" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
       <div class="upcoming-date"><div class="day">${dayLabel}</div><div style="font-size:10px;margin-top:2px;">${fmtDate(p.deadline)}</div></div>
-      <div style="flex:1;"><div class="upcoming-title">${gIcon} ${p.name}</div><div class="upcoming-meta">${c.company} / ${c.name}</div></div>
-      <div class="upcoming-badge"><span class="badge ${days < 0 ? '期限超過' : isAvailable ? '育休中' : '未'}">${days < 0 ? '期限超過' : isAvailable ? '申請可能' : '対応待ち'}</span></div>
+      <div style="flex:1;"><div class="upcoming-title">${gIcon} ${p.name}</div><div class="upcoming-meta">${c.company} / ${c.name}${wait ? '　📬 前回の公文書が未着です。通知書を確認してから申請してください。' : ''}</div></div>
+      <div class="upcoming-badge"><span class="badge ${days < 0 || wait ? '期限超過' : isAvailable ? '育休中' : '未'}">${days < 0 ? '期限超過' : isAvailable ? '申請可能' : '対応待ち'}${wait ? '・前回公文書未着' : ''}</span></div>
     </div>`;
   }).join('')}</div>`;
 }
@@ -3156,6 +3291,7 @@ function renderUpcoming() {
   });
   // 出産確認も同じ一覧に並べる（超過日数の大きいものが上に来る）
   allItems.push(...birthCheckItems());
+  allItems.push(...doneCheckItems());
   allItems.sort((a,b) => a.days - b.days);
   const el = document.getElementById('upcoming-content');
   if (allItems.length === 0) {
@@ -3164,14 +3300,16 @@ function renderUpcoming() {
   }
   el.innerHTML = `<div class="upcoming-list">${allItems.map(({c,p,days,type}) => {
     if (type === 'birthcheck') return birthCheckItemHtml(c, days);
+    if (type === 'check') return doneCheckItemHtml(c, p);
     const isAvailable = type === 'available';
-    const cls = !isAvailable ? 'urgent' : 'soon';
+    const wait = prevKobunshoWaiting(c, p);
+    const cls = (!isAvailable || wait) ? 'urgent' : 'soon';
     const dayLabel = days < 0 ? `${Math.abs(days)}日超過` : isAvailable ? '申請可能' : `あと${days}日`;
     const gIcon = c.gender === 'male' ? '♂' : '♀';
     return `<div class="upcoming-item ${cls}" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
       <div class="upcoming-date"><div class="day">${dayLabel}</div><div style="font-size:10px;margin-top:3px;">${fmtDate(p.deadline)}</div></div>
-      <div style="flex:1;"><div class="upcoming-title">${gIcon} ${p.name}</div><div class="upcoming-meta">${c.company} / ${c.name}${p.period ? `　${p.period}` : ''}</div></div>
-      <span class="badge ${isAvailable ? '育休中' : '期限超過'}">${isAvailable ? '申請可能' : '期限超過'}</span>
+      <div style="flex:1;"><div class="upcoming-title">${gIcon} ${p.name}</div><div class="upcoming-meta">${c.company} / ${c.name}${p.period ? `　${p.period}` : ''}${wait ? '　📬 前回の公文書が未着です。通知書を確認してから申請してください。' : ''}</div></div>
+      <span class="badge ${isAvailable && !wait ? '育休中' : '期限超過'}">${isAvailable ? '申請可能' : '期限超過'}${wait ? '・前回公文書未着' : ''}</span>
     </div>`;
   }).join('')}</div>`;
 }
