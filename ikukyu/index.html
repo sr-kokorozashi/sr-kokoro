@@ -1465,7 +1465,7 @@ function fmtDate(d) {
   const dt = new Date(d);
   return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
 }
-function today() { return new Date().toISOString().split('T')[0]; }
+function today() { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); }
 function escH(v) {
   return String(v == null ? '' : v)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1520,12 +1520,26 @@ function calcDeadline(endDate) {
   return d.toISOString().split('T')[0];
 }
 // 給付金申請期間は「カレンダー2か月分」= 開始日の2か月後の前日
-function add2MonthsMinus1(dateStr) {
+// 給付金の区切りは、最初の開始日の「日」（anchorDay）を基準に毎月の応当日を決める。
+// その月に応当日がない場合（31日始まりの9月など）は月末を応当日とし、その前日で区切る。
+//   例：7/31始まり → 8/30 → 9/29 ／ 6/27始まり → 8/26 ／ 12/28始まり → 2/27
+// 日付は時差の影響を受けないよう、すべて世界標準時の日付として計算する。
+function add2MonthsMinus1(dateStr, anchorDay) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  d.setMonth(d.getMonth() + 2);
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
+  const s = _ymd(dateStr);
+  const day = anchorDay || s.d;
+  let y = s.y, m = s.m + 2;
+  while (m > 12) { m -= 12; y += 1; }
+  const od = Math.min(day, _lastDay(y, m));          // 2か月後の応当日
+  return new Date(Date.UTC(y, m - 1, od) - 86400000).toISOString().slice(0, 10); // その前日
+}
+function anchorDayOf(dateStr) { return dateStr ? _ymd(dateStr).d : null; }
+// 時短給付金用：従来どおりの区切り（2か月後の同日の前日。その日がない月は翌月にはみ出す）
+// 区切り方の確認がとれるまで、時短給付金は従来の計算のまま据え置く
+function add2MonthsMinus1Jitan(dateStr) {
+  if (!dateStr) return null;
+  const s = _ymd(dateStr);
+  return new Date(Date.UTC(s.y, s.m + 1, s.d) - 86400000).toISOString().slice(0, 10);
 }
 
 // ===== FEMALE PROCEDURES =====
@@ -1562,9 +1576,10 @@ function getFemaleDates(c) {
   const ikukyuEnd = calcIkukyuEnd(base, c.ikukyuExtend);
   const kyufuPeriods = [];
   let ps = ikukyuStart;
+  const kyufuAnchor = anchorDayOf(ikukyuStart);
   for (let i = 0; i < 13; i++) {
     if (!ps || ps > ikukyuEnd) break;
-    const pe = add2MonthsMinus1(ps);
+    const pe = add2MonthsMinus1(ps, kyufuAnchor);
     const end = pe > ikukyuEnd ? ikukyuEnd : pe;
     kyufuPeriods.push({ num: i+1, start: ps, end, deadline: calcDeadline(end) });
     ps = addDays(end, 1);
@@ -1657,7 +1672,7 @@ function getFemaleProcedures(c) {
     note: '産休終了日前後に提出（状況による）',
   });
   procs.push({
-    id: 'f-sankyu-tsuki', no: '⑧',
+    id: 'f-sankyu-tsuki', no: b && c.dueDate && b !== c.dueDate ? '⑨' : '⑧',
     name: '産前産後休業終了時月変（状況により）',
     period: null,
     deadline: addDays(d.sangoEnd, 60),
@@ -1878,21 +1893,21 @@ function getFemaleProcedures(c) {
   procs.push({
     id: 'f-jitan-shikaku', no: '②',
     name: '育児時短就業給付 受給資格確認・初回支給申請',
-    period: jitanStart ? `${fmtDate(jitanStart)} 〜 ${fmtDate(add2MonthsMinus1(jitanStart))}` : '—',
+    period: jitanStart ? `${fmtDate(jitanStart)} 〜 ${fmtDate(add2MonthsMinus1Jitan(jitanStart))}` : '—',
     deadline: jitanInitDeadline,
-    availableDate: jitanStart ? addDays(add2MonthsMinus1(jitanStart), 1) : null,
+    availableDate: jitanStart ? addDays(add2MonthsMinus1Jitan(jitanStart), 1) : null,
     sendDate: jitanStart ? addDays(jitanStart, 14) : null,
     docs: '育児時短就業給付受給資格確認票・（初回）育児時短就業給付金支給申請書・母子手帳または住民票（子の生年月日確認）・育児時短就業開始日確認書類・本来の週所定労働時間確認書類（就業規則等）・労働条件通知書（時短後）・出勤簿・賃金台帳',
     note: '時短開始日から4か月以内に申請。賃金証明書と同時提出可。' + (jitanStartNote ? '\n' + jitanStartNote : ''),
   });
   // 第2回以降（2か月ごと・子が2歳になるまで）
   if (jitanStart && jitanEnd2y) {
-    let jps = add2MonthsMinus1(jitanStart);
+    let jps = add2MonthsMinus1Jitan(jitanStart);
     jps = addDays(jps, 1); // 第2回開始
     let jitanNum = 2;
     for (let i = 0; i < 10; i++) {
       if (!jps || jps > jitanEnd2y) break;
-      const jpe = add2MonthsMinus1(jps);
+      const jpe = add2MonthsMinus1Jitan(jps);
       const jend = jpe > jitanEnd2y ? jitanEnd2y : jpe;
       const jdeadline = calcDeadline(jend);
       procs.push({
@@ -1926,7 +1941,7 @@ function getMaleDates(c) {
     const end = c.ikukyu1End || ikukyuEnd;
     for (let i = 0; i < 7; i++) {
       if (!ps || !end || ps > end) break;
-      const pe = add2MonthsMinus1(ps);
+      const pe = add2MonthsMinus1(ps, anchorDayOf(c.ikukyu1Start));
       const periodEnd = pe > end ? end : pe;
       kyufuPeriods.push({ num: i+1, start: ps, end: periodEnd, deadline: calcDeadline(periodEnd), blockNum: 1 });
       ps = addDays(periodEnd, 1);
@@ -1937,7 +1952,7 @@ function getMaleDates(c) {
     const end = c.ikukyu2End || ikukyuEnd;
     for (let i = 0; i < 5; i++) {
       if (!ps || !end || ps > end) break;
-      const pe = add2MonthsMinus1(ps);
+      const pe = add2MonthsMinus1(ps, anchorDayOf(c.ikukyu2Start));
       const periodEnd = pe > end ? end : pe;
       const num = kyufuPeriods.length + 1;
       kyufuPeriods.push({ num, start: ps, end: periodEnd, deadline: calcDeadline(periodEnd), blockNum: 2 });
@@ -2242,19 +2257,19 @@ function getMaleProcedures(c) {
   procs.push({
     id: 'm-jitan-shikaku', no: '②',
     name: '育児時短就業給付 受給資格確認・初回支給申請',
-    period: c.returnDate ? `${fmtDate(c.returnDate)} 〜 ${fmtDate(add2MonthsMinus1(c.returnDate))}` : '—',
+    period: c.returnDate ? `${fmtDate(c.returnDate)} 〜 ${fmtDate(add2MonthsMinus1Jitan(c.returnDate))}` : '—',
     deadline: mJitanInitDeadline,
     sendDate: c.returnDate ? addDays(c.returnDate, 14) : null,
     docs: '育児時短就業給付受給資格確認票・（初回）育児時短就業給付金支給申請書・母子手帳または住民票（子の生年月日確認）・育児時短就業開始日確認書類・本来の週所定労働時間確認書類（就業規則等）・労働条件通知書（時短後）・出勤簿・賃金台帳',
     note: '時短開始日から4か月以内に申請。賃金証明書と同時提出可。',
   });
   if (c.returnDate && mJitanEnd2y) {
-    let jps = add2MonthsMinus1(c.returnDate);
+    let jps = add2MonthsMinus1Jitan(c.returnDate);
     jps = addDays(jps, 1);
     let jitanNum = 2;
     for (let i = 0; i < 10; i++) {
       if (!jps || jps > mJitanEnd2y) break;
-      const jpe = add2MonthsMinus1(jps);
+      const jpe = add2MonthsMinus1Jitan(jps);
       const jend = jpe > mJitanEnd2y ? mJitanEnd2y : jpe;
       procs.push({
         id: `m-jitan-kyufu${jitanNum}`, no: `第${jitanNum}回`,
@@ -2827,6 +2842,7 @@ function openCaseDetail(id) {
       <td style="white-space:nowrap;font-size:11px;${deadlineStyle}">${p.deadline ? fmtDate(p.deadline) : '—'}${daysLabel}</td>
       <td style="min-width:220px;">
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--text-muted);min-width:36px;">申請</span>
           <button class="status-btn ${displaySt}" onclick="toggleStatus('${p.id}','${id}',event)">${displaySt}</button>
           ${st !== '不要' ? `<button class="status-btn 不要" style="font-size:10px;" onclick="setIryo('${p.id}','${id}',event)">不要</button>` : ''}
           ${dateInput}
