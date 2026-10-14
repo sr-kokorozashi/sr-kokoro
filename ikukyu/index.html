@@ -1698,7 +1698,7 @@ function getFemaleProcedures(c) {
   procs.push({
     id: 'f-ikukyu-shinsei', no: '②',
     name: '育児休業等取得者申出書（社保免除）',
-    period: `${fmtDate(d.ikukyuStart)} 〜 ${fmtDate(d.ikukyuEnd)}`,
+    period: `${fmtDate(d.ikukyuStart)} 〜 ${fmtDate(d.ikukyuEnd1)}`,
     deadline: d.ikukyuStart,
     sendDate: addDays(d.ikukyuStart, -21),
     docs: '育児休業等取得者申出書',
@@ -1820,10 +1820,10 @@ function getFemaleProcedures(c) {
     procs.push({
       id: 'f-ikukyu-extend-18m', no: '①',
       name: '育児休業等取得者申出書（1歳6か月まで延長）',
-      period: d.ikukyuEnd1 ? `${fmtDate(addDays(d.ikukyuEnd1, 1))} 〜 ${fmtDate(d.ikukyuEnd18m)}` : null,
+      period: d.ikukyuEnd1 ? `${fmtDate(d.ikukyuStart)} 〜 ${fmtDate(d.ikukyuEnd18m)}` : null,
       deadline: d.ikukyuEnd1 ? d.ikukyuEnd1 : null,
       sendDate: d.ikukyuEnd1 ? addDays(d.ikukyuEnd1, -14) : null,
-      docs: '育児休業等取得者申出書（延長）・入所保留通知書・保育所等利用申込書の写し・延長事由認定申告書',
+      docs: '育児休業等取得者申出書（延長）',
       note: '1歳到達日までに提出。社保免除の継続申出も兼ねる。',
     });
   }
@@ -1831,10 +1831,10 @@ function getFemaleProcedures(c) {
     procs.push({
       id: 'f-ikukyu-extend-2y', no: '②',
       name: '育児休業等取得者申出書（2歳まで延長）',
-      period: d.ikukyuEnd18m ? `${fmtDate(addDays(d.ikukyuEnd18m, 1))} 〜 ${fmtDate(d.ikukyuEnd)}` : null,
+      period: d.ikukyuEnd18m ? `${fmtDate(d.ikukyuStart)} 〜 ${fmtDate(d.ikukyuEnd)}` : null,
       deadline: d.ikukyuEnd18m ? d.ikukyuEnd18m : null,
       sendDate: d.ikukyuEnd18m ? addDays(d.ikukyuEnd18m, -14) : null,
-      docs: '育児休業等取得者申出書（延長）・入所保留通知書・保育所等利用申込書の写し・延長事由認定申告書',
+      docs: '育児休業等取得者申出書（延長）',
       note: '1歳6か月到達日までに提出。社保免除の継続申出も兼ねる。',
     });
   }
@@ -3694,7 +3694,7 @@ function getFemaleMailTemplates(c) {
     '',
     '\u25a0 \u80b2\u5150\u4f11\u696d\u7b49\u53d6\u5f97\u8005\u7533\u51fa\u66f8\uff08\u793e\u4f1a\u4fdd\u967a\u6599\u514d\u9664\uff09',
     '\u3000\u958b\u59cb\u65e5\uff1a' + fmtDate(d.ikukyuStart) + '\uff08\u7523\u5f8c57\u65e5\u76ee\uff09',
-    '\u3000\u7d42\u4e86\u65e5\uff1a' + fmtDate(d.ikukyuEnd) + '\uff081\u6b73\u5230\u9054\u65e5\uff09',
+    '\u3000\u7d42\u4e86\u65e5\uff1a' + fmtDate(d.ikukyuEnd1) + '\uff081\u6b73\u5230\u9054\u65e5\uff09',
     '',
     '\u25a0 \u51fa\u7523\u624b\u5f53\u91d1',
     '\u3000\u5bfe\u8c61\u671f\u9593\uff1a' + fmtDate(d.sanzenStart) + ' \uff5e ' + fmtDate(d.sangoEnd),
@@ -3770,7 +3770,7 @@ function getFemaleMailTemplates(c) {
     '\u3000\u2192 \u5e02\u533a\u753a\u6751\u306e\u4fdd\u80b2\u8ab2\u7b49\u304b\u3089\u3054\u5165\u624b\u304f\u3060\u3055\u3044',
     '',
     '\u2462 \u5e02\u533a\u753a\u6751\u767a\u884c\u306e\u300c\u5165\u6240\u4fdd\u7559\u901a\u77e5\u66f8\uff08\u5165\u6240\u4e0d\u627f\u8afe\u901a\u77e5\u66f8\uff09\u300d',
-    '\u3000\u2192 ' + fmtDate(d.ikukyuEnd) + '\uff081\u6b73\u5230\u9054\u65e5\uff09\u306e2\u304b\u6708\u524d\u4ee5\u964d\u306b\u767a\u884c\u3055\u308c\u305f\u3082\u306e\u304c\u5fc5\u8981\u3067\u3059',
+    '\u3000\u2192 ' + fmtDate(d.ikukyuEnd1) + '\uff081\u6b73\u5230\u9054\u65e5\uff09\u306e2\u304b\u6708\u524d\u4ee5\u964d\u306b\u767a\u884c\u3055\u308c\u305f\u3082\u306e\u304c\u5fc5\u8981\u3067\u3059',
     '',
     '\u3010\u3054\u6ce8\u610f\u3011',
     '\u30fb\u5165\u6240\u5185\u5b9a\u304c\u51fa\u305f\u5834\u5408\u306f\u5fc5\u305a\u3054\u9023\u7d61\u304f\u3060\u3055\u3044\uff08\u65ad\u308a\u306b\u308f\u305f\u308a\u304c\u3042\u308b\u5834\u5408\u3001\u5ef6\u9577\u304c\u4e0d\u53ef\u3068\u306a\u308b\u5834\u5408\u304c\u3042\u308a\u307e\u3059\uff09',
