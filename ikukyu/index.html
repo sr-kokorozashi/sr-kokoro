@@ -2954,15 +2954,21 @@ async function saveTanto() {
 }
 
 // ③ 出産確認：連絡の記録
-function birthDefaultBy(c) {
-  const login = (SR_AUTH && SR_AUTH.email) ? SR_AUTH.email.split('@')[0] : '';
-  return tantoLast(c) || login || '';
+// 記録者は押し間違いを防ぐため初期値を入れず、毎回入力してもらう。
+// 入力しやすいよう、これまでに記録された名前を候補として出す
+function birthByCandidates() {
+  const set = new Set();
+  cases.forEach(c => {
+    (c.tantoLog || []).forEach(t => t && t.name && set.add(t.name));
+    (Array.isArray(c.birthContactLog) ? c.birthContactLog : []).forEach(e => e && e.by && set.add(e.by));
+  });
+  return [...set].sort();
 }
-async function recordBirthContact(type) {
+async function recordBirthContact(type, byName) {
   const c = cases.find(x => x.id === currentCaseId);
   if (!c) return;
   const el = document.getElementById('birth-by-input');
-  const by = (el ? el.value : birthDefaultBy(c)).trim();
+  const by = String(byName != null ? byName : (el ? el.value : '')).trim();
   if (!by) { showToast('記録者の氏名を入力してください'); if (el) el.focus(); return; }
   // 旧版の「確認済み」の記録は、最初の1件として引き継ぐ
   if (!Array.isArray(c.birthContactLog)) c.birthContactLog = getBirthLog(c).slice();
@@ -3025,7 +3031,8 @@ function birthPanelHtml(c) {
     + '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + msg + '</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;color:var(--text);">'
     +   '<span style="font-size:11px;">記録者</span>'
-    +   '<input id="birth-by-input" type="text" value="' + escH(birthDefaultBy(c)) + '" placeholder="氏名" style="width:110px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;background:var(--surface);">'
+    +   '<input id="birth-by-input" type="text" value="" list="birth-by-list" autocomplete="off" placeholder="氏名（必須）" style="width:130px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;background:var(--surface);">'
+    +   '<datalist id="birth-by-list">' + birthByCandidates().map(n => '<option value="' + escH(n) + '">').join('') + '</datalist>'
     +   '<button class="btn btn-ghost btn-sm" style="background:var(--surface);" onclick="recordBirthContact(\'contact\')">📧 連絡した</button>'
     +   '<button class="btn btn-ghost btn-sm" style="background:var(--surface);" onclick="recordBirthContact(\'notyet\')">🕐 まだ生まれていない（回答あり）</button>'
     +   '<button class="btn btn-ghost btn-sm" style="background:var(--surface);" onclick="openEditModal()">✏️ 実分娩日を入力</button>'
@@ -3585,10 +3592,12 @@ function copyMailText() {
     var c = cases.find(function(x) { return x.id === currentCaseId; });
     if (_mailSelectedLabel === '出産のご確認' && c && needsBirthCheck(c)) {
       setTimeout(function() {
-        var byEl = document.getElementById('birth-by-input');
-        var by = (byEl ? byEl.value : birthDefaultBy(c)).trim();
-        var msg = '出産確認の連絡として、今日の日付で記録しますか？' + (by ? '\n（記録者：' + by + '）' : '');
-        if (confirm(msg)) recordBirthContact('contact');
+        // 記録者は初期値を入れず、その場で入力してもらう
+        var by = prompt('出産確認の連絡として、今日の日付で記録します。\n記録者の氏名を入力してください。\n（記録しない場合は「キャンセル」）', '');
+        if (by === null) return;
+        by = by.trim();
+        if (!by) { showToast('記録者の氏名が空のため、記録しませんでした'); return; }
+        recordBirthContact('contact', by);
       }, 300);
     }
   });
