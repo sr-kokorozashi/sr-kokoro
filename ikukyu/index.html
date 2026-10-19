@@ -1477,14 +1477,37 @@ function tantoLast(c) {
 }
 // ===== 出産予定日の超過確認 =====
 // 予定日を過ぎても実分娩日が未入力なら、お客様への確認を促す
-// 「確認済み」を押すと BIRTH_CHECK_SNOOZE_DAYS 日だけ非表示にし、その後また表示する
-const BIRTH_CHECK_SNOOZE_DAYS = 7;
-function needsBirthCheck(c) {
-  if (!c || !c.dueDate || c.birthDate) return false;
+// アラートは実分娩日を入力するまで消さない。
+// 「連絡した」「まだ生まれていない」を記録すると、BIRTH_REMIND_DAYS 日の間は
+// 「返信待ち／出産待ち」（オレンジ）になり、その後また赤（再確認）に戻る。
+const BIRTH_REMIND_DAYS = 7;
+// 連絡の記録　[{date:'YYYY-MM-DD', type:'contact'|'notyet', by:'氏名'}]
+// 旧版の「確認済み」（birthCheckedAt）は、その日に連絡したものとして扱う
+function getBirthLog(c) {
+  if (!c) return [];
+  if (Array.isArray(c.birthContactLog)) return c.birthContactLog;
+  if (c.birthCheckedAt) return [{ date: c.birthCheckedAt, type: 'contact', by: '' }];
+  return [];
+}
+// 出産確認の状況。対応不要なら null
+//   stage: 'none'=未連絡（赤） 'wait'=返信待ち（橙） 'notyet'=出産待ち（橙） 'remind'=再確認（赤）
+function birthCheckState(c) {
+  if (!c || !c.dueDate || c.birthDate) return null;
   const t = today();
-  if (c.dueDate >= t) return false;
-  if (c.birthCheckedAt && addDays(c.birthCheckedAt, BIRTH_CHECK_SNOOZE_DAYS) > t) return false;
-  return true;
+  if (c.dueDate >= t) return null;
+  const log = getBirthLog(c);
+  const last = log.length ? log[log.length - 1] : null;
+  const overDays = -daysUntil(c.dueDate);
+  if (!last) return { stage: 'none', red: true, last: null, overDays: overDays };
+  const remindOn = addDays(last.date, BIRTH_REMIND_DAYS);
+  const passed = -daysUntil(last.date);
+  if (remindOn <= t) return { stage: 'remind', red: true, last: last, remindOn: remindOn, passed: passed, overDays: overDays };
+  return { stage: last.type === 'notyet' ? 'notyet' : 'wait', red: false, last: last, remindOn: remindOn, passed: passed, overDays: overDays };
+}
+function needsBirthCheck(c) { return !!birthCheckState(c); }
+function mdShort(d) { return d ? Number(d.slice(5, 7)) + '/' + Number(d.slice(8, 10)) : '—'; }
+function birthLogText(e) {
+  return mdShort(e.date) + ' ' + (e.type === 'notyet' ? '未出産の回答' : '連絡') + (e.by ? '（' + e.by + '）' : '');
 }
 // 申請は「済」なのに公文書が「未」の手続きを1つでも持っているか
 // （案件一覧の絞り込みとサイドバーのバッジで共通利用）
@@ -2636,7 +2659,7 @@ function renderCaseTable() {
       <td class="date-display">${fmtDate(c.birthDate)}</td>
       <td class="date-display" style="font-size:11px;">${nextDeadline}</td>
       <td><div class="alert-row">
-        ${birthCheck ? '<span class="alert-chip red">🔔 出産確認</span>' : ''}
+        ${birthChipHtml(c)}
         ${alerts.some(a => a.type === 'check') ? `<span class="alert-chip red">⚠ 押し間違い？${alerts.filter(a => a.type === 'check').length}件</span>` : ''}
         ${!kobunshoChips && alerts.some(a => a.prevWait) ? `<span class="alert-chip red">📬 前回公文書未着${alerts.filter(a => a.prevWait).length}件</span>` : ''}
         ${kobunshoChips}
@@ -2755,6 +2778,7 @@ function buildCaseSheetHtml(c) {
           '<td class="lbl">ステータス</td><td>' + psEsc(getStatus(c)) + '</td>' +
           '<td class="lbl">子の扶養</td><td>' + psEsc(c.dependent || '未') + '</td></tr>' +
       '<tr><td class="lbl">担当者</td><td colspan="5">' + psEsc(tantoLast(c) || '—') + '</td></tr>' +
+      (getBirthLog(c).length ? '<tr><td class="lbl">出産確認</td><td colspan="5">' + psEsc(getBirthLog(c).map(birthLogText).join(' → ')) + '</td></tr>' : '') +
     '</tbody></table>' +
     '<div class="ps-sec">■ 重要日程</div>' +
     '<table class="ps-dates"><tbody>' + dates + '</tbody></table>' +
@@ -2896,18 +2920,7 @@ function openCaseDetail(id) {
     </div>`;
 
   // 出産確認パネル
-  let birthPanel = '';
-  if (needsBirthCheck(c)) {
-    birthPanel = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;margin-bottom:14px;font-size:12px;color:var(--red);">
-      <span style="font-weight:700;">🔔 出産予定日から${Math.abs(daysUntil(c.dueDate))}日経過しています</span>
-      <span>実分娩日が未入力です。お客様に出産の有無を確認してください。</span>
-      <button class="btn btn-ghost btn-sm" onclick="markBirthChecked()">確認済みにする</button>
-    </div>`;
-  } else if (c.birthCheckedAt && !c.birthDate && c.dueDate && c.dueDate < today()) {
-    birthPanel = `<div style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:11px;color:var(--text-muted);">
-      🔔 出産確認済み（${fmtDate(c.birthCheckedAt)}）。実分娩日が入力されないままの場合、${fmtDate(addDays(c.birthCheckedAt, BIRTH_CHECK_SNOOZE_DAYS))}以降にまた表示します。
-    </div>`;
-  }
+  const birthPanel = birthPanelHtml(c);
 
   document.getElementById('detail-body').innerHTML = `
     ${birthPanel}
@@ -2940,15 +2953,87 @@ async function saveTanto() {
   showToast('📝 ' + name + ' さんを担当として記録しました');
 }
 
-// ③ 出産の確認が済んだことを記録する（一定期間アラートを止める）
-async function markBirthChecked() {
+// ③ 出産確認：連絡の記録
+function birthDefaultBy(c) {
+  const login = (SR_AUTH && SR_AUTH.email) ? SR_AUTH.email.split('@')[0] : '';
+  return tantoLast(c) || login || '';
+}
+async function recordBirthContact(type) {
   const c = cases.find(x => x.id === currentCaseId);
   if (!c) return;
-  c.birthCheckedAt = today();
+  const el = document.getElementById('birth-by-input');
+  const by = (el ? el.value : birthDefaultBy(c)).trim();
+  if (!by) { showToast('記録者の氏名を入力してください'); if (el) el.focus(); return; }
+  // 旧版の「確認済み」の記録は、最初の1件として引き継ぐ
+  if (!Array.isArray(c.birthContactLog)) c.birthContactLog = getBirthLog(c).slice();
+  c.birthContactLog.push({ date: today(), type: type, by: by });
+  if (c.birthContactLog.length > 20) c.birthContactLog = c.birthContactLog.slice(-20);
   await save();
   renderAll();
   openCaseDetail(c.id);
-  showToast('🔔 確認済みにしました（' + BIRTH_CHECK_SNOOZE_DAYS + '日後にまた表示します）');
+  showToast((type === 'notyet' ? '🕐 「まだ生まれていない」を記録しました' : '📧 連絡を記録しました')
+    + '（' + mdShort(addDays(today(), BIRTH_REMIND_DAYS)) + 'に再確認を表示します）');
+}
+async function undoBirthContact() {
+  const c = cases.find(x => x.id === currentCaseId);
+  if (!c) return;
+  const log = getBirthLog(c);
+  if (!log.length) return;
+  const last = log[log.length - 1];
+  if (!confirm('直近の記録「' + birthLogText(last) + '」を取り消しますか？')) return;
+  c.birthContactLog = log.slice(0, -1);
+  await save();
+  renderAll();
+  openCaseDetail(c.id);
+  showToast('記録を取り消しました');
+}
+// 詳細画面の出産確認パネル
+function birthPanelHtml(c) {
+  const st = birthCheckState(c);
+  const log = getBirthLog(c);
+  const histHtml = log.length
+    ? '<div style="margin-top:8px;font-size:11px;color:var(--text-muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center;">記録：'
+      + log.map(e => '<span style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1px 8px;color:var(--text);">' + escH(birthLogText(e)) + '</span>').join('')
+      + '</div>'
+    : '';
+  if (!st) {
+    // 出産確認が終わった案件は、記録だけ小さく残す
+    if (c.birthDate && log.length) {
+      return '<div style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:11px;color:var(--text-muted);">🔔 出産確認の記録：'
+        + log.map(e => escH(birthLogText(e))).join(' → ') + ' → 実分娩日 ' + fmtDate(c.birthDate) + ' 入力済み</div>';
+    }
+    return '';
+  }
+  let msg = '';
+  if (st.stage === 'none') {
+    msg = '<span style="font-weight:700;">🔔 出産予定日（' + fmtDate(c.dueDate) + '）から' + st.overDays + '日経過しています</span>'
+        + '<span>実分娩日が未入力です。お客様に出産の状況を確認してください。</span>';
+  } else if (st.stage === 'wait') {
+    msg = '<span style="font-weight:700;">📧 ' + mdShort(st.last.date) + 'に連絡済み' + (st.last.by ? '（' + escH(st.last.by) + '）' : '') + '・返信待ち（' + st.passed + '日経過）</span>'
+        + '<span>返信がないまま ' + fmtDate(st.remindOn) + ' になると、再確認のアラートに変わります。</span>';
+  } else if (st.stage === 'notyet') {
+    msg = '<span style="font-weight:700;">🕐 ' + mdShort(st.last.date) + 'に「まだ生まれていない」と回答あり' + (st.last.by ? '（' + escH(st.last.by) + '）' : '') + '</span>'
+        + '<span>' + fmtDate(st.remindOn) + ' に再確認のアラートを出します。</span>';
+  } else {
+    msg = st.last.type === 'notyet'
+      ? '<span style="font-weight:700;">🔔 「まだ生まれていない」の回答（' + mdShort(st.last.date) + '）から' + st.passed + '日経過しました</span><span>もう一度、出産の状況を確認してください。</span>'
+      : '<span style="font-weight:700;">🔔 ' + mdShort(st.last.date) + 'に連絡してから' + st.passed + '日経過しました・返信がありません</span><span>もう一度、出産の状況を確認してください。</span>';
+  }
+  const col = st.red ? 'var(--red)' : 'var(--orange)';
+  const bg = st.red ? 'var(--red-bg)' : 'var(--orange-bg)';
+  return '<div style="padding:10px 14px;background:' + bg + ';border:1px solid ' + col + ';border-radius:8px;margin-bottom:14px;font-size:12px;color:' + col + ';">'
+    + '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' + msg + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;color:var(--text);">'
+    +   '<span style="font-size:11px;">記録者</span>'
+    +   '<input id="birth-by-input" type="text" value="' + escH(birthDefaultBy(c)) + '" placeholder="氏名" style="width:110px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;background:var(--surface);">'
+    +   '<button class="btn btn-ghost btn-sm" style="background:var(--surface);" onclick="recordBirthContact(\'contact\')">📧 連絡した</button>'
+    +   '<button class="btn btn-ghost btn-sm" style="background:var(--surface);" onclick="recordBirthContact(\'notyet\')">🕐 まだ生まれていない（回答あり）</button>'
+    +   '<button class="btn btn-ghost btn-sm" style="background:var(--surface);" onclick="openEditModal()">✏️ 実分娩日を入力</button>'
+    +   (log.length ? '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 8px;" onclick="undoBirthContact()">直近の記録を取消</button>' : '')
+    + '</div>'
+    + histHtml
+    + '<div style="margin-top:6px;font-size:10px;color:var(--text-muted);">生まれたと回答があったら「実分娩日を入力」から入力してください。入力するとアラートが消えます。</div>'
+    + '</div>';
 }
 
 async function toggleStatus(procId, caseId, e) {
@@ -3163,19 +3248,53 @@ function doneCheckItemHtml(c, p) {
     </div>`;
 }
 function birthCheckItems() {
-  return cases.filter(c => needsBirthCheck(c))
-    .map(c => ({ c: c, p: null, days: daysUntil(c.dueDate), type: 'birthcheck' }));
+  // 赤（未連絡・再確認）は超過日数順で上に、橙（返信待ち・出産待ち）は申請可能と同じ位置に並べる
+  return cases.map(c => ({ c: c, st: birthCheckState(c) })).filter(x => x.st)
+    .map(x => ({ c: x.c, p: null, days: x.st.red ? -x.st.overDays : 0, type: 'birthcheck' }));
 }
-function birthCheckItemHtml(c, days) {
+function birthCheckItemHtml(c) {
+  const st = birthCheckState(c);
+  if (!st) return '';
   const gIcon = c.gender === 'male' ? '♂' : '♀';
-  return `<div class="upcoming-item urgent" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
-      <div class="upcoming-date"><div class="day">${Math.abs(days)}日超過</div><div style="font-size:10px;margin-top:3px;">${fmtDate(c.dueDate)}</div></div>
+  let day, sub, title, meta, badge;
+  if (st.stage === 'none') {
+    day = st.overDays + '日超過'; sub = fmtDate(c.dueDate);
+    title = '🔔 出産の確認（実分娩日が未入力）';
+    meta = '出産予定日を過ぎています。お客様に確認してください。';
+    badge = '出産確認';
+  } else if (st.stage === 'remind') {
+    day = '再確認'; sub = (st.last.type === 'notyet' ? '回答 ' : '連絡 ') + mdShort(st.last.date);
+    title = '🔔 出産の再確認（前回から' + st.passed + '日経過）';
+    meta = (st.last.type === 'notyet' ? '「まだ生まれていない」の回答から' : '連絡してから') + BIRTH_REMIND_DAYS + '日以上たちました。もう一度確認してください。';
+    badge = '出産再確認';
+  } else if (st.stage === 'wait') {
+    day = '返信待ち'; sub = '連絡 ' + mdShort(st.last.date);
+    title = '📧 出産確認の返信待ち（' + st.passed + '日経過）';
+    meta = fmtDate(st.remindOn) + 'まで返信がなければ再確認を表示します。';
+    badge = '返信待ち';
+  } else {
+    day = '出産待ち'; sub = '回答 ' + mdShort(st.last.date);
+    title = '🕐 出産待ち（まだ生まれていないと回答あり）';
+    meta = fmtDate(st.remindOn) + 'に再確認を表示します。';
+    badge = '出産待ち';
+  }
+  return `<div class="upcoming-item ${st.red ? 'urgent' : 'soon'}" onclick="openCaseDetail('${c.id}')" style="cursor:pointer;">
+      <div class="upcoming-date"><div class="day">${day}</div><div style="font-size:10px;margin-top:3px;">${sub}</div></div>
       <div style="flex:1;">
-        <div class="upcoming-title">${gIcon} 🔔 出産の確認（実分娩日が未入力）</div>
-        <div class="upcoming-meta">${c.company} / ${c.name}　出産予定日を過ぎています。お客様に確認してください。</div>
+        <div class="upcoming-title">${gIcon} ${title}</div>
+        <div class="upcoming-meta">${c.company} / ${c.name}　${meta}</div>
       </div>
-      <span class="badge 期限超過">出産確認</span>
+      <span class="badge ${st.red ? '期限超過' : '産休中'}">${badge}</span>
     </div>`;
+}
+// 案件一覧のチップ
+function birthChipHtml(c) {
+  const st = birthCheckState(c);
+  if (!st) return '';
+  if (st.stage === 'none') return '<span class="alert-chip red">🔔 出産確認</span>';
+  if (st.stage === 'remind') return '<span class="alert-chip red">🔔 出産再確認</span>';
+  if (st.stage === 'wait') return '<span class="alert-chip orange">📧 返信待ち' + st.passed + '日</span>';
+  return '<span class="alert-chip orange">🕐 出産待ち</span>';
 }
 
 // サイドバーのバッジ表示（0件なら非表示にして、対応が必要なものだけ目立たせる）
@@ -3235,7 +3354,7 @@ function renderDashboard() {
     return;
   }
   el.innerHTML = `<div class="upcoming-list">${upcomingItems.slice(0,10).map(({c,p,days,type}) => {
-    if (type === 'birthcheck') return birthCheckItemHtml(c, days);
+    if (type === 'birthcheck') return birthCheckItemHtml(c);
     if (type === 'check') return doneCheckItemHtml(c, p);
     const isAvailable = type === 'available';
     const wait = prevKobunshoWaiting(c, p);
@@ -3315,7 +3434,7 @@ function renderUpcoming() {
     return;
   }
   el.innerHTML = `<div class="upcoming-list">${allItems.map(({c,p,days,type}) => {
-    if (type === 'birthcheck') return birthCheckItemHtml(c, days);
+    if (type === 'birthcheck') return birthCheckItemHtml(c);
     if (type === 'check') return doneCheckItemHtml(c, p);
     const isAvailable = type === 'available';
     const wait = prevKobunshoWaiting(c, p);
@@ -3389,9 +3508,38 @@ function switchMailTab(tab) {
   document.getElementById('mail-pane-custom').style.display = tab === 'custom' ? '' : 'none';
 }
 
+function birthCheckMailBody(c) {
+  var lines = [
+    '》出産のご確認》',
+    '', c.company, c.name + '様', '',
+    'いつもお世話になっております。',
+    '社労士事務所○○です。',
+    '',
+    (c.gender === 'male' ? '配偶者様の' : '') + '出産予定日（' + fmtDate(c.dueDate) + '）を過ぎましたので、',
+    'ご出産の状況についてお伺いしたくご連絡いたしました。',
+    '',
+    '■ ご出産された場合',
+    '　下記をお知らせください。',
+    '　・出産日（実際にお生まれになった日）',
+    '　・お子様のお名前',
+    c.gender === 'male'
+      ? '　出産日をもとに、産後パパ育休・育児休業の期間を確定し、手続きを進めてまいります。'
+      : '　出産日をもとに、産後休業・育児休業の期間を確定し、手続きを進めてまいります。',
+    '',
+    '■ まだご出産されていない場合',
+    '　その旨をお知らせいただけましたら、1週間後をめどに改めてご連絡いたします。',
+    '',
+    'お忙しいところ恐れ入りますが、どうぞよろしくお願いいたします。'
+  ];
+  return buildMailBody(lines);
+}
+var _mailSelectedLabel = null;
 function renderMailTemplateBtns(c) {
-  var templates = getMailTemplates(c);
+  var templates = getMailTemplates(c).slice();
+  // 出産予定日を過ぎて実分娩日が未入力のときは「出産のご確認」を先頭に出す
+  if (needsBirthCheck(c)) templates.unshift({ label: '出産のご確認', body: birthCheckMailBody(c) });
   document._mailAutoTemplates = templates;
+  _mailSelectedLabel = templates.length ? templates[0].label : null;
   var btns = templates.map(function(t, i) {
     return '<button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="selectAutoTemplate(' + i + ')">' + t.label + '</button>';
   }).join('');
@@ -3414,7 +3562,7 @@ function renderCustomTemplateBtns(c) {
 
 function selectAutoTemplate(idx) {
   var t = document._mailAutoTemplates[idx];
-  if (t) document.getElementById('mail-textarea').value = t.body;
+  if (t) { document.getElementById('mail-textarea').value = t.body; _mailSelectedLabel = t.label; }
 }
 
 function selectCustomTemplateInMail(id) {
@@ -3426,11 +3574,24 @@ function selectCustomTemplateInMail(id) {
     .replace(/\{\{name\}\}/g, c.name)
     .replace(/\{\{childName\}\}/g, c.childName || 'お子様');
   document.getElementById('mail-textarea').value = body;
+  _mailSelectedLabel = null;
 }
 
 function copyMailText() {
   var ta = document.getElementById('mail-textarea');
-  navigator.clipboard.writeText(ta.value).then(function() { showToast('\u{1F4CB} コピーしました'); });
+  navigator.clipboard.writeText(ta.value).then(function() {
+    showToast('\u{1F4CB} コピーしました');
+    // 出産確認のメールをコピーしたときは、連絡日の記録をすすめる
+    var c = cases.find(function(x) { return x.id === currentCaseId; });
+    if (_mailSelectedLabel === '出産のご確認' && c && needsBirthCheck(c)) {
+      setTimeout(function() {
+        var byEl = document.getElementById('birth-by-input');
+        var by = (byEl ? byEl.value : birthDefaultBy(c)).trim();
+        var msg = '出産確認の連絡として、今日の日付で記録しますか？' + (by ? '\n（記録者：' + by + '）' : '');
+        if (confirm(msg)) recordBirthContact('contact');
+      }, 300);
+    }
+  });
 }
 
 function buildMailBody(lines) { return lines.join('\n'); }
