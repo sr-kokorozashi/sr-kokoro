@@ -116,6 +116,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 .remind-date{font-size:11px;font-family:inherit;border:1px solid #BFDBFE;border-radius:5px;padding:3px 6px;background:#fff;color:#1E3A8A;}
 .remind-add{background:#2563EB;border:none;color:#fff;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;}
 #test-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9999;background:#DC2626;color:#fff;font-size:11px;font-weight:700;padding:3px 14px;border-radius:0 0 6px 6px;}
+.tk-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;margin-left:5px;vertical-align:middle;white-space:nowrap;}
+.tk-badge.yes{background:#0891B2;color:#fff;}
+.tk-badge .tk-sub{background:rgba(255,255,255,.25);border-radius:6px;padding:0 5px;font-size:10px;}
+.si-tk{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:4px;vertical-align:middle;}
 .wchip{font-size:9px;padding:2px 7px;border-radius:4px;background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;font-weight:600;}
 
 /* ステータスドロップダウン */
@@ -1756,6 +1760,28 @@ function procMarksHtml(c) {
 }
 
 // ============================================================
+// 月変あり表示（月変・賃金入力の一覧カード・サイドバー用）
+// あり：月変手続き(mc11)のチェックで「届出済」に変わる
+// ============================================================
+function tsukihenBadge(c) {
+  if (c.proc !== '月変・賃金入力') return '';
+  if (c.hasTsukihen === true) {
+    const done = !!(c.checks && c.checks.mc11);
+    return `<span class="tk-badge yes" title="月変該当者あり">📈 月変あり<span class="tk-sub">${done ? '☑届出済' : '□未届出'}</span></span>`;
+  }
+  return '';
+}
+function tsukihenSbBadge(c) {
+  if (c.proc !== '月変・賃金入力') return '';
+  if (c.hasTsukihen === true)  return `<span class="si-tk" style="background:#0891B2;color:#fff;">月変あり</span>`;
+  return '';
+}
+function tsukihenText(c) {
+  if (c.proc !== '月変・賃金入力') return '';
+  return c.hasTsukihen === true ? '（月変あり）' : '';
+}
+
+// ============================================================
 // リマインド日（書類・情報待ちでお客様に催促した日）
 // ============================================================
 function fmtMD(d) { const m = String(d||'').match(/^\d{4}-(\d{2})-(\d{2})$/); return m ? `${+m[1]}/${+m[2]}` : esc(d); }
@@ -1976,7 +2002,7 @@ function renderSidebar() {
   el.innerHTML = filtered.map(c => {
     const p = gp(c), pt = pct(c), st = stInfo(c.status||'none');
     return `<div class="si${currentId===c.id&&viewMode==='c'?' on':''}" onclick="openChecklist('${c.id}')">
-      <span class="si-badge" style="background:${p.color}22;color:${p.color}">${p.icon} ${c.freeName ? esc(c.freeName) : esc(c.proc)}</span>
+      <span class="si-badge" style="background:${p.color}22;color:${p.color}">${p.icon} ${c.freeName ? esc(c.freeName) : esc(c.proc)}</span>${tsukihenSbBadge(c)}
       <div class="si-co">${esc(c.company)}</div>
       ${c.name ? `<div class="si-name">${esc(c.name)}</div>` : ''}
       <div class="si-row">
@@ -2093,7 +2119,8 @@ function renderDash() {
     // リマインド日も待ちチップと同じく「書類・情報待ち」のときだけ表示
     const remindRow = (c.status||'none') === 'wait' ? remindHtml(c) : '';
     const marks = procMarksHtml(c);
-    const badgeRow = (ageBadge || apBadge) ? `<div class="badge-row">${ageBadge}${apBadge}</div>` : '';
+    const tkBadge = tsukihenBadge(c);
+    const badgeRow = (ageBadge || apBadge || tkBadge) ? `<div class="badge-row">${tkBadge}${ageBadge}${apBadge}</div>` : '';
 
     return `<div class="dc" onclick="openChecklist('${c.id}')">
       <div class="dc-head">
@@ -2147,7 +2174,7 @@ function exportCsv() {
     return [
       c.company || '',
       c.name || '',
-      c.freeName ? c.freeName : (c.proc || ''),
+      (c.freeName ? c.freeName : (c.proc || '')) + tsukihenText(c),
       stInfo(c.status || 'none').label,
       d === null ? '' : d,
       tanto,
@@ -2639,11 +2666,19 @@ async function delRemind(d) {
 async function setTsukihen(val) {
   const c = cases.find(x => x.id === currentId);
   if (!c) return;
+  if (c.hasTsukihen === val) return;
+  const prev = c.hasTsukihen;
   c.hasTsukihen = val;
-  // has_tsukihenをSupabaseに保存
-  await sbUpdate(c.id, { has_tsukihen: val, updated_at: new Date().toISOString() });
-  const idx = cases.findIndex(x => x.id === currentId);
-  if (idx >= 0) cases[idx] = c;
+  // has_tsukihenをSupabaseに保存（失敗したら元に戻す）
+  const ok = await sbUpdate(c.id, { has_tsukihen: val, updated_at: new Date().toISOString() });
+  if (!ok) {
+    c.hasTsukihen = prev;
+    setSyncStatus('⚠️ 保存失敗');
+    toast('⚠️ 保存できませんでした。もう一度お試しください');
+    renderChecklist();
+    return;
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify(cases));
   renderChecklist();
   renderSidebar();
   toast(val ? '🔵 月変手続きに進みます' : '✅ 月変なし。以降のタスクをスキップします');
