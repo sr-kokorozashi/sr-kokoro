@@ -190,6 +190,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
 .task-info{flex:1;}
 .task-label{color:#1E293B;font-weight:500;font-size:12px;line-height:1.4;}
 .task-label.done{color:#166534;text-decoration:line-through;}
+.task-warn-strong{margin-top:3px;padding:4px 8px;background:#FEF2F2;border:1.5px solid #DC2626;border-radius:4px;font-size:11px;color:#B91C1C;font-weight:700;line-height:1.5;}
+.task-warn-ask{margin-top:3px;padding:3px 7px;background:#FEFCE8;border:1px dashed #CA8A04;border-radius:3px;font-size:10px;color:#854D0E;font-weight:600;line-height:1.5;}
+.wc-note{font-size:11px;color:#0E7490;background:#ECFEFF;border:1px solid #67E8F9;border-radius:4px;padding:3px 8px;margin-top:6px;font-weight:600;line-height:1.5;}
+.wc-note b{color:#B91C1C;}
+.wc-banner{margin:8px 0 4px;padding:8px 12px;background:#ECFEFF;border:1.5px solid #0891B2;border-radius:6px;font-size:12px;color:#0E7490;font-weight:600;line-height:1.6;}
+.wc-banner b{color:#B91C1C;}
 .task-warn{margin-top:3px;padding:3px 7px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:3px;font-size:10px;color:#C2410C;line-height:1.5;}
 .task-toggle{background:none;border:none;color:#94A3B8;font-size:12px;cursor:pointer;padding:0 3px;flex-shrink:0;}
 .task-toggle:hover{color:#475569;}
@@ -377,6 +383,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:#F1F5F9;min-height:100vh;f
         <button id="tsukihen-yes-btn" onclick="setTsukihen(true)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">あり</button>
         <button id="tsukihen-no-btn" onclick="setTsukihen(false)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">なし（終了）</button>
         <span id="tsukihen-note" style="font-size:10px;color:#64748B;"></span>
+      </div>
+      <!-- 70歳以上該当者 いる/いないパネル（月変あり・賞与支払届） -->
+      <div id="over70-panel" style="display:none;padding:8px 18px;background:#FEF2F2;border-bottom:1px solid #FECACA;flex-shrink:0;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:#B91C1C;font-weight:700;">🧓 70歳以上の該当者：</span>
+        <button id="over70-yes-btn" onclick="setOver70(true)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">いる</button>
+        <button id="over70-no-btn" onclick="setOver70(false)" style="padding:4px 14px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;">いない</button>
+        <span id="over70-note" style="font-size:10px;color:#64748B;"></span>
       </div>
       <!-- 社会保険加入あり/なしパネル -->
       <div id="shaho-panel" style="display:none;padding:8px 18px;background:#ECFEFF;border-bottom:1px solid #A5F3FC;flex-shrink:0;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -1229,7 +1242,8 @@ const P = {
     {id:"mc10",label:"ドキュの名前の変更",tsukihenOnly:true,note:"",warn:null},
   ]},
   {title:"月変手続き",tsukihenOnly:true,tasks:[
-    {id:"mc11",label:"月変手続き",note:"",warn:"⚠️ 健保組合　□健保　□厚年  □70歳以上該当者"},
+    {id:"mc11",label:"月変手続き",note:"",warn:"⚠️ 健保組合　□健保　□厚年",over70Gate:true},
+    {id:"mc11b",label:"70歳以上被用者の欄にチェックして申請したか確認",note:"70歳以上の方は、申請時に「70歳以上被用者」の欄へのチェックが必要です。対象者名は案件メモに書いておくと確認しやすくなります。",warn:null,over70Only:true},
     {id:"mc12",label:"手続き後、ドキュを整理する",note:"",warn:null},
     {id:"mc13",label:"社会保険料控除表をメールで送る",note:"",warn:null},
   ]},
@@ -1243,7 +1257,7 @@ const P = {
     {id:"mc18",label:"社会保険料控除表送付済みか確認",note:"",warn:null},
     {id:"mc19",label:"チェックリストのドキュ",note:"",warn:null},
   ]},
-  {title:"Wチェック",tasks:[
+  {title:"Wチェック",wcheck:true,tasks:[
     {id:"mc20",label:"担当者",note:"",warn:null},
   ]},
 ]},
@@ -1262,7 +1276,8 @@ const P = {
     {id:"by9",label:"ダブルチェック",note:"",warn:null},
   ]},
   {title:"賞与支払手続き",tasks:[
-    {id:"by10",label:"賞与支払届手続き",note:"",warn:"⚠️ 健保組合　□健保　□厚年  □70歳以上該当者"},
+    {id:"by10",label:"賞与支払届手続き",note:"",warn:"⚠️ 健保組合　□健保　□厚年",over70Gate:true},
+    {id:"by10b",label:"70歳以上被用者の欄にチェックして申請したか確認",note:"70歳以上の方は、申請時に「70歳以上被用者」の欄へのチェックが必要です。対象者名は案件メモに書いておくと確認しやすくなります。",warn:null,over70Only:true},
     {id:"by11",label:"手続き後、ドキュを整理する",note:"",warn:null},
   ]},
   {title:"手続き後",tasks:[
@@ -1720,7 +1735,28 @@ function taskVisible(t, c) {
       && (!t.tsukihenOnly || c.hasTsukihen !== false)
       && (!t.shahoOnly    || c.hasShaho    !== false)
       && (!t.koyoOnly     || c.hasKoyo     !== false)
-      && (!t.rishoOnly    || (c.hasKoyo !== false && c.hasRisho !== false));
+      && (!t.rishoOnly    || (c.hasKoyo !== false && c.hasRisho !== false))
+      && (!t.over70Only   || c.hasOver70 === true);
+}
+// 70歳以上の確認が必要な手続きか（月変は「月変あり」のときだけ）
+function needOver70(c) {
+  if (c.proc === '賞与支払届') return true;
+  if (c.proc === '月変・賃金入力') return c.hasTsukihen === true;
+  return false;
+}
+// 月変手続き・賞与支払届手続きのタスクに出す70歳の注意
+function over70WarnHtml(t, c) {
+  if (!t.over70Gate) return '';
+  if (c.hasOver70 === true)  return '<div class="task-warn-strong">🔴 70歳以上の該当者がいます。申請時に「70歳以上被用者」の欄に必ずチェック</div>';
+  if (c.hasOver70 === false) return '';
+  return '<div class="task-warn-ask">□70歳以上該当者 → 上の「70歳以上の該当者：いる／いない」を選んでください</div>';
+}
+// 名前に「さん」を付ける（すでに付いていれば付けない）
+function san(n) { n = String(n||''); return /(さん|様|先生)$/.test(n) ? n : n + 'さん'; }
+// 一覧カードに出す70歳バッジ
+function over70Badge(c) {
+  if (!needOver70(c) || c.hasOver70 !== true) return '';
+  return '<span class="tk-badge" style="background:#DC2626;color:#fff;" title="70歳以上被用者の欄にチェックが必要">🧓 70歳以上あり</span>';
 }
 // 離職票あり／なしでタスク名を切り替える（未選択＝従来の「or」表記のまま）
 function taskLabel(t, c) {
@@ -1843,6 +1879,7 @@ async function loadData() {
       hasFuyo: r.ha_fuyo !== false,
       hasCalc: r.has_calc !== null ? r.has_calc : null,
       hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
+      hasOver70: (r.has_over70 === true || r.has_over70 === false) ? r.has_over70 : null,
       hasShaho: r.has_shaho !== false,
       hasKoyo: r.has_koyo !== false,
       hasRisho: (r.has_rishokuhyo === true || r.has_rishokuhyo === false) ? r.has_rishokuhyo : null,
@@ -1944,6 +1981,7 @@ setInterval(async () => {
       hasFuyo: r.ha_fuyo !== false,
       hasCalc: r.has_calc !== null ? r.has_calc : null,
       hasTsukihen: r.has_tsukihen !== null ? r.has_tsukihen : null,
+      hasOver70: (r.has_over70 === true || r.has_over70 === false) ? r.has_over70 : null,
       hasShaho: r.has_shaho !== false,
       hasKoyo: r.has_koyo !== false,
       hasRisho: (r.has_rishokuhyo === true || r.has_rishokuhyo === false) ? r.has_rishokuhyo : null,
@@ -2110,7 +2148,16 @@ function renderDash() {
     // （waitFlags 自体は残すので、書類・情報待ちに戻せばチェックも戻る）
     const waitChips = (c.status||'none') === 'wait' && c.waitFlags && Object.keys(c.waitFlags).some(k=>c.waitFlags[k])
       ? `<div class="waiting-chips">${WAIT_ITEMS.filter(w=>c.waitFlags[w.key]).map(w=>`<span class="wchip">⏳ ${w.label}</span>`).join('')}</div>` : '';
-    const tantoLast = c.tantoLog && c.tantoLog.length ? `<div style="font-size:10px;color:#64748B;margin-top:4px;">担当: ${esc(c.tantoLog[c.tantoLog.length-1].name)}</div>` : '';
+    // ダブルチェック中は「入力した人以外がチェック」と分かる表示にする
+    const lastTanto = c.tantoLog && c.tantoLog.length ? c.tantoLog[c.tantoLog.length-1].name : '';
+    let tantoLast;
+    if ((c.status||'none') === 'double') {
+      tantoLast = lastTanto
+        ? `<div class="wc-note">👀 入力: ${esc(lastTanto)} → Wチェックは<b>${esc(san(lastTanto))}以外</b>で</div>`
+        : `<div class="wc-note">👀 Wチェックは<b>入力した人以外</b>で</div>`;
+    } else {
+      tantoLast = lastTanto ? `<div style="font-size:10px;color:#64748B;margin-top:4px;">担当: ${esc(lastTanto)}</div>` : '';
+    }
     // 申請待ちのときは「登録からN日」を隠す（申請可能日バッジと数字が紛らわしいため）
     const ageDays = daysSince(c.created_at);
     const ageBadge = (ageDays === null || (c.status||'none') === 'shinsei')
@@ -2119,7 +2166,7 @@ function renderDash() {
     // リマインド日も待ちチップと同じく「書類・情報待ち」のときだけ表示
     const remindRow = (c.status||'none') === 'wait' ? remindHtml(c) : '';
     const marks = procMarksHtml(c);
-    const tkBadge = tsukihenBadge(c);
+    const tkBadge = tsukihenBadge(c) + over70Badge(c);
     const badgeRow = (ageBadge || apBadge || tkBadge) ? `<div class="badge-row">${tkBadge}${ageBadge}${apBadge}</div>` : '';
 
     return `<div class="dc" onclick="openChecklist('${c.id}')">
@@ -2399,6 +2446,23 @@ function renderChecklist() {
       tsukihenPanel.style.display = 'none';
     }
   }
+  // 70歳以上 いる/いない選択ボタンの表示
+  const over70Panel = document.getElementById('over70-panel');
+  if (over70Panel) {
+    if (needOver70(c)) {
+      over70Panel.style.display = 'flex';
+      const y = document.getElementById('over70-yes-btn'), n = document.getElementById('over70-no-btn');
+      y.style.background = c.hasOver70 === true  ? '#DC2626' : '#E2E8F0';
+      y.style.color      = c.hasOver70 === true  ? '#fff' : '#475569';
+      n.style.background = c.hasOver70 === false ? '#6B7280' : '#E2E8F0';
+      n.style.color      = c.hasOver70 === false ? '#fff' : '#475569';
+      document.getElementById('over70-note').textContent =
+        c.hasOver70 === true  ? '申請時に「70歳以上被用者」欄へチェック。対象者名は案件メモへ' :
+        c.hasOver70 === false ? '' : '未選択（選ぶまで手続きのタスクにチェックできません）';
+    } else {
+      over70Panel.style.display = 'none';
+    }
+  }
   // 社会保険あり/なし選択ボタンの表示
   const shahoPanel = document.getElementById('shaho-panel');
   if (shahoPanel) {
@@ -2482,6 +2546,12 @@ function renderChecklist() {
     const filteredTasks = sec.tasks.filter(t => taskVisible(t, c));
     const st2 = filteredTasks.length, sd = filteredTasks.filter(t => c.checks[t.id]).length;
     if (st2 === 0) return; // 全タスクが非表示なら セクションごとスキップ
+    if (sec.wcheck) {
+      const lt = c.tantoLog && c.tantoLog.length ? c.tantoLog[c.tantoLog.length-1].name : '';
+      html += lt
+        ? `<div class="wc-banner">👀 入力した人：${esc(lt)}　→　Wチェックは<b>${esc(san(lt))}以外</b>の人がしてください。</div>`
+        : `<div class="wc-banner">👀 Wチェックは<b>入力した人以外</b>の人がしてください。</div>`;
+    }
     html += `<div class="sec-head" style="background:${p.color}18;border-left:4px solid ${p.color}">
       <span class="sec-title" style="color:${p.color}">${esc(sec.title)}</span>
       <span class="sec-cnt">${sd}/${st2}</span>
@@ -2505,6 +2575,7 @@ function renderChecklist() {
               : '<div class="task-label' + (ck?' done':'') + '">' + esc(task.label) + '</div>'
             }
             ${task.warn ? `<div class="task-warn">${esc(task.warn)}</div>` : ''}
+            ${over70WarnHtml(task, c)}
           </div>
           <button class="task-toggle" onclick="toggleNote('${task.id}')">${ex?'▲':'▼'}</button>
         </div>
@@ -2528,6 +2599,18 @@ function renderChecklist() {
 async function toggleTask(taskId) {
   const c = cases.find(x => x.id === currentId);
   if (!c) return;
+  // 月変手続き・賞与支払届手続き：70歳以上の選択が済むまでチェックさせない
+  const tdef = gp(c).sections.flatMap(s => s.tasks).find(t => t.id === taskId);
+  if (tdef && tdef.over70Gate && !c.checks[taskId]) {
+    if (c.proc === '月変・賃金入力' && c.hasTsukihen !== true) {
+      alert('先に「月変該当者：あり／なし」を選んでください。');
+      renderChecklist(); return;
+    }
+    if (c.hasOver70 !== true && c.hasOver70 !== false) {
+      alert('先に「70歳以上の該当者：いる／いない」を選んでください。\n70歳以上の方がいる場合は、申請時に「70歳以上被用者」の欄にチェックが必要です。');
+      renderChecklist(); return;
+    }
+  }
   c.checks[taskId] = !c.checks[taskId];
   renderChecklist();
   renderSidebar();
@@ -2661,6 +2744,27 @@ async function delRemind(d) {
   c.remindDates = (c.remindDates || []).filter(x => x !== d);
   renderChecklist();
   await saveCase(c);
+}
+
+async function setOver70(val) {
+  const c = cases.find(x => x.id === currentId);
+  if (!c) return;
+  if (c.hasOver70 === val) return;
+  const prev = c.hasOver70;
+  c.hasOver70 = val;
+  const ok = await sbUpdate(c.id, { has_over70: val, updated_at: new Date().toISOString() });
+  if (!ok) {
+    c.hasOver70 = prev;
+    setSyncStatus('⚠️ 保存失敗');
+    toast('⚠️ 保存できませんでした。もう一度お試しください');
+    renderChecklist();
+    return;
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify(cases));
+  renderChecklist();
+  renderSidebar();
+  if (viewMode === 'd') renderDash();
+  toast(val ? '🧓 70歳以上あり。申請時に「70歳以上被用者」欄へチェックしてください' : '✅ 70歳以上の該当者なしにしました');
 }
 
 async function setTsukihen(val) {
@@ -3069,6 +3173,7 @@ async function createCase() {
       hasFuyo: row.ha_fuyo !== false,
       hasCalc: row.has_calc !== null ? row.has_calc : null,
       hasTsukihen: row.has_tsukihen !== null ? row.has_tsukihen : null,
+      hasOver70: (row.has_over70 === true || row.has_over70 === false) ? row.has_over70 : null,
       hasShaho: row.has_shaho !== false,
       hasKoyo: row.has_koyo !== false,
       hasRisho: (row.has_rishokuhyo === true || row.has_rishokuhyo === false) ? row.has_rishokuhyo : null,
@@ -3191,6 +3296,7 @@ async function restoreData(event) {
         has_tsukihen: (c.hasTsukihen !== undefined ? c.hasTsukihen
                      : (c.has_tsukihen !== undefined ? c.has_tsukihen : null)),
         free_labels: c.freeLabels || c.free_labels || {},
+        has_over70: [c.hasOver70, c.has_over70].find(v => v === true || v === false) ?? null,
         updated_at: new Date().toISOString(),
       };
       /* 案件がDBに残っていれば上書き、消えていれば同じidで作り直します。
@@ -3262,6 +3368,7 @@ function openPrintWindow() {
         <td class="label-cell">
           <div class="task-label">${taskLabel(task, c)}</div>
           ${task.warn ? `<div class="task-warn">${task.warn}</div>` : ''}
+          ${task.over70Gate ? (c.hasOver70 === true ? '<div class="task-warn" style="color:#B91C1C;font-weight:700;">🔴 70歳以上の該当者あり：「70歳以上被用者」欄にチェック</div>' : (c.hasOver70 === false ? '' : '<div class="task-warn">□70歳以上該当者（未選択）</div>')) : ''}
           ${memo ? `<div class="task-memo">${memo}</div>` : ''}
         </td>
       </tr>`;
