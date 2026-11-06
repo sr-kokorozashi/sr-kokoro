@@ -599,7 +599,7 @@ section.notes .note.starred .body{font-size:15px;font-weight:600}
    =========================================================== */
 /* DEMO=true：Supabaseにつながず、このパソコンだけでサンプルデータを使って動かします（試し用）
    本番で使うときは false にします */
-const DEMO = true;
+const DEMO = false;
 const SUPABASE_URL = DEMO ? '' : 'https://mmcgxgzplvtenlyzxhty.supabase.co';
 const SUPABASE_ANON_KEY = DEMO ? '' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tY2d4Z3pwbHZ0ZW5seXp4aHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODAwMTMsImV4cCI6MjA4OTM1NjAxM30.0qaVx5ymqB63YJ7rHQe0I56sqp3M8CVv4ZwRVmhjHWU';
 const LS = DEMO ? 'kmdemo3_' : 'km_';   /* この端末に保存するときの名前の頭 */
@@ -2065,7 +2065,7 @@ function renderDetail(){
    - 「対応する人」を自分以外にすると伝言になり、本人が「確認しました」を押すまで未読と出ます
    - 画面を開くたびに全件は読みません：未完了の分（全社）＋開いた会社の履歴を20件ずつ
    ===================================================================== */
-const LOG_TABLE = 'client_logs_test';   /* 動作確認が済んだら 'client_logs' に変えて本番テーブルへ */
+const LOG_TABLE = 'client_logs';   /* 動作確認が済んだら 'client_logs' に変えて本番テーブルへ */
 const LOG_KINDS = ['電話','メール','打合せ','来所','その他'];
 const LOG_ICON  = {'電話':'📞','メール':'✉️','打合せ':'🤝','来所':'🏢','その他':'📝'};
 const LOG_PAGE  = 20;      /* 履歴を一度に読む件数 */
