@@ -372,6 +372,169 @@ section > h3{
 /* 横長の画面でも間延びしないよう、詳細の中身は幅に上限を付けます */
 #detail > *{max-width:1180px}
 #back{display:none;margin-bottom:12px;border:1px solid var(--rule);background:#fff;border-radius:4px;padding:5px 12px;font-size:12px}
+
+/* ===== ヘッダー：わたし／わたしの要対応 ===== */
+.mesel{font-size:12px;display:flex;align-items:center;gap:5px;opacity:.95}
+.mesel select{background:#fff;color:var(--ink);border:none;border-radius:4px;padding:3px 6px;font-size:12px}
+#myTodo{display:inline-flex;align-items:center;line-height:1.6}
+#myTodo b{display:inline-block;line-height:1.5;background:#fff;color:var(--navy);border-radius:9px;padding:0 7px;margin-left:5px;font-variant-numeric:tabular-nums}
+#myTodo.hot{background:#c0392b;border-color:#e1675b}
+#myTodo.hot b{color:#c0392b}
+.row .fg.td{background:#fdecea;color:#b4231f;border:1px solid #f0c3bf}
+
+/* ===== 注意点・特記事項（1か所にまとめた枠） ===== */
+section.notes > h3{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:14px;letter-spacing:.04em;padding:10px 15px}
+section.notes > h3 .h3s{font-size:11px;font-weight:400;opacity:.85;letter-spacing:0}
+section.notes .notefilter{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 12px}
+.nfl{font-size:11px;color:#3d6b57;margin-right:2px}
+section.notes .note.starred .body{font-size:15px;font-weight:600}
+.excwrap{background:#fff4e0;border:1px solid #efd3a4;border-radius:6px;padding:8px 12px 11px;margin:0 0 8px}
+.excwrap .sub2{font-size:12px;font-weight:700;color:#9a4a06;margin:0 0 6px}
+.excwrap .sub2 small{font-weight:400;color:#8a7a66;margin-left:6px}
+.nsep{font-size:11px;color:#3d6b57;font-weight:700;margin:12px 2px 6px;letter-spacing:.04em}
+.nmore{display:block;width:100%;background:#fff;border:1px dashed #b6cec2;border-radius:6px;padding:8px;color:var(--ok);font-size:12px;font-weight:600;margin-top:8px}
+.nmore:hover{background:#f3f8f5}
+.naopen{display:block;margin:0 10px 12px;background:#fff;border:1px solid #b6cec2;border-radius:6px;padding:7px 14px;color:var(--ok);font-size:12px;font-weight:700}
+.naopen:hover{background:#f3f8f5}
+
+/* ===== よく見る項目 ===== */
+.quick{display:flex;flex-wrap:wrap;gap:0;background:#fff;border:1px solid var(--rule);
+  border-radius:8px;margin:-2px 0 14px;overflow:hidden}
+.quick .q{flex:1 1 auto;padding:7px 14px;border-right:1px solid #eef1f4;margin-bottom:-1px;border-bottom:1px solid #eef1f4;min-width:0}
+.quick .l{display:block;font-size:10px;color:#8a93a0;letter-spacing:.05em}
+.quick .v{display:block;font-size:13px;font-weight:600;color:var(--ink);word-break:break-word}
+
+/* ===== 特記事項の1行表示 ===== */
+.nrow{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #d3e2da;border-radius:5px;
+  padding:7px 11px;margin-bottom:4px;cursor:pointer;font-size:13px}
+.nrow:hover{border-color:#8fb8a3;background:#fbfdfc}
+.nrow .tg{display:flex;gap:3px;flex:none}
+.nrow .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nrow .mr{font-size:10px;color:#3d6b57;background:#e3eee8;border-radius:3px;padding:0 5px;flex:none}
+.nrow .lk{font-size:12px;flex:none}
+.nrow .ar{color:#9bb8a9;flex:none}
+
+/* ===== 削除した記録 ===== */
+.trashlink{margin:4px 0 0;font-size:11px;color:#8a93a0;display:flex;gap:6px;align-items:center}
+.trashlink button{background:none;border:none;color:#566170;font-size:12px;padding:2px 0;text-decoration:underline}
+.lsec.trash{border-color:#d6d9de;background:#f7f8f9}
+.lsec.trash > h3{background:#eceef1;color:#566170;display:flex;gap:10px;align-items:baseline}
+.lsec.trash > h3 small{font-weight:400;font-size:11px;letter-spacing:0}
+.lsec.trash > h3 .lnk2{margin-left:auto;background:none;border:none;color:var(--blue);font-size:12px}
+.trow2{display:grid;grid-template-columns:60px 22px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 15px;border-bottom:1px solid #eceef1;font-size:13px;color:#566170}
+.trow2 .sm small{margin-left:8px;font-size:11px;color:#8a93a0}
+.trow2 .dl{font-size:11px;color:#8a93a0;white-space:nowrap}
+.trow2 .sm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:line-through;text-decoration-color:#b9c0c8}
+
+/* ===== タブ ===== */
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--navy);margin:0 0 16px;flex-wrap:wrap}
+.tab{background:#e9edf2;border:1px solid #d3dae2;border-bottom:none;border-radius:6px 6px 0 0;
+  padding:7px 18px;font-size:13px;color:#566170;font-weight:600;display:flex;align-items:center;gap:7px}
+.tab:hover{background:#dfe6ee;color:var(--navy)}
+.tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tc{font-size:11px;background:rgba(0,0,0,.07);border-radius:9px;padding:0 7px;font-weight:600;font-variant-numeric:tabular-nums}
+.tab.on .tc{background:rgba(255,255,255,.22)}
+.tc.warn,.tab.on .tc.warn{background:#fff1dd;color:#9a4a06;border:1px solid #efd3a4}
+.tc.red,.tab.on .tc.red{background:#fdecea;color:#b4231f;border:1px solid #f0c3bf}
+
+.openstrip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#eef4fb;border:1px solid #bcd2ec;
+  border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:13px;color:#1f4e79}
+.openstrip.red{background:#fdf1f0;border-color:#f0c3bf;color:#8f1d19}
+.openstrip .o1{flex:1;min-width:120px;color:#566170;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.openstrip button{background:#fff;border:1px solid currentColor;color:inherit;border-radius:4px;padding:4px 11px;font-size:12px;font-weight:600}
+
+/* ===== 対応履歴タブ ===== */
+.logbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.logbar .add{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700}
+.logbar .add:hover{background:#163a5b}
+.kfilter{display:flex;gap:4px;flex-wrap:wrap}
+.logbar input[type=search]{flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--rule);border-radius:4px;background:#fff}
+.lsec{padding-bottom:4px}
+.lsec.hist{padding-bottom:0}
+.lnone{padding:14px 15px;color:#8a93a0;font-size:13px}
+
+.lg{background:#fff;border:1px solid #dde2e8;border-radius:6px;padding:10px 13px 9px;margin:8px 10px}
+.lg.late{border-color:#f0c3bf;box-shadow:inset 4px 0 0 #d9534f}
+.lg.unread{border-color:#e8a7a2;background:#fffafa}
+.lgh{display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:12px;color:#566170}
+.lgh .kd{font-weight:700;color:var(--navy);white-space:nowrap}
+.lgh .pt{color:#3b4651}
+.st{font-size:11px;border-radius:3px;padding:0 7px;font-weight:700;white-space:nowrap}
+.st.s0{background:#fdecea;color:#b4231f}
+.st.s1{background:#e6effb;color:#1f4e79}
+.st.s2{background:#eef1f4;color:#566170}
+.due{font-size:11px;padding:0 7px;border-radius:3px;background:#f0f2f5;color:#566170;white-space:nowrap}
+.due.late{background:#d9534f;color:#fff;font-weight:700}
+.due.today{background:#fff1dd;color:#9a4a06;border:1px solid #efd3a4;font-weight:700}
+.lgt{font-weight:700;font-size:14px;margin-top:5px;line-height:1.5}
+.lgb{white-space:pre-wrap;word-break:break-word;margin-top:3px;color:#26313c}
+.lgf{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-top:7px;border-top:1px solid #eef1f4;font-size:11px;color:#8a93a0}
+.lgf .sp{flex:1}
+.unr{display:inline-block;background:#b4231f;color:#fff;border-radius:3px;padding:0 6px;margin-left:5px;font-size:10px;font-weight:700}
+.rdok{color:var(--ok)}
+.bs{border:1px solid var(--rule);background:#fff;border-radius:4px;padding:3px 11px;font-size:12px;color:var(--ink);white-space:nowrap}
+.bs:hover{border-color:#a9b6c4}
+.bs.pri{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.bs.rd{background:#b4231f;border-color:#b4231f;color:#fff;font-weight:600}
+.lx{margin-left:auto;background:none;border:none;color:#c3cad2;font-size:15px;line-height:1;padding:2px 4px}
+.lx:hover{color:var(--warn)}
+.lgf .lnk2{background:none;border:none;color:var(--blue);font-size:12px;padding:0}
+
+.lgr{display:grid;grid-template-columns:76px 22px minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:7px 15px;border-bottom:1px solid #f0f2f5;cursor:pointer;font-size:13px}
+.lgr:hover{background:var(--tint)}
+.lgr .at{font-size:12px;color:#566170;font-variant-numeric:tabular-nums}
+.lgr .sm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgr .pt2{color:#8a93a0;font-size:12px}
+.lgr .by{font-size:11px;color:#8a93a0}
+.lsec.hist .lg{margin:6px 10px}
+.lmore{display:block;width:100%;background:#fbfcfd;border:none;border-top:1px solid #eef1f4;padding:9px;
+  color:var(--blue);font-size:12px;border-radius:0 0 6px 6px}
+.lmore:hover{background:var(--tint)}
+
+/* ===== わたしの要対応 ===== */
+.todohead{margin-bottom:14px}
+.todohead h2{font-size:20px;margin:0;color:var(--navy);font-weight:700}
+.todohead span{font-size:12px;color:#566170}
+.tsec{background:#fff;border:1px solid #dde2e8;border-radius:8px;margin-bottom:14px;overflow:hidden}
+.tsec .th{padding:9px 15px;font-weight:700;font-size:13px;border-bottom:1px solid #eef1f4;display:flex;gap:10px;align-items:baseline;color:var(--navy);background:#f5f8fb}
+.tsec .th small{font-weight:400;color:#8a93a0;font-size:11px}
+.tsec.red .th{color:#b4231f;background:#fdf1f0}
+.tsec.amb .th{color:#9a4a06;background:#fff6e8}
+.tsec.soft .th{color:#566170;background:#f7f8f9}
+.trow{display:grid;grid-template-columns:minmax(0,190px) 22px minmax(0,1fr) auto;gap:10px;align-items:center;
+  padding:8px 15px;border-bottom:1px solid #f3f4f6;cursor:pointer;font-size:13px}
+.trow:last-child{border-bottom:none}
+.trow:hover{background:var(--tint)}
+.trow .cn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow .sm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow .mt{display:flex;gap:6px;align-items:center}
+.trow .who{font-size:11px;color:#8a93a0;white-space:nowrap}
+
+/* ===== 入力ダイアログ ===== */
+.modal .box.wide{max-width:600px}
+.modal textarea,.modal input[type=date],.modal input[type=datetime-local]{
+  width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:4px;background:#fff;font:inherit;line-height:1.6}
+.modal textarea{resize:vertical;min-height:110px}
+.kpick{display:flex;gap:5px;flex-wrap:wrap}
+.kpick .tgl{font-size:12px;padding:4px 12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.needbox{margin-top:14px;background:#f7f8f9;border:1px solid var(--rule);border-radius:6px;padding:4px 12px 11px}
+.needbox label.chk{color:var(--ink);font-size:13px;font-weight:600}
+
+@media(max-width:820px){
+  .nrow .tg{display:none}
+  .trow2{grid-template-columns:52px minmax(0,1fr) auto}
+  .trow2 .kd,.trow2 .dl{display:none}
+  .trow{display:flex;flex-wrap:wrap;gap:4px 8px}
+  .trow .sm{flex:1 1 100%;order:3;white-space:normal}
+  .trow .mt{margin-left:auto}
+  .lgr{grid-template-columns:52px minmax(0,1fr)}
+  .lgr .kd,.lgr .by{display:none}
+  .two{grid-template-columns:1fr}
+  .tab{padding:6px 11px}
+  .mesel{order:5}
+}
 </style>
 </head>
 <body>
@@ -381,6 +544,9 @@ section > h3{
   <span class="count" id="count"></span>
   <span class="spacer"></span>
   <span id="status"></span>
+  <label class="mesel">わたし：<select id="meSel"></select></label>
+  <button id="myTodo" title="自分宛ての伝言・対応が必要な記録">わたしの要対応<b id="myTodoN">—</b></button>
+  <button id="demoReset" style="display:none" title="サンプルデータを最初の状態に戻します">デモを初期化</button>
   <button id="addClient">＋顧問先を追加</button>
   <button id="staffCfg">担当者設定</button>
   <button id="importBtn">データ取込</button>
@@ -431,8 +597,12 @@ section > h3{
    設定：Supabaseを使う場合は下の2行を埋めてください。
    空のままだとブラウザのローカル保存（この端末のみ）で動きます。
    =========================================================== */
-const SUPABASE_URL = 'https://mmcgxgzplvtenlyzxhty.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tY2d4Z3pwbHZ0ZW5seXp4aHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODAwMTMsImV4cCI6MjA4OTM1NjAxM30.0qaVx5ymqB63YJ7rHQe0I56sqp3M8CVv4ZwRVmhjHWU';
+/* DEMO=true：Supabaseにつながず、このパソコンだけでサンプルデータを使って動かします（試し用）
+   本番で使うときは false にします */
+const DEMO = true;
+const SUPABASE_URL = DEMO ? '' : 'https://mmcgxgzplvtenlyzxhty.supabase.co';
+const SUPABASE_ANON_KEY = DEMO ? '' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tY2d4Z3pwbHZ0ZW5seXp4aHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODAwMTMsImV4cCI6MjA4OTM1NjAxM30.0qaVx5ymqB63YJ7rHQe0I56sqp3M8CVv4ZwRVmhjHWU';
+const LS = DEMO ? 'kmdemo3_' : 'km_';   /* この端末に保存するときの名前の頭 */
 
 /* ===========================================================
    担当者の一覧は Supabase に保存されます。
@@ -629,6 +799,31 @@ const SR_AUTH = (SUPABASE_URL && SUPABASE_ANON_KEY) ? (function () {
 })() : null;
 
 const SEED = {clients:[],notes:[]};   /* 顧問先データはSupabaseにあります。公開ファイルには置きません */
+/* デモ用の架空データ（DEMO=true のときだけ使います） */
+const DEMO_STAFF = ['志田','武田','大江','石山','嵯峨山'];
+if(DEMO){
+  const base = {sources:['カルテ','賃金','ルーティング'], sho:'当事務所で手続き', koyo:'当事務所で手続き',
+    hokensha:'協会けんぽ', jimu:'なし', kojo:'翌月', shime:'末日', harai:'翌月25日', roudou:'調整なし',
+    keiro:'メール添付', k_how:'メール', d_how:'メール', hozon:'OneDrive', madoguchi:'総務担当', renraku:'メール'};
+  SEED.clients = [
+    Object.assign({}, base, {id:'demo1', name:'株式会社サンプル商事', wage_no:'101', kubun:'手続き・給与計算', shutan:'志田', fukutan:'武田'}),
+    Object.assign({}, base, {id:'demo2', name:'有限会社みどり運送', wage_no:'102', kubun:'手続き', shutan:'大江', fukutan:'嵯峨山', hokensha:'健保組合', kenpo_name:'〇〇運輸健康保険組合'}),
+    Object.assign({}, base, {id:'demo3', name:'株式会社テスト製作所', wage_no:'103', kubun:'給与計算', shutan:'石山', fukutan:'武田'}),
+    Object.assign({}, base, {id:'demo4', name:'医療法人さくら会', wage_no:'104', kubun:'手続き・給与計算', shutan:'志田', fukutan:'大江'}),
+    Object.assign({}, base, {id:'demo5', name:'株式会社ひかり食品', wage_no:'105', kubun:'相談顧問', shutan:'武田', fukutan:'嵯峨山'}),
+  ];
+  SEED.notes = [
+    {id:1, client:'demo1', body:'算定基礎届は社長の確認後に提出する（6月20日までに確認依頼を送る）', tags:['算定'], star:true, link:'', created:'2026-06-01', checked:'2026-06-01'},
+    {id:2, client:'demo1', body:'賞与は年2回（7月・12月）。支給日の1週間前に一覧が届く', tags:['賞与'], star:false, link:'', created:'2026-07-01', checked:'2026-07-01'},
+    {id:3, client:'demo1', body:'社長分の給与明細だけは紙で郵送（メール不可）', tags:['給与計算'], star:true, link:'', created:'2026-04-10', checked:'2026-04-10'},
+    {id:4, client:'demo1', body:'入社時の雇用契約書は総務の田中様からメールで届く。\n届いたら3営業日以内に資格取得届', tags:['入社'], star:false, link:'', created:'2026-05-12', checked:'2026-05-12'},
+    {id:5, client:'demo1', body:'扶養に入れるときは、必ず本人の同意書をもらってから手続きする', tags:['扶養','入社'], star:false, link:'', created:'2026-03-02', checked:'2026-03-02'},
+    {id:6, client:'demo1', body:'退職者の離職票は本人の自宅へ直接郵送する', tags:['退職'], star:false, link:'', created:'2026-02-20', checked:'2026-02-20'},
+    {id:7, client:'demo1', body:'月変の対象者が出たら、社長に事前にひと言伝える', tags:['月変'], star:false, link:'', created:'2025-09-01', checked:'2025-09-01'},
+    {id:8, client:'demo1', body:'総務の田中様は午前中なら電話がつながりやすい', tags:[], star:false, link:'', created:'2026-01-15', checked:'2026-01-15'},
+    {id:9, client:'demo2', body:'健保組合の届出は組合独自の様式。組合のホームページから最新版を取る', tags:['健保組合'], star:true, link:'', created:'2026-06-01', checked:'2026-06-01'},
+  ];
+}
 
 const REQUIRED = ['shutan','kojo','shime','keiro','hokensha'];
 
@@ -670,6 +865,10 @@ let clients = [], notes = [], sel = null, remote = false;
 const state = {q:'',kubun:'',hoken:'',jimu:'',staff:'',sort:'wage_no',wage:false,gap:false,note:false,follow:false};
 let editMode = false;   /* false＝ふだんの閲覧表示、true＝入力欄を出して編集 */
 let noteFilter = '';   /* 詳細画面で特記事項をタグで絞り込むための一時的な状態 */
+let noteMore = false;  /* ★以外の特記事項を全部開いているか */
+let noteAddOpen = false; /* 追加欄を開いているか */
+const NOTE_FOLD = 8;   /* ★以外は1行で並べ、多いときこの件数まで見せて残りはたたむ */
+let noteOpen = null;   /* 1行表示から開いている特記事項 */
 
 /* 本文を編集しているあいだの状態。編集できるのは一度に1件だけです。
    noteDraft に書きかけを持っておくので、画面が描き直されても打ちかけは消えません */
@@ -696,19 +895,20 @@ let bulk = false, picked = new Set();
 /* ---------- storage ---------- */
 const local = {
   load(){
-    const c = localStorage.getItem('km_clients_v2'), n = localStorage.getItem('km_notes_v2');
+    const c = localStorage.getItem(LS+'clients_v2'), n = localStorage.getItem(LS+'notes_v2');
     if(c){ clients = JSON.parse(c); notes = JSON.parse(n||'[]').map(x=>noteFrom(x.id, x.client, x)); }
     else { clients = structuredClone(SEED.clients); notes = structuredClone(SEED.notes); }
     try{
-      const s = JSON.parse(localStorage.getItem('km_settings_v2')||'null');
+      const s = JSON.parse(localStorage.getItem(LS+'settings_v2')||'null');
       if(s && Array.isArray(s.staff)) STAFF = s.staff;
       if(s && Array.isArray(s.tags) && s.tags.length) TAGS = s.tags;
     }catch(e){}
+    if(DEMO && !STAFF.length) STAFF = DEMO_STAFF.slice();
   },
   flush(){
-    localStorage.setItem('km_clients_v2', JSON.stringify(clients));
-    localStorage.setItem('km_notes_v2', JSON.stringify(notes));
-    localStorage.setItem('km_settings_v2', JSON.stringify({staff:STAFF, tags:TAGS}));
+    localStorage.setItem(LS+'clients_v2', JSON.stringify(clients));
+    localStorage.setItem(LS+'notes_v2', JSON.stringify(notes));
+    localStorage.setItem(LS+'settings_v2', JSON.stringify({staff:STAFF, tags:TAGS}));
   },
 };
 
@@ -759,12 +959,15 @@ async function boot(){
     }catch(err){
       console.error(err); st('Supabase接続失敗 — ローカル保存で動作中'); local.load();
     }
-  } else { st('ローカル保存（この端末のみ）'); local.load(); }
+  } else { st(DEMO ? 'デモ版（サンプルデータ・このパソコンだけに保存）' : 'ローカル保存（この端末のみ）'); local.load(); }
   if(needStaffInit && clients.length){
     STAFF = [...new Set(clients.flatMap(staffOf))].filter(Boolean);
     if(STAFF.length) await saveSettings();
   }
   await cleanup();
+  await loadOpenLogs();
+  if(remote && !logsReady) st('Supabase接続中（対応履歴のテーブルが未作成）');
+  initMe();
   initFilters(); render();
   if(!clients.length) toast('データがありません。「データ取込」からデータファイルを読み込んでください');
 }
@@ -867,13 +1070,15 @@ async function createClient(c){
 async function deleteClient(c){
   if(remote){
     try{
+      try{ await rest(LOG_TABLE+'?client_id=eq.'+encodeURIComponent(c.id), {method:'DELETE'}); }catch(e){ console.warn(e); }
       await rest('client_notes?client_id=eq.'+encodeURIComponent(c.id), {method:'DELETE'});
       await rest('clients?id=eq.'+encodeURIComponent(c.id), {method:'DELETE'});
     }catch(e){ console.error(e); toast('削除できませんでした'); return false; }
   }
   clients = clients.filter(x=>x.id!==c.id);
   notes = notes.filter(n=>n.client!==c.id);
-  if(!remote) local.flush();
+  openLogs = openLogs.filter(l=>l.client!==c.id);
+  if(!remote){ local.flush(); localLogsLoad(); localLogs = localLogs.filter(r=>r.client_id!==c.id); localLogsSave(); }
   return true;
 }
 
@@ -964,6 +1169,7 @@ function refreshStaffSelects(){
   opt(document.getElementById('bulk1'),'（担当①はそのまま）');
   opt(document.getElementById('bulk2'),'（担当②はそのまま）');
   opt(document.getElementById('bulk3'),'（フォローはそのまま）');
+  fillMe();
 }
 
 /* ---------- モーダル ---------- */
@@ -976,7 +1182,7 @@ const modal = {
     document.onkeydown=e=>{ if(e.key==='Escape') modal.close(); };
     return document.getElementById('modalBox');
   },
-  close(){ document.getElementById('modal').classList.remove('on'); document.onkeydown=null; }
+  close(){ document.getElementById('modal').classList.remove('on'); document.getElementById('modalBox').classList.remove('wide'); document.onkeydown=null; }
 };
 
 /* 担当者設定 */
@@ -1271,7 +1477,9 @@ function filtered(){
 
 /* ---------- render ---------- */
 function render(){
+  syncTodoBtn();
   const rows = sortRows(filtered());
+  const openBy = {}; openLogs.forEach(l=>{ openBy[l.client] = (openBy[l.client]||0) + 1; });
   document.getElementById('count').textContent = rows.length + ' / ' + clients.length + ' 社';
 
   let html = '', last = null;
@@ -1300,6 +1508,7 @@ function render(){
           <span class="nm">${esc(c.name)}</span>
         </div>
         <div class="rsub">
+          ${openBy[c.id] ? `<span class="fg td" title="対応中のやりとり">要対応${openBy[c.id]}</span>` : ''}
           ${flags}
           <span class="tm ${tm?'':'none'}">${esc(tm||'未設定')}</span>
           <span class="kb">${esc(c.kubun||'—')}</span>
@@ -1316,9 +1525,8 @@ function render(){
         picked.has(id) ? picked.delete(id) : picked.add(id);
         render(); return;
       }
-      sel = clients.find(c=>c.id===r.dataset.id); noteFilter=''; tagEditOpen=null; editMode=false;
-      noteEditOpen=null; noteDraft=''; noteFocus=false;
-      document.body.classList.add('viewing'); render();
+      const hit = clients.find(c=>c.id===r.dataset.id);
+      if(hit) openClient(hit, sel===hit ? detailTab : 'karte');
     };
   });
   if(bulk) syncBulk();
@@ -1403,6 +1611,14 @@ const EXC = [
   {k:'d_how',    l:'公文書の送付',     x:v=>v && v!=='メール'},
   {k:'sokyu',    l:'総支給額の定義',   x:v=>!!v},
 ];
+const QUICK_FIELDS = [
+  {l:'顧問区分', v:c=>c.kubun},
+  {l:'締め／払い', v:c=>[c.shime?c.shime+'締め':'', c.harai?c.harai+'払い':''].filter(Boolean).join('・')},
+  {l:'保険者', v:c=>c.hokensha==='健保組合' && c.kenpo_name ? c.kenpo_name : c.hokensha},
+  {l:'連絡窓口', v:c=>c.madoguchi},
+  {l:'連絡方法', v:c=>c.renraku},
+  {l:'回収', v:c=>c.keiro},
+];
 const isExc = (k,v) => { const e = EXC.find(x=>x.k===k); return !!(e && e.x(v)); };
 
 const VIEW_SECTIONS = [
@@ -1428,42 +1644,16 @@ function emptyFields(c){
   return out.sort((a,b)=>b.req-a.req);
 }
 
-function viewHtml(c, gaps, ns){
-  const stars = ns.filter(n=>n.star);
-  const excs  = EXC.filter(e=>e.x(c[e.k]||''));
+function viewHtml(c, gaps, ns, notesBlock){
   const empt  = emptyFields(c);
-  const meta  = [
-    c.kubun,
-    (c.shime||c.harai) ? [c.shime?c.shime+'締め':'', c.harai?c.harai+'払い':''].filter(Boolean).join('・') : '',
-    c.keiro ? '回収：'+c.keiro : '',
-  ].filter(Boolean);
+  /* よく見る項目。会社名のすぐ下に並べて、下の「基本情報」まで見に行かなくて済むようにします。
+     並べる項目は QUICK_FIELDS で変えられます */
+  const quick = QUICK_FIELDS.map(q=>[q.l, q.v(c)]).filter(([,v])=>v);
   const srcMissing = ['カルテ','賃金','ルーティング'].filter(s=>!(c.sources||[]).includes(s));
 
   const staffBox = (role, v, req) => `<div class="s"><div class="r">${role}</div>`+
     (v ? `<div class="n">${esc(v)}</div>`
        : `<div class="n none${req?' req':''}">${req?'要記入':'未設定'}</div>`)+`</div>`;
-
-  const alert = (stars.length || excs.length) ? `
-  <div class="alert">
-    <div class="ah"><b>この会社の注意点</b><span>作業の前にここだけは必ず確認</span></div>
-    ${stars.map(n=>{
-      const li = n.link ? linkInfo(n.link) : null;
-      return `<div class="astar"><span class="mk">★</span>
-        <div class="bd">${esc(n.body)}</div>
-        <div class="side">
-          <div class="tags">${n.tags.map(t=>`<span class="tag ${t==='健保組合'?'kh':''}">${esc(t)}</span>`).join('')}</div>
-          ${li ? `<a class="linkbtn ${li.cls}" href="${esc(n.link)}" target="_blank" rel="noopener">${li.icon} ${li.label}を開く</a>` : ''}
-          <button class="lnk2" data-aedit="${esc(String(n.id))}"${noteEditOpen?' disabled':''}>編集</button>
-        </div></div>`;}).join('')}
-    ${excs.length ? `<div class="sub2"${stars.length?'':' style="margin-top:0"'}>いつもと違う設定</div>
-    <div class="excs">${excs.map(e=>{
-      const sub = e.sub ? e.sub(c) : '';
-      const v = String(c[e.k]||'');
-      const wide = v.length > 14 || v.includes('\n');   /* 長い値は1行ぶん使って読みやすく */
-      return `<div class="exc${wide?' wide':''}"><div class="l">${e.l}</div><div class="v">${esc(c[e.k])}</div>`+
-             (sub ? `<div class="s2">${esc(sub)}</div>` : '')+`</div>`;}).join('')}</div>` : ''}
-  </div>`
-  : `<div class="alert calm"><div class="ah"><b>特別な注意点はありません</b><span>★の特記事項・いつもと違う設定ともになし</span></div></div>`;
 
   const gapLine = empt.length ? `
   <div class="gapline"><span class="gd"></span>
@@ -1489,53 +1679,56 @@ function viewHtml(c, gaps, ns){
         <span class="vno ${c.wage_no?'':'none'}">No.${esc(c.wage_no||'未設定')}</span>
         <h2>${esc(c.name)}</h2>
       </div>
-      <div class="vmeta">
-        ${meta.map(esc).join('<span>／</span>')}
-        ${srcMissing.map(s=>`<span class="badge w">${esc(s)}に未登録</span>`).join('')}
-      </div>
+      ${srcMissing.length ? `<div class="vmeta">${srcMissing.map(s=>`<span class="badge w">${esc(s)}に未登録</span>`).join('')}</div>` : ''}
     </div>
     <button class="editbtn" id="toEdit">編集する</button>
   </div>
+  ${quick.length ? `<div class="quick">${quick.map(([l,v])=>`<div class="q"><span class="l">${esc(l)}</span><span class="v">${esc(v)}</span></div>`).join('')}</div>` : ''}
+  ${tabsHtml(c, ns)}
+  ${detailTab!=='karte' ? '' : `${openStrip(c)}
   <div class="staffs">
     ${staffBox('担当①', c.shutan, true)}
     ${staffBox('担当②', c.fukutan)}
     ${staffBox('フォロー（不在時）', c.follow)}
   </div>
-  ${alert}
+  ${notesBlock}
   ${gapLine}
-  <div class="vcards">${cards}</div>`;
+  <div class="vcards">${cards}</div>`}`;
 }
 
 function renderDetail(){
   const d = document.getElementById('detail');
-  if(!sel){ d.innerHTML='<div class="empty-state">左の一覧から顧問先を選んでください。</div>'; return; }
+  if(!sel){ d.innerHTML = todoHtml(); bindTodo(d); return; }
   const c = sel, gaps = gapsOf(c), ns = notesOf(c.id);
   const srcMissing = ['カルテ','賃金','ルーティング'].filter(s=>!(c.sources||[]).includes(s));
   const usedTags  = TAGS.filter(t=>ns.some(n=>n.tags.includes(t)));
   const untagged  = ns.filter(n=>!n.tags.length).length;
   const starN   = ns.filter(n=>n.star).length;
-  /* ★の付いた特記事項は上の「この会社の注意点」に出すので、ふだんの一覧からは外します。
-     ただし編集中のものは、どの絞り込みでも見えるようにします */
-  const shown = ns.filter(n=>
-      noteEditOpen === String(n.id) ? true
-    : !noteFilter ? (starN ? !n.star : true)
-    : noteFilter==='__all__' ? true
-    : noteFilter==='__star__' ? n.star
-    : noteFilter==='__none__' ? !n.tags.length
-    : n.tags.includes(noteFilter));
-
-  const notesHtml = `
-  <section class="notes"><h3>特記事項・イレギュラー（${ns.length}件）</h3>
-    ${ns.length ? `<div class="notefilter">
-      <button class="tgl ${noteFilter?'':'on'}" data-nf=""${noteEditOpen?' disabled':''}>${starN?'★以外（'+(ns.length-starN)+'）':'すべて（'+ns.length+'）'}</button>
-      ${starN?`<button class="tgl ${noteFilter==='__star__'?'on':''}" data-nf="__star__"${noteEditOpen?' disabled':''}>★（${starN}）</button>
-      <button class="tgl ${noteFilter==='__all__'?'on':''}" data-nf="__all__"${noteEditOpen?' disabled':''}>すべて（${ns.length}）</button>`:''}
-      ${usedTags.map(t=>`<button class="tgl ${noteFilter===t?'on':''}" data-nf="${esc(t)}"${noteEditOpen?' disabled':''}>${esc(t)}（${ns.filter(n=>n.tags.includes(t)).length}）</button>`).join('')}
-      ${untagged?`<button class="tgl ${noteFilter==='__none__'?'on':''}" data-nf="__none__"${noteEditOpen?' disabled':''}>タグ未設定（${untagged}）</button>`:''}
-    </div>` : ''}
-    ${starN && !noteFilter ? `<div class="starinfo">★の付いた${starN}件は、上の「この会社の注意点」に出しています。直すときは「★」で絞り込んでください。</div>` : ''}
-    <div class="nbody">
-    ${shown.map(n=>{
+  const excs    = EXC.filter(e=>e.x(c[e.k]||''));
+  /* 特記事項はぜんぶ1か所に出します。★は「上に固定」の印です。
+     ★以外が多いときだけ、NOTE_FOLD件まで見せて残りは「続きを見る」でたたみます */
+  const tagOk = n => !noteFilter || noteFilter==='__all__' || noteFilter==='__star__'
+                  || (noteFilter==='__none__' ? !n.tags.length : n.tags.includes(noteFilter));
+  const hit   = ns.filter(n => noteEditOpen===String(n.id) || tagOk(n));
+  const pinned = hit.filter(n=>n.star), others = hit.filter(n=>!n.star);
+  const folding = !editMode && !noteFilter && !noteMore && others.length > NOTE_FOLD + 1;
+  const othersShown = folding
+    ? others.filter((n,i)=> i < NOTE_FOLD || noteEditOpen===String(n.id) || tagEditOpen===String(n.id) || noteOpen===String(n.id))
+    : others;
+  const hiddenN = others.length - othersShown.length;
+  const noteCard = n => {
+    const id = String(n.id);
+    if(!editMode && !n.star && noteEditOpen!==id && tagEditOpen!==id && noteOpen!==id){
+      const first = n.body.split('\n')[0];
+      const more  = n.body.includes('\n') || first.length > 60;
+      return `<div class="nrow" data-nrow="${esc(id)}" title="クリックで開く">
+        <span class="tg">${n.tags.length ? n.tags.map(t=>`<span class="tag ${t==='健保組合'?'kh':''}">${esc(t)}</span>`).join('') : '<span class="notag">タグなし</span>'}</span>
+        <span class="tx">${esc(first)}</span>
+        ${more ? '<span class="mr">続きあり</span>' : ''}
+        ${n.link ? '<span class="lk" title="リンクあり">🔗</span>' : ''}
+        <span class="ar">▸</span>
+      </div>`;
+    }
       const age = daysAgo(n.checked);
       const editing = noteEditOpen === String(n.id);   /* この特記事項を編集中かどうか */
       const locked  = noteEditOpen && !editing;        /* 他を編集中なので、いま触らせない */
@@ -1544,7 +1737,7 @@ function renderDetail(){
       return `
       <div class="note ${n.star?'starred':''} ${editing?'editing':''}" data-nid="${esc(String(n.id))}">
         <div class="nhead">
-          <button class="nstar ${n.star?'on':''}" title="重要マーク"${off}>${n.star?'★':'☆'}</button>
+          <button class="nstar ${n.star?'on':''}" title="${n.star?'★を外す（固定をやめる）':'★を付けて上に固定'}"${off}>${n.star?'★':'☆'}</button>
           ${n.tags.length ? n.tags.map(t=>`<span class="tag ${t==='健保組合'?'kh':''}">${esc(t)}</span>`).join('')
                           : '<span class="notag">タグ未設定</span>'}
           <button class="del" title="削除"${off}>×</button>
@@ -1565,18 +1758,46 @@ function renderDetail(){
             ${editing ? '' : `<button class="lnk2 nedit"${locked?' disabled':''}>編集</button>`}
             <button class="lnk2 etag"${off}>タグを編集</button>
             <button class="lnk2 elink"${off}>${n.link?'リンクを変更':'リンクを追加'}</button>
+            ${!editMode && !n.star && !editing ? `<button class="lnk2 nclose"${off}>▴ 1行に戻す</button>` : ''}
           </div>
           <div class="dates">
             ${n.created ? `<span>記録 ${esc(n.created)}</span>` : ''}
             ${n.checked ? `<span class="${age!==null&&age>365?'old':''}">確認 ${esc(n.checked)}${age!==null&&age>365?'（1年以上前）':''}</span>` : ''}
           </div>
         </div>
-      </div>`;}).join('')
-      || `<div style="padding:14px 15px;color:#8a93a0">${ns.length?'この絞り込みに当てはまる特記事項はありません。':'まだ登録がありません。'}</div>`}
-    </div>
-  </section>
+      </div>`;
+  };
+  const excHtml = (!excs.length || noteFilter) ? '' : `
+      <div class="excwrap"><div class="sub2">いつもと違う設定 <small>カルテの項目から自動で表示</small></div>
+      <div class="excs">${excs.map(e=>{
+        const sub = e.sub ? e.sub(c) : '';
+        const v = String(c[e.k]||'');
+        const wide = v.length > 14 || v.includes('\n');
+        return `<div class="exc${wide?' wide':''}"><div class="l">${e.l}</div><div class="v">${esc(c[e.k])}</div>`+
+               (sub ? `<div class="s2">${esc(sub)}</div>` : '')+`</div>`;}).join('')}</div></div>`;
+  const listHtml = (pinned.length || othersShown.length || excHtml)
+    ? pinned.map(noteCard).join('')
+      + excHtml
+      + (others.length && (pinned.length || excHtml) && !noteFilter ? `<div class="nsep">そのほかの特記事項（${others.length}）</div>` : '')
+      + othersShown.map(noteCard).join('')
+      + (hiddenN ? `<button class="nmore" id="nMore">続きを見る（あと${hiddenN}件）</button>` : '')
+      + (!folding && noteMore && !noteFilter && others.length > NOTE_FOLD + 1 ? `<button class="nmore" id="nLess">たたむ</button>` : '')
+    : `<div style="padding:14px 15px;color:#8a93a0">${ns.length?'この場面のタグが付いた特記事項はありません。':'まだ登録がありません。下の「＋特記事項を追加」から書けます。'}</div>`;
 
-  <div class="addout">
+  const notesHtml = `
+  <section class="notes"><h3>この会社の注意点・特記事項（${ns.length}件）<span class="h3s">作業の前に確認／★は上に固定</span></h3>
+    ${ns.length ? `<div class="notefilter">
+      <span class="nfl">場面で絞る：</span>
+      <button class="tgl ${noteFilter && noteFilter!=='__all__' && noteFilter!=='__star__'?'':'on'}" data-nf=""${noteEditOpen?' disabled':''}>すべて（${ns.length}）</button>
+      ${usedTags.map(t=>`<button class="tgl ${noteFilter===t?'on':''}" data-nf="${esc(t)}"${noteEditOpen?' disabled':''}>${esc(t)}（${ns.filter(n=>n.tags.includes(t)).length}）</button>`).join('')}
+      ${untagged?`<button class="tgl ${noteFilter==='__none__'?'on':''}" data-nf="__none__"${noteEditOpen?' disabled':''}>タグ未設定（${untagged}）</button>`:''}
+    </div>` : ''}
+    <div class="nbody">
+    ${listHtml}    </div>
+
+  ${editMode || noteAddOpen ? '' : `<button class="naopen" id="naOpen">＋ 特記事項を追加</button>`}
+  </section>
+  <div class="addout" style="display:${editMode || noteAddOpen ? 'block' : 'none'}">
     <div class="addnote">
       <div class="ttl">新しい特記事項を追加</div>
       <textarea id="nb" placeholder="例：被扶養者届には必ず住民票をつける。後から提出はNG&#10;（改行して手順を書くこともできます）"></textarea>
@@ -1584,9 +1805,10 @@ function renderDetail(){
       <input type="text" id="nlink" placeholder="リンク（任意）　Notion・OneDrive・YouTube など">
       <div class="arow">
         <button class="go" id="na"${noteEditOpen?' disabled':''}>追加</button>
-        <label class="hint"><input type="checkbox" id="nstarnew"> ★を付ける</label>
+        <label class="hint"><input type="checkbox" id="nstarnew"> ★を付ける（上に固定）</label>
         <span style="flex:1"></span>
         <button class="lnk2" id="tagCfg" style="background:none;border:none;color:var(--blue);font-size:11px">タグを追加・削除</button>
+        ${editMode ? '' : '<button class="lnk2" id="naClose" style="background:none;border:none;color:#8a93a0;font-size:11px">閉じる</button>'}
       </div>
     </div>
   </div>
@@ -1644,7 +1866,7 @@ function renderDetail(){
 
 ` + notesHtml + `
   <div class="dz"><button id="delClient">この顧問先を削除</button></div>`
-    : viewHtml(c, gaps, ns) + notesHtml;
+    : viewHtml(c, gaps, ns, notesHtml) + (detailTab==='logs' ? logsHtml(c) : '');
 
   const delBtn = d.querySelector('#delClient');
   if(delBtn) delBtn.onclick = async ()=>{
@@ -1654,7 +1876,7 @@ function renderDetail(){
     refreshStaffSelects(); render(); toast(c.name + ' を削除しました');
   };
 
-  const goEdit = ()=>{ editMode = true; renderDetail(); d.scrollTop = 0; };
+  const goEdit = ()=>{ editMode = true; detailTab = 'karte'; renderDetail(); d.scrollTop = 0; };
   d.querySelector('#toEdit') && (d.querySelector('#toEdit').onclick = goEdit);
   d.querySelector('#gapEdit') && (d.querySelector('#gapEdit').onclick = goEdit);
   /* 入力欄にカーソルがあるまま押すと、先に保存→描き直しが走ってクリックが空振りするため、
@@ -1665,19 +1887,6 @@ function renderDetail(){
     if(document.activeElement && d.contains(document.activeElement)) document.activeElement.blur();
     editMode = false; render(); d.scrollTop = 0;
   });
-  /* 注意点の★から「編集」：★で絞り込んで、その特記事項を編集状態にします */
-  d.querySelectorAll('.astar [data-aedit]').forEach(b=>{
-    b.onclick=()=>{
-      if(noteEditOpen) return;
-      const n = ns.find(x=>String(x.id)===b.dataset.aedit);
-      if(!n) return;
-      noteFilter='__star__'; noteEditOpen=String(n.id); noteDraft=n.body; noteFocus=true;
-      renderDetail();
-      const el = d.querySelector('.note.editing');
-      if(el) el.scrollIntoView({block:'center'});
-    };
-  });
-
   d.querySelector('#back').onclick=()=>{
     if(noteEditOpen && noteDraft.trim() !== (ns.find(x=>String(x.id)===noteEditOpen)||{}).body
        && !confirm('編集中の特記事項があります。保存せずに一覧へ戻りますか？')) return;
@@ -1721,10 +1930,21 @@ function renderDetail(){
     el.addEventListener('blur', commit);
     el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); } });
   });
-  /* タグでの絞り込み */
+  /* 場面タグでの絞り込み */
   d.querySelectorAll('.notefilter .tgl').forEach(el=>{
     el.onclick=()=>{ noteFilter = el.dataset.nf; renderDetail(); };
   });
+  d.querySelectorAll('[data-nrow]').forEach(r=>{
+    r.onclick = ()=>{ if(noteEditOpen) return; noteOpen = r.dataset.nrow; tagEditOpen = null; renderDetail(); };
+  });
+  d.querySelectorAll('.nclose').forEach(b=>{
+    b.onclick = ()=>{ noteOpen = null; tagEditOpen = null; renderDetail(); };
+  });
+  const nm = d.querySelector('#nMore'); if(nm) nm.onclick = ()=>{ noteMore = true; renderDetail(); };
+  const nl = d.querySelector('#nLess'); if(nl) nl.onclick = ()=>{ noteMore = false; renderDetail(); };
+  const no = d.querySelector('#naOpen');
+  if(no) no.onclick = ()=>{ noteAddOpen = true; renderDetail(); const t = d.querySelector('#nb'); if(t){ t.focus(); t.scrollIntoView({block:'center'}); } };
+  const nc = d.querySelector('#naClose'); if(nc) nc.onclick = ()=>{ noteAddOpen = false; renderDetail(); };
 
   d.querySelectorAll('.note[data-nid]').forEach(el=>{
     const n = ns.find(x=>String(x.id)===el.dataset.nid);
@@ -1782,6 +2002,7 @@ function renderDetail(){
     /* ★の付け外し */
     el.querySelector('.nstar').onclick=()=>{
       n.star = !n.star;
+      if(!n.star) noteOpen = String(n.id);
       updateNote(n, true).then(()=>{ render(); });
     };
 
@@ -1822,8 +2043,8 @@ function renderDetail(){
   d.querySelectorAll('[data-newtag]').forEach(b=>{
     b.onclick=()=>b.classList.toggle('on');
   });
-  d.querySelector('#tagCfg').onclick = tagDialog;
-  d.querySelector('#na').onclick=()=>{
+  if(d.querySelector('#tagCfg')) d.querySelector('#tagCfg').onclick = tagDialog;
+  if(d.querySelector('#na')) d.querySelector('#na').onclick=()=>{
     const body = d.querySelector('#nb').value.trim();
     if(!body){ toast('本文を入力してください'); return; }
     const tags = [...d.querySelectorAll('[data-newtag].on')].map(b=>b.dataset.newtag);
@@ -1831,8 +2052,673 @@ function renderDetail(){
       body, tags,
       star: d.querySelector('#nstarnew').checked,
       link: d.querySelector('#nlink').value.trim()
-    }).then(()=>{ noteFilter=''; render(); });
+    }).then(()=>{ noteFilter=''; noteAddOpen=false; render(); toast('特記事項を追加しました'); });
   };
+  bindTabs(d);
+  bindLogs(d, c);
+}
+
+/* =====================================================================
+   対応履歴（電話・メール・打合せなどのやりとりの記録）
+   - 1件ずつ「未対応 → 対応中 → 完了」。完了したものは下の「履歴」に小さくしまいます
+   - 消さずに残す（削除は入力ミス用。削除済みの印を付けて見えなくするだけ）
+   - 「対応する人」を自分以外にすると伝言になり、本人が「確認しました」を押すまで未読と出ます
+   - 画面を開くたびに全件は読みません：未完了の分（全社）＋開いた会社の履歴を20件ずつ
+   ===================================================================== */
+const LOG_TABLE = 'client_logs_test';   /* 動作確認が済んだら 'client_logs' に変えて本番テーブルへ */
+const LOG_KINDS = ['電話','メール','打合せ','来所','その他'];
+const LOG_ICON  = {'電話':'📞','メール':'✉️','打合せ':'🤝','来所':'🏢','その他':'📝'};
+const LOG_PAGE  = 20;      /* 履歴を一度に読む件数 */
+const LOG_ADMIN = ['志田'];  /* 誰の記録でも削除・復元できる人 */
+const HIST_PEEK = 5;       /* 履歴をたたんでいるときに見せる件数 */
+
+let detailTab = 'karte';  /* 'karte' | 'notes' | 'logs' */
+let openLogs  = [];       /* 未完了の記録（全社分）。件数バッジと「わたしの要対応」に使います */
+let logsReady = false;
+const hist = {};          /* 顧問先ごとの完了済み履歴 {items, more, loading, key, err} */
+let logUI = {kind:'', q:'', histOpen:false, trash:false};
+const trash = {};   /* 顧問先ごとの削除した記録 */
+let logExpand = null;     /* 履歴の中で開いている1件 */
+let ME = '';              /* この端末で「わたし」として選んだ担当者 */
+let localLogs = [], localLogsLoaded = false;
+
+const pad2 = n => String(n).padStart(2,'0');
+const nowIso = () => new Date().toISOString();
+const byAtDesc = (a,b) => String(b.at||'').localeCompare(String(a.at||''));
+const isOpenLog = l => !l.deleted && l.status !== '完了';
+const isUnread  = l => !!l.to && l.to !== l.by && !l.read_at;
+const isAdmin   = () => !!ME && LOG_ADMIN.includes(ME);
+const canDelLog = l => !!ME && (l.by === ME || isAdmin());
+const clientOf  = id => clients.find(c=>c.id===id);
+const mdOf = s => { const p = String(s||'').split('-'); return p.length===3 ? (+p[1])+'/'+(+p[2]) : s; };
+
+function toLocalInput(iso){
+  const t = new Date(iso || Date.now());
+  return t.getFullYear()+'-'+pad2(t.getMonth()+1)+'-'+pad2(t.getDate())+'T'+pad2(t.getHours())+':'+pad2(t.getMinutes());
+}
+function fmtAt(iso, dateOnly){
+  const t = new Date(iso);
+  if(isNaN(t)) return '';
+  const y = t.getFullYear() !== new Date().getFullYear() ? t.getFullYear()+'/' : '';
+  return y + (t.getMonth()+1)+'/'+t.getDate() + (dateOnly ? '' : ' '+pad2(t.getHours())+':'+pad2(t.getMinutes()));
+}
+function dueInfo(l){
+  if(!l.due || l.status==='完了') return null;
+  const t = today();
+  if(l.due < t)   return {cls:'late',  txt:'期限切れ '+mdOf(l.due)};
+  if(l.due === t) return {cls:'today', txt:'今日まで'};
+  return {cls:'', txt:'期限 '+mdOf(l.due)};
+}
+const summaryOf = l => l.title || (l.body||'').split('\n')[0] || '（内容なし）';
+
+/* 保存の形（Supabaseの列名）⇔ 画面で使う形 */
+function logFrom(r){
+  return {
+    id:r.id, client:r.client_id, at:r.at||'', kind:r.kind||'その他',
+    party:r.party||'', title:r.title||'', body:r.body||'',
+    by:r.by_staff||'', to:r.to_staff||'', read_at:r.read_at||'',
+    status:r.status||'完了', due:r.due||'', done_at:r.done_at||'',
+    deleted:!!r.deleted, deleted_by:r.deleted_by||'', deleted_at:r.deleted_at||'',
+    created_at:r.created_at||''
+  };
+}
+function logRow(l){
+  return {
+    client_id:l.client, at:l.at, kind:l.kind, party:l.party, title:l.title, body:l.body,
+    by_staff:l.by, to_staff:l.to, read_at:l.read_at||null,
+    status:l.status, due:l.due||null, done_at:l.done_at||null,
+    deleted:!!l.deleted, deleted_by:l.deleted_by||'', deleted_at:l.deleted_at||null,
+    updated_at:nowIso()
+  };
+}
+
+/* ---------- 読み込み ---------- */
+function localLogsSave(){ try{ localStorage.setItem(LS+'logs_v1', JSON.stringify(localLogs)); }catch(e){} }
+function localLogsLoad(){
+  if(localLogsLoaded) return;
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(LS+'logs_v1')||'null'); }catch(e){ saved = null; }
+  localLogs = Array.isArray(saved) ? saved : (DEMO ? demoLogs() : []);
+  if(!Array.isArray(saved) && DEMO) localLogsSave();
+  localLogsLoaded = true;
+}
+
+async function loadOpenLogs(){
+  if(remote){
+    try{
+      const rows = await rest(LOG_TABLE+'?select=*&deleted=is.false&status=neq.'+encodeURIComponent('完了')
+                              +'&order=at.desc&limit=1000');
+      openLogs = (rows||[]).map(logFrom);
+      logsReady = true;
+    }catch(e){
+      console.error(e); openLogs = []; logsReady = false;
+    }
+  } else {
+    localLogsLoad();
+    openLogs = localLogs.map(logFrom).filter(isOpenLog).sort(byAtDesc);
+    logsReady = true;
+  }
+}
+
+const histKey = () => logUI.kind + '|' + logUI.q;
+async function loadHist(cid){
+  let h = hist[cid];
+  if(!h || h.key !== histKey()) h = hist[cid] = {items:[], more:true, loading:false, key:histKey(), err:false};
+  if(h.loading || !h.more) return;
+  h.loading = true;
+  const off = h.items.length;
+  try{
+    let got;
+    if(remote){
+      let q = LOG_TABLE+'?select=*&client_id=eq.'+encodeURIComponent(cid)
+            + '&deleted=is.false&status=eq.'+encodeURIComponent('完了');
+      if(logUI.kind) q += '&kind=eq.'+encodeURIComponent(logUI.kind);
+      const w = logUI.q.replace(/[(),*%]/g,' ').trim();
+      if(w) q += '&or=(' + ['title','body','party'].map(f=>f+'.ilike.'+encodeURIComponent('*'+w+'*')).join(',') + ')';
+      q += '&order=at.desc&offset='+off+'&limit='+LOG_PAGE;
+      got = ((await rest(q))||[]).map(logFrom);
+    } else {
+      localLogsLoad();
+      const w = logUI.q.toLowerCase();
+      got = localLogs.map(logFrom)
+        .filter(l=>l.client===cid && !l.deleted && l.status==='完了'
+          && (!logUI.kind || l.kind===logUI.kind)
+          && (!w || (l.title+' '+l.body+' '+l.party).toLowerCase().includes(w)))
+        .sort(byAtDesc).slice(off, off+LOG_PAGE);
+    }
+    if(hist[cid] !== h) return;          /* 読み込み中に絞り込みが変わった */
+    h.items = h.items.concat(got);
+    h.more = got.length === LOG_PAGE;
+  }catch(e){
+    console.error(e); h.err = true; h.more = false;
+  }
+  h.loading = false;
+}
+
+/* ---------- 書き込み ---------- */
+async function saveLog(l, isNew){
+  const row = logRow(l);
+  if(remote){
+    if(isNew){
+      const r = await rest(LOG_TABLE, {method:'POST', headers:{Prefer:'return=representation'}, body:JSON.stringify(row)});
+      l.id = r[0].id;
+    } else {
+      const r = await rest(LOG_TABLE+'?id=eq.'+l.id, {method:'PATCH', headers:{Prefer:'return=representation'}, body:JSON.stringify(row)});
+      if(!r || !r.length) throw new Error('記録が見つかりませんでした（ほかの人が削除した可能性があります）');
+    }
+  } else {
+    localLogsLoad();
+    if(isNew){
+      l.id = Date.now();
+      localLogs.push(Object.assign({id:l.id, created_at:nowIso()}, row));
+    } else {
+      const i = localLogs.findIndex(x=>x.id===l.id);
+      if(i>=0) localLogs[i] = Object.assign({}, localLogs[i], row);
+    }
+    localLogsSave();
+  }
+}
+async function writeLog(l, isNew, msg, undo){
+  try{ await saveLog(l, isNew); }
+  catch(e){ console.error(e); toast('保存できませんでした：'+String(e.message||e).slice(0,60)); return false; }
+  await loadOpenLogs();
+  delete hist[l.client];
+  if(logUI.trash) await loadTrash(l.client);
+  render();
+  if(msg) toast(msg, undo);
+  return true;
+}
+
+async function setLogStatus(l, s){
+  const before = {status:l.status, done_at:l.done_at};
+  l.status = s;
+  l.done_at = s==='完了' ? nowIso() : '';
+  if(s==='完了') logExpand = null;
+  await writeLog(l, false,
+    s==='完了' ? '完了にしました（下の履歴にしまいました）' : '「'+s+'」にしました',
+    s==='完了' ? ()=>{ l.status = before.status; l.done_at = before.done_at; writeLog(l, false, '元に戻しました'); } : null);
+}
+async function markLogRead(l){
+  l.read_at = nowIso();
+  await writeLog(l, false, '確認済みにしました');
+}
+async function deleteLog(l){
+  if(!canDelLog(l)){ toast('削除できるのは記録した本人と管理者だけです'); return; }
+  if(!confirm('この記録を削除しますか？\n\n「'+summaryOf(l).slice(0,30)+'」\n\n※入力ミスのときだけ使ってください。対応が終わったものは「完了」にします。')) return;
+  l.deleted = true; l.deleted_by = ME; l.deleted_at = nowIso();
+  delete trash[l.client];
+  await writeLog(l, false, '削除しました', ()=>restoreLog(l));
+}
+async function restoreLog(l){
+  l.deleted = false; l.deleted_by = ''; l.deleted_at = '';
+  delete trash[l.client];
+  await writeLog(l, false, '元に戻しました');
+}
+async function loadTrash(cid){
+  try{
+    let got;
+    if(remote){
+      got = ((await rest(LOG_TABLE+'?select=*&client_id=eq.'+encodeURIComponent(cid)
+              +'&deleted=is.true&order=deleted_at.desc.nullslast&limit=100'))||[]).map(logFrom);
+    } else {
+      localLogsLoad();
+      got = localLogs.map(logFrom).filter(l=>l.client===cid && l.deleted)
+        .sort((a,b)=>String(b.deleted_at||'').localeCompare(String(a.deleted_at||'')));
+    }
+    trash[cid] = {items:got, err:false};
+  }catch(e){ console.error(e); trash[cid] = {items:[], err:true}; }
+}
+
+/* ---------- わたし ---------- */
+function initMe(){
+  try{ ME = localStorage.getItem(LS+'me') || ''; }catch(e){ ME = ''; }
+  if(DEMO && !ME) ME = DEMO_STAFF[0];
+  if(ME && STAFF.length && !STAFF.includes(ME)) ME = '';
+  fillMe();
+}
+function fillMe(){
+  const s = document.getElementById('meSel');
+  if(!s) return;
+  s.innerHTML = '<option value="">（選ぶ）</option>'
+    + STAFF.map(n=>`<option value="${esc(n)}"${n===ME?' selected':''}>${esc(n)}</option>`).join('');
+}
+function myLists(){
+  const mine = openLogs.filter(l => l.to===ME || (!l.to && l.by===ME));
+  const unread = mine.filter(l => l.to===ME && isUnread(l));
+  const late = mine.filter(l => !unread.includes(l) && l.due && l.due < today());
+  const due0 = mine.filter(l => !unread.includes(l) && l.due === today());
+  const rest = mine.filter(l => !unread.includes(l) && !late.includes(l) && !due0.includes(l));
+  const pair = openLogs.filter(l => !mine.includes(l) && (c=>c && hasStaff(c,ME))(clientOf(l.client)));
+  const sent = openLogs.filter(l => l.by===ME && l.to && l.to!==ME && !l.read_at);
+  return {mine, unread, late, due0, rest, pair, sent};
+}
+function syncTodoBtn(){
+  const b = document.getElementById('myTodo');
+  if(!b) return;
+  if(!ME || !logsReady){ document.getElementById('myTodoN').textContent = '—'; b.classList.remove('hot'); return; }
+  const m = myLists();
+  document.getElementById('myTodoN').textContent = m.mine.length;
+  b.classList.toggle('hot', !!(m.unread.length || m.late.length));
+}
+
+/* ---------- タブ ---------- */
+function tabsHtml(c, ns){
+  const op = openLogs.filter(l=>l.client===c.id);
+  const red = op.some(l => (l.to===ME && isUnread(l)) || (l.due && l.due < today()));
+  return `<div class="tabs">
+    <button class="tab ${detailTab==='karte'?'on':''}" data-tab="karte">カルテ</button>
+    <button class="tab ${detailTab==='logs'?'on':''}" data-tab="logs">対応履歴${op.length?`<span class="tc warn${red?' red':''}">要対応 ${op.length}</span>`:''}</button>
+  </div>`;
+}
+function bindTabs(d){
+  d.querySelectorAll('.tab[data-tab]').forEach(b=>{
+    b.onclick = ()=>{
+      if(noteEditOpen){ toast('特記事項を編集中です。保存か取消をしてから切り替えてください'); return; }
+      detailTab = b.dataset.tab;
+      renderDetail(); d.scrollTop = 0;
+    };
+  });
+  d.querySelectorAll('[data-gotab]').forEach(b=>{
+    b.onclick = ()=>{ detailTab = b.dataset.gotab; renderDetail(); d.scrollTop = 0; };
+  });
+}
+/* カルテ側に出す一行（忘れ防止） */
+function openStrip(c){
+  const op = openLogs.filter(l=>l.client===c.id);
+  if(!op.length) return '';
+  const late = op.filter(l=>l.due && l.due < today()).length;
+  const unr  = op.filter(l=>l.to===ME && isUnread(l)).length;
+  return `<div class="openstrip${late||unr?' red':''}">
+    <span>📌 対応中のやりとりが <b>${op.length}件</b> あります${late?`（期限切れ ${late}件）`:''}${unr?`（あなた宛ての未読 ${unr}件）`:''}</span>
+    <span class="o1">${esc(summaryOf(op[0]))}${op.length>1?' ほか':''}</span>
+    <button data-gotab="logs">対応履歴を開く →</button>
+  </div>`;
+}
+
+/* ---------- 対応履歴タブ ---------- */
+function logCard(l, done){
+  const di = dueInfo(l);
+  const sc = {'未対応':'s0','対応中':'s1','完了':'s2'}[l.status] || 's2';
+  const canRead = l.to===ME && isUnread(l);
+  return `<div class="lg ${di&&di.cls==='late'?'late':''} ${canRead?'unread':''}" data-lid="${esc(String(l.id))}">
+    <div class="lgh">
+      <span class="kd">${LOG_ICON[l.kind]||'📝'} ${esc(l.kind)}</span>
+      <span>${esc(fmtAt(l.at))}</span>
+      ${l.party?`<span class="pt">相手：${esc(l.party)}</span>`:''}
+      <span class="st ${sc}">${esc(l.status)}</span>
+      ${di?`<span class="due ${di.cls}">${esc(di.txt)}</span>`:''}
+      ${canDelLog(l) ? '<button class="lx ldel" title="削除（入力ミスのとき）">×</button>' : ''}
+    </div>
+    ${l.title?`<div class="lgt">${esc(l.title)}</div>`:''}
+    ${l.body?`<div class="lgb">${esc(l.body)}</div>`:''}
+    <div class="lgf">
+      <span>記録：${esc(l.by||'—')}</span>
+      ${l.to?`<span>対応：${esc(l.to)}${isUnread(l)?'<b class="unr">未読</b>':(l.to!==l.by&&l.read_at?' <span class="rdok">✓確認済み</span>':'')}</span>`:''}
+      ${done&&l.done_at?`<span>完了 ${esc(fmtAt(l.done_at,true))}</span>`:''}
+      <span class="sp"></span>
+      ${canRead?'<button class="bs rd lread">確認しました</button>':''}
+      ${!done && l.status==='未対応'?'<button class="bs ldoing">対応中にする</button>':''}
+      ${!done?'<button class="bs pri ldone">✓ 完了</button>':'<button class="bs lreopen">未完了に戻す</button>'}
+      <button class="lnk2 ledit">編集</button>
+    </div>
+  </div>`;
+}
+
+function logsHtml(c){
+  if(!logsReady){
+    return `<section class="lsec"><h3>対応履歴</h3><div class="lnone">
+      対応履歴のテーブル（${esc(LOG_TABLE)}）に接続できませんでした。<br>
+      Supabaseでテーブルを作成するSQLを実行してから、もう一度開いてください。</div></section>`;
+  }
+  const w = logUI.q.toLowerCase();
+  const match = l => (!logUI.kind || l.kind===logUI.kind)
+                  && (!w || (l.title+' '+l.body+' '+l.party).toLowerCase().includes(w));
+  const op = openLogs.filter(l=>l.client===c.id && match(l))
+    .sort((a,b)=> (a.due||'9999') .localeCompare(b.due||'9999') || byAtDesc(a,b));
+  const h = hist[c.id] && hist[c.id].key===histKey() ? hist[c.id] : null;
+  const items = h ? h.items : [];
+  const showN = logUI.histOpen ? items.length : Math.min(HIST_PEEK, items.length);
+  const filtering = !!(logUI.kind || logUI.q);
+
+  return `
+  <div class="logbar">
+    <button class="add" id="lgAdd">＋ やりとりを記録</button>
+    <div class="kfilter">
+      <button class="tgl ${logUI.kind?'':'on'}" data-lk="">すべて</button>
+      ${LOG_KINDS.map(k=>`<button class="tgl ${logUI.kind===k?'on':''}" data-lk="${esc(k)}">${LOG_ICON[k]} ${esc(k)}</button>`).join('')}
+    </div>
+    <input type="search" id="lgQ" placeholder="内容で検索（Enter）" value="${esc(logUI.q)}">
+  </div>
+
+  <section class="lsec">
+    <h3>対応中・要対応（${op.length}）</h3>
+    ${op.length ? op.map(l=>logCard(l,false)).join('')
+      : `<div class="lnone">${filtering?'この絞り込みに当てはまる未完了の記録はありません。':'いま対応が必要なやりとりはありません。'}</div>`}
+  </section>
+
+  <section class="lsec hist">
+    <h3>履歴（完了したもの）</h3>
+    ${items.slice(0, showN).map(l => logExpand===String(l.id) ? logCard(l,true) : `
+      <div class="lgr" data-lid="${esc(String(l.id))}">
+        <span class="at">${esc(fmtAt(l.at,true))}</span>
+        <span class="kd" title="${esc(l.kind)}">${LOG_ICON[l.kind]||'📝'}</span>
+        <span class="sm">${esc(summaryOf(l))}${l.party?`<span class="pt2">／${esc(l.party)}</span>`:''}</span>
+        <span class="by">${esc(l.by)}</span>
+      </div>`).join('')}
+    ${!h || (h.loading && !items.length) ? '<div class="lnone">読み込み中…</div>'
+      : h.err ? '<div class="lnone">履歴を読み込めませんでした。</div>'
+      : !items.length ? `<div class="lnone">${filtering?'この絞り込みに当てはまる履歴はありません。':'完了した記録はまだありません。'}</div>`
+      : !logUI.histOpen && (items.length > HIST_PEEK || h.more) ? `<button class="lmore" id="lgHistOpen">すべての履歴を見る</button>`
+      : logUI.histOpen && h.more ? `<button class="lmore" id="lgMore">${h.loading?'読み込み中…':'さらに20件を読み込む'}</button>`
+      : logUI.histOpen && items.length > HIST_PEEK ? `<button class="lmore" id="lgHistClose">たたむ</button>` : ''}
+  </section>
+  ${isAdmin() ? trashHtml(c) : ''}`;
+}
+function trashHtml(c){
+  if(!logUI.trash) return `<div class="trashlink"><button id="lgTrash">🗑 削除した記録を見る</button><span>（管理者だけに表示）</span></div>`;
+  const t = trash[c.id];
+  return `<section class="lsec trash"><h3>削除した記録 <small>管理者だけに表示。ここから元に戻せます</small>
+      <button class="lnk2" id="lgTrashClose">閉じる</button></h3>
+    ${!t ? '<div class="lnone">読み込み中…</div>'
+      : t.err ? '<div class="lnone">読み込めませんでした。</div>'
+      : !t.items.length ? '<div class="lnone">削除した記録はありません。</div>'
+      : t.items.map(l=>`<div class="trow2" data-tid="${esc(String(l.id))}">
+          <span class="at">${esc(fmtAt(l.at,true))}</span>
+          <span class="kd">${LOG_ICON[l.kind]||'📝'}</span>
+          <span class="sm">${esc(summaryOf(l))}<small>記録：${esc(l.by||'—')}</small></span>
+          <span class="dl">${l.deleted_by?esc(l.deleted_by)+'さんが削除':'削除'}${l.deleted_at?' '+esc(fmtAt(l.deleted_at)):''}</span>
+          <button class="bs lrestore">元に戻す</button>
+        </div>`).join('')}
+  </section>`;
+}
+
+function findLog(cid, id){
+  return openLogs.find(l=>String(l.id)===id)
+      || ((hist[cid]&&hist[cid].items)||[]).find(l=>String(l.id)===id);
+}
+
+function bindLogs(d, c){
+  const add = d.querySelector('#lgAdd');
+  if(!add) return;   /* 対応履歴タブを表示していない */
+  add.onclick = ()=> logDialog(c, null);
+
+  d.querySelectorAll('[data-lk]').forEach(b=>{
+    b.onclick = ()=>{ logUI.kind = b.dataset.lk; logExpand = null; renderDetail(); };
+  });
+  const q = d.querySelector('#lgQ');
+  q.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ logUI.q = q.value.trim(); logExpand = null; renderDetail(); }
+  });
+  q.addEventListener('search', ()=>{ if(!q.value && logUI.q){ logUI.q=''; renderDetail(); } });
+
+  d.querySelectorAll('.lgr[data-lid]').forEach(r=>{
+    r.onclick = ()=>{ logExpand = r.dataset.lid; renderDetail(); };
+  });
+  d.querySelectorAll('.lg[data-lid]').forEach(el=>{
+    const l = findLog(c.id, el.dataset.lid);
+    if(!l) return;
+    const on = (sel, fn) => { const b = el.querySelector(sel); if(b) b.onclick = e=>{ e.stopPropagation(); fn(); }; };
+    on('.ldel',   ()=>deleteLog(l));
+    on('.lread',  ()=>markLogRead(l));
+    on('.ldoing', ()=>setLogStatus(l,'対応中'));
+    on('.ldone',  ()=>setLogStatus(l,'完了'));
+    on('.lreopen',()=>{ logExpand = null; setLogStatus(l,'対応中'); });
+    on('.ledit',  ()=>logDialog(c, l));
+  });
+  const tb = d.querySelector('#lgTrash');
+  if(tb) tb.onclick = ()=>{
+    logUI.trash = true; delete trash[c.id]; renderDetail();
+    loadTrash(c.id).then(()=>{ if(sel===c && detailTab==='logs') renderDetail(); });
+  };
+  const tc = d.querySelector('#lgTrashClose');
+  if(tc) tc.onclick = ()=>{ logUI.trash = false; renderDetail(); };
+  d.querySelectorAll('.trow2 .lrestore').forEach(b=>{
+    b.onclick = async ()=>{
+      const id = b.closest('.trow2').dataset.tid;
+      const l = ((trash[c.id]||{}).items||[]).find(x=>String(x.id)===id);
+      if(!l) return;
+      await restoreLog(l);
+      loadTrash(c.id).then(()=>{ if(sel===c && detailTab==='logs') renderDetail(); });
+    };
+  });
+  if(logUI.trash && !trash[c.id]) loadTrash(c.id).then(()=>{ if(sel===c && detailTab==='logs') renderDetail(); });
+  const ho = d.querySelector('#lgHistOpen');
+  if(ho) ho.onclick = ()=>{ logUI.histOpen = true; renderDetail(); };
+  const hc = d.querySelector('#lgHistClose');
+  if(hc) hc.onclick = ()=>{ logUI.histOpen = false; logExpand = null; renderDetail(); };
+  const mo = d.querySelector('#lgMore');
+  if(mo) mo.onclick = ()=>{ loadHist(c.id).then(()=>{ if(sel===c && detailTab==='logs') renderDetail(); }); renderDetail(); };
+
+  /* 履歴がまだ読めていなければ読みに行きます */
+  const h = hist[c.id];
+  if(!h || h.key!==histKey()){
+    loadHist(c.id).then(()=>{ if(sel===c && detailTab==='logs' && !editMode) renderDetail(); });
+  }
+}
+
+/* ---------- 記録の入力・編集 ---------- */
+function logDialog(c, l){
+  const isNew = !l;
+  const v = l ? Object.assign({}, l)
+              : {client:c.id, at:nowIso(), kind:'電話', party:'', title:'', body:'', by:ME, to:'', status:'完了', due:''};
+  const need0 = isNew ? false : v.status!=='完了';
+  const sOpt = (cur, blank) => `<option value="">${blank}</option>`
+    + [...new Set([...STAFF, cur||''])].filter(Boolean)
+      .map(n=>`<option value="${esc(n)}"${n===cur?' selected':''}>${esc(n)}</option>`).join('');
+
+  const box = modal.open(`
+    <h3>${isNew?'やりとりを記録':'記録を編集'}｜${esc(c.name)}</h3>
+    <div class="in">
+      <label>手段</label>
+      <div class="kpick">${LOG_KINDS.map(k=>`<button type="button" class="tgl ${k===v.kind?'on':''}" data-kind="${esc(k)}">${LOG_ICON[k]} ${esc(k)}</button>`).join('')}</div>
+      <div class="two">
+        <div><label>日時</label><input type="datetime-local" id="lgAt" value="${esc(toLocalInput(v.at))}"></div>
+        <div><label>記録した人</label><select id="lgBy">${sOpt(v.by,'（選ぶ）')}</select></div>
+      </div>
+      <label>相手（誰と）</label>
+      <input type="text" id="lgParty" value="${esc(v.party)}" placeholder="例：総務の田中様">
+      <label>件名（一覧に出る一行・任意）</label>
+      <input type="text" id="lgTitle" value="${esc(v.title)}" placeholder="例：11月入社2名の資格取得">
+      <label>内容</label>
+      <textarea id="lgBody" rows="6" placeholder="聞いたこと・伝えたこと・決まったことなど">${esc(v.body)}</textarea>
+      <div class="needbox">
+        <label class="chk"><input type="checkbox" id="lgNeed"${need0?' checked':''}> このあと対応が必要（要対応にする）</label>
+        <div id="lgNeedMore" style="display:${need0?'block':'none'}">
+          <div class="two">
+            <div><label>対応する人</label><select id="lgTo">${sOpt(v.to,'記録した人が対応')}</select></div>
+            <div><label>期限（任意）</label><input type="date" id="lgDue" value="${esc(v.due||'')}"></div>
+          </div>
+          <p class="note" id="lgHint" style="margin:8px 0 0"></p>
+        </div>
+        <p class="note" id="lgNoNeed" style="margin:6px 0 0;display:${need0?'none':'block'}">チェックしない場合は「記録のみ」として、すぐ履歴に入ります。</p>
+      </div>
+    </div>
+    <div class="foot">
+      <span class="note" style="margin-right:auto;font-size:11px;color:#8a93a0;align-self:center">Ctrl＋Enterで保存</span>
+      <button id="lgCancel">キャンセル</button>
+      <button class="pri" id="lgSave">${isNew?'記録する':'保存'}</button>
+    </div>`);
+  box.classList.add('wide');
+
+  let kind = v.kind;
+  box.querySelectorAll('[data-kind]').forEach(b=>{
+    b.onclick = ()=>{
+      kind = b.dataset.kind;
+      box.querySelectorAll('[data-kind]').forEach(x=>x.classList.toggle('on', x===b));
+    };
+  });
+  const need = box.querySelector('#lgNeed'), more = box.querySelector('#lgNeedMore');
+  const hint = ()=>{
+    const by = box.querySelector('#lgBy').value, to = box.querySelector('#lgTo').value;
+    box.querySelector('#lgHint').textContent = (to && to!==by)
+      ? to+'さんへの伝言になります。'+to+'さんが「確認しました」を押すまで「未読」と表示されます。'
+      : '自分の要対応として「わたしの要対応」に出ます。';
+  };
+  need.onchange = ()=>{ more.style.display = need.checked ? 'block' : 'none';
+    box.querySelector('#lgNoNeed').style.display = need.checked ? 'none' : 'block'; hint(); };
+  box.querySelector('#lgTo').onchange = hint;
+  box.querySelector('#lgBy').onchange = hint;
+  hint();
+
+  const save = async ()=>{
+    const body  = box.querySelector('#lgBody').value.replace(/\s+$/,'');
+    const title = box.querySelector('#lgTitle').value.trim();
+    const by    = box.querySelector('#lgBy').value;
+    const atv   = box.querySelector('#lgAt').value;
+    if(!body.trim() && !title){ toast('件名か内容を入れてください'); box.querySelector('#lgBody').focus(); return; }
+    if(!by){ toast('記録した人を選んでください'); box.querySelector('#lgBy').focus(); return; }
+    const at = atv ? new Date(atv) : new Date();
+    const out = l || {client:c.id, deleted:false, read_at:'', done_at:''};
+    const prevTo = out.to;
+    out.kind = kind; out.at = isNaN(at) ? nowIso() : at.toISOString();
+    out.party = box.querySelector('#lgParty').value.trim();
+    out.title = title; out.body = body; out.by = by;
+    if(need.checked){
+      out.to  = box.querySelector('#lgTo').value;
+      out.due = box.querySelector('#lgDue').value;
+      if(isNew || out.status==='完了'){ out.status = '未対応'; out.done_at = ''; }
+      if(isNew || out.to !== prevTo) out.read_at = '';
+    } else {
+      if(out.status !== '完了') out.done_at = nowIso();
+      out.status = '完了'; out.to = ''; out.due = ''; out.read_at = '';
+    }
+    box.querySelector('#lgSave').disabled = true;
+    const ok = await writeLog(out, isNew,
+      isNew ? (need.checked ? '要対応として記録しました' : '記録しました（履歴に入れました）') : '保存しました');
+    if(ok) modal.close();
+    else box.querySelector('#lgSave').disabled = false;
+  };
+  box.querySelector('#lgSave').onclick = save;
+  box.querySelector('#lgCancel').onclick = modal.close;
+  box.addEventListener('keydown', e=>{ if(e.key==='Enter' && (e.ctrlKey||e.metaKey)){ e.preventDefault(); save(); } });
+  (isNew ? box.querySelector('#lgParty') : box.querySelector('#lgBody')).focus();
+}
+
+/* ---------- わたしの要対応（顧問先を選んでいないときの画面） ---------- */
+function todoRow(l){
+  const c = clientOf(l.client);
+  const di = dueInfo(l);
+  const canRead = l.to===ME && isUnread(l);
+  return `<div class="trow" data-cid="${esc(l.client)}" data-lid="${esc(String(l.id))}">
+    <span class="cn">${esc(c ? c.name : '（削除された顧問先）')}</span>
+    <span class="kd" title="${esc(l.kind)}">${LOG_ICON[l.kind]||'📝'}</span>
+    <span class="sm">${esc(summaryOf(l))}</span>
+    <span class="mt">
+      ${l.to && l.to!==ME ? `<span class="who">→ ${esc(l.to)}</span>` : (l.by!==ME ? `<span class="who">from ${esc(l.by)}</span>` : '')}
+      ${isUnread(l) && l.to!==ME ? '<b class="unr">未読</b>' : ''}
+      ${di?`<span class="due ${di.cls}">${esc(di.txt)}</span>`:''}
+      ${canRead?'<button class="bs rd tread">確認しました</button>':''}
+    </span>
+  </div>`;
+}
+function todoHtml(){
+  const back = `<button id="back">← 一覧へ</button>`;
+  if(!logsReady){
+    return back + `<div class="empty-state">左の一覧から顧問先を選んでください。<br>
+      <span style="font-size:12px">（対応履歴のテーブルに接続できていません）</span></div>`;
+  }
+  if(!ME){
+    return back + `<div class="todo"><div class="todohead"><h2>わたしの要対応</h2></div>
+      <div class="tsec"><div class="lnone">画面上の「わたし」で自分の名前を選ぶと、自分宛ての伝言や対応が必要な記録がここに出ます。<br>
+      （名前はこのパソコンに覚えておきます）</div></div>
+      <div class="empty-state" style="padding:30px 20px">左の一覧から顧問先を選んでください。</div></div>`;
+  }
+  const m = myLists();
+  const sec = (cls, title, sub, list) => list.length ? `
+    <div class="tsec ${cls}"><div class="th"><span>${title}（${list.length}）</span><small>${sub}</small></div>
+    ${list.map(todoRow).join('')}</div>` : '';
+  const none = !m.mine.length && !m.pair.length && !m.sent.length;
+  return back + `<div class="todo">
+    <div class="todohead"><h2>${esc(ME)}さんの要対応</h2>
+      <span>左の一覧から顧問先を選ぶとカルテが開きます。行をクリックするとその会社の対応履歴へ移ります。</span></div>
+    ${none ? `<div class="tsec"><div class="lnone" style="padding:26px 18px">🎉 いま、${esc(ME)}さんが対応する記録はありません。</div></div>` : ''}
+    ${sec('red','未読の伝言','あなた宛て。確認したら「確認しました」を', m.unread)}
+    ${sec('red','期限切れ','', m.late)}
+    ${sec('amb','今日まで','', m.due0)}
+    ${sec('','わたしの未完了','', m.rest)}
+    ${sec('soft','担当先で、ほかの人が対応中','ペアの人の分。念のため', m.pair)}
+    ${sec('soft','送った伝言（相手がまだ見ていない）','', m.sent)}
+  </div>`;
+}
+function bindTodo(d){
+  const b = d.querySelector('#back');
+  if(b) b.onclick = ()=>{ document.body.classList.remove('viewing'); render(); };
+  d.querySelectorAll('.trow').forEach(r=>{
+    r.onclick = ()=>{
+      const c = clientOf(r.dataset.cid);
+      if(!c) return;
+      openClient(c, 'logs');
+    };
+    const rb = r.querySelector('.tread');
+    if(rb) rb.onclick = e=>{
+      e.stopPropagation();
+      const l = openLogs.find(x=>String(x.id)===r.dataset.lid);
+      if(l) markLogRead(l);
+    };
+  });
+}
+/* 顧問先を開く（一覧のクリックと、要対応からの移動で共通） */
+function openClient(c, tab){
+  sel = c; noteFilter=''; tagEditOpen=null; editMode=false; noteMore=false; noteAddOpen=false; noteOpen=null;
+  noteEditOpen=null; noteDraft=''; noteFocus=false;
+  detailTab = tab || 'karte';
+  logUI = {kind:'', q:'', histOpen:false, trash:false}; logExpand = null;
+  document.body.classList.add('viewing');
+  render();
+  document.getElementById('detail').scrollTop = 0;
+}
+
+/* ---------- デモ用のサンプル記録（DEMO=true のときだけ使います） ---------- */
+function demoLogs(){
+  const at = (days, h, m) => { const t = new Date(); t.setDate(t.getDate()+days); t.setHours(h, m||0, 0, 0); return t.toISOString(); };
+  const day = days => { const t = new Date(); t.setDate(t.getDate()+days);
+    return t.getFullYear()+'-'+pad2(t.getMonth()+1)+'-'+pad2(t.getDate()); };
+  let id = 1;
+  const R = o => Object.assign({id:id++, party:'', title:'', body:'', to_staff:'', read_at:null,
+    due:null, done_at:null, deleted:false, created_at:o.at}, o);
+  const rows = [
+    R({client_id:'demo1', at:at(0,9,40), kind:'電話', party:'総務 田中様', title:'11月入社2名の資格取得',
+       body:'11/1入社のパート2名。うち1名は扶養あり（配偶者）。\n雇用契約書は今週中にメールで送るとのこと。届いたら手続き開始。',
+       by_staff:'武田', to_staff:'志田', status:'未対応', due:day(3)}),
+    R({client_id:'demo1', at:at(-6,15,0), kind:'メール', party:'田中様', title:'年末調整の書類配布時期の確認',
+       body:'今年の扶養控除等申告書をいつ配ればよいか、との問い合わせ。\n回答案を作って返信する。',
+       by_staff:'志田', status:'対応中', due:day(-1)}),
+    R({client_id:'demo4', at:at(-2,14,0), kind:'打合せ', party:'事務長 佐藤様', title:'就業規則改定の打合せ',
+       body:'・育児介護休業規程を改定したい\n・テレワーク規程を新設したい（在宅の看護記録担当者向け）\n・次回は12月上旬。改定案を事前に送る',
+       by_staff:'志田', to_staff:'大江', status:'未対応', due:day(10), read_at:at(-1,9,0)}),
+    R({client_id:'demo2', at:at(-1,11,0), kind:'電話', party:'社長', title:'退職者の離職票',
+       body:'10月末退職のドライバー1名。離職票を本人に郵送してほしいとのこと。',
+       by_staff:'嵯峨山', to_staff:'大江', status:'未対応'}),
+    R({client_id:'demo3', at:at(-3,16,30), kind:'メール', party:'経理 鈴木様', title:'10月分の勤怠データ受領',
+       body:'10月分の勤怠CSVを受領。残業の多い社員がいるので、36協定の上限を確認してから計算する。',
+       by_staff:'石山', to_staff:'志田', status:'対応中', due:day(0), read_at:at(-2,10,0)}),
+    R({client_id:'demo5', at:at(-1,17,0), kind:'電話', party:'人事 山本様', title:'パートの社保加入要件について',
+       body:'週20時間を超えそうなパートがいる。加入要件の説明資料がほしい。',
+       by_staff:'志田', to_staff:'武田', status:'未対応', due:day(5)}),
+  ];
+  const past = [
+    ['電話','算定基礎届の提出完了を報告','提出が終わったことを電話で報告。控えは来週郵送。'],
+    ['メール','賞与支払届の金額確認','賞与の支給額一覧を受領し、届出の金額と照合した。'],
+    ['打合せ','月次の定例打合せ','入退社の予定、残業の状況、来月の行事を確認。特に問題なし。'],
+    ['電話','住所変更の届出','社員1名が転居。新住所はメールで受領済み。'],
+    ['メール','給与明細の送付','今月分の給与明細PDFを送付した。'],
+    ['来所','書類の受け渡し','社長が来所。雇用契約書の原本を受け取った。'],
+    ['電話','扶養に入れる条件の質問','配偶者の年収見込みを確認し、扶養に入れることを説明。'],
+  ];
+  for(let i=0;i<26;i++){
+    const p = past[i % past.length];
+    const a = at(-8 - i*5, 9 + (i%7), (i*13)%60);
+    rows.push(R({client_id:'demo1', at:a, kind:p[0], party:'総務 田中様', title:p[1], body:p[2],
+      by_staff: i%2 ? '武田' : '志田', status:'完了', done_at:a}));
+  }
+  rows.push(R({client_id:'demo1', at:at(-4,10,0), kind:'電話', party:'総務 田中様', title:'（入力ミス）別の会社の内容',
+    body:'別の顧問先の電話をこちらに書いてしまったもの', by_staff:'石山', status:'完了', done_at:at(-4,10,0),
+    deleted:true, deleted_by:'石山', deleted_at:at(-4,10,5)}));
+  [['demo4','打合せ','労働時間の管理方法について','タイムカードからクラウド勤怠への切り替えを相談。'],
+   ['demo2','電話','健保組合への届出様式','組合独自の様式があるので、組合のホームページから取得する。']]
+   .forEach((p,i)=>{ const a = at(-10-i*7, 13, 0);
+     rows.push(R({client_id:p[0], at:a, kind:p[1], title:p[2], body:p[3], by_staff:'大江', status:'完了', done_at:a})); });
+  return rows;
 }
 
 /* ---------- events ---------- */
@@ -1843,6 +2729,27 @@ document.getElementById('fJimu').onchange = e=>{state.jimu=e.target.value;render
 document.getElementById('staffCfg').onclick = staffDialog;
 document.getElementById('importBtn').onclick = importDialog;
 document.getElementById('addClient').onclick = addClientDialog;
+document.getElementById('meSel').onchange = e=>{
+  ME = e.target.value;
+  try{ localStorage.setItem(LS+'me', ME); }catch(err){}
+  render();
+};
+document.getElementById('myTodo').onclick = ()=>{
+  if(noteEditOpen){ toast('特記事項を編集中です。保存か取消をしてください'); return; }
+  sel = null; editMode = false;
+  document.body.classList.add('viewing');
+  render();
+  document.getElementById('detail').scrollTop = 0;
+};
+if(DEMO){
+  const dr = document.getElementById('demoReset');
+  dr.style.display = '';
+  dr.onclick = ()=>{
+    if(!confirm('デモのデータを最初の状態に戻しますか？（このパソコンのデモ用データだけが消えます）')) return;
+    Object.keys(localStorage).filter(k=>k.startsWith('kmdemo')).forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  };
+}
 document.getElementById('fTeam').onchange = e=>{state.staff=e.target.value;syncFollowChip();render();};
 /* 「フォロー分も表示」は、特定の担当者を選んでいるときだけ押せます */
 function syncFollowChip(){
