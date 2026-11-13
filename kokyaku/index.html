@@ -397,6 +397,40 @@ section.notes .note.starred .body{font-size:15px;font-weight:600}
 .naopen{display:block;margin:0 10px 12px;background:#fff;border:1px solid #b6cec2;border-radius:6px;padding:7px 14px;color:var(--ok);font-size:12px;font-weight:700}
 .naopen:hover{background:#f3f8f5}
 
+/* ===== 報酬の扱い（月変・算定） ===== */
+.hoshu .ch .lnk2{background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;padding:0}
+.hoshu .hr{display:grid;grid-template-columns:minmax(0,8em) auto minmax(0,1fr);gap:10px;align-items:center;
+  padding:7px 4px;border-bottom:1px solid #f0f2f4;font-size:13px;cursor:pointer;border-radius:3px}
+.hoshu .hr:last-child{border-bottom:none}
+.hoshu .hr:hover{background:var(--tint)}
+.hoshu .hn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hoshu .hk{font-size:11px;font-weight:700;border-radius:3px;padding:1px 7px;white-space:nowrap}
+.hk.k1{background:#e6effb;color:#1f4e79}
+.hk.k2{background:#fff1dd;color:#9a4a06}
+.hk.k3{background:#eef1f4;color:#566170}
+.hk.k4{background:#e8f3ec;color:#1e6b46}
+.hoshu .hm{font-size:12px;color:#566170;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hoshu .hnone{font-size:12px;color:#8a93a0;padding:9px 2px 8px}
+.hoshu .hnone span{display:block;font-size:11px;color:#a3abb5;margin-top:1px}
+.hoshu .hsnone{margin-top:7px;background:#fff;border:1px solid var(--rule);border-radius:4px;padding:3px 11px;font-size:12px;color:#566170}
+.hoshu .hsnone:hover{border-color:#a9b6c4;color:var(--ink)}
+.hoshu .hnil{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:9px 4px 8px;font-size:13px}
+.hoshu .hnil b{color:var(--ok)}
+.hoshu .hnil span{font-size:11px;color:#8a93a0}
+.hoshu .hnil .lnk2{margin-left:auto;background:none;border:none;color:#8a93a0;font-size:11px;text-decoration:underline;padding:0}
+.hoshu .hmemo{margin:8px 0 6px;background:#fffbea;border:1px solid #efe2b4;border-radius:5px;padding:7px 10px;cursor:pointer}
+.hoshu .hmemo:hover{border-color:#e0cb83}
+.hoshu .hmemo .ml{font-size:10px;font-weight:700;color:#8a6d12;letter-spacing:.06em;margin-bottom:2px}
+.hoshu .hmemo .mt{font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.hoshu .hmemo.editing{cursor:default}
+.hoshu .hmemo textarea{width:100%;border:1px solid var(--rule);border-radius:4px;padding:6px 8px;font:inherit;font-size:13px;line-height:1.6;resize:vertical;background:#fff}
+.hoshu .hmemo .mb{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:6px}
+.hoshu .hmemo .mb span{margin-right:auto;font-size:11px;color:#a3abb5}
+.hoshu .hmemo .mb button{border:1px solid var(--rule);background:#fff;border-radius:4px;padding:3px 12px;font-size:12px}
+.hoshu .hmemo .mb .pri{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.hoshu .hmadd{display:block;margin:8px 0 6px;background:none;border:none;color:var(--blue);font-size:12px;padding:2px 0}
+.hoshu .hmadd span{color:#a3abb5;font-size:11px;margin-left:4px}
+
 /* ===== よく見る項目 ===== */
 .quick{display:flex;flex-wrap:wrap;gap:0;background:#fff;border:1px solid var(--rule);
   border-radius:8px;margin:-2px 0 14px;overflow:hidden}
@@ -523,6 +557,8 @@ section.notes .note.starred .body{font-size:15px;font-weight:600}
 .needbox label.chk{color:var(--ink);font-size:13px;font-weight:600}
 
 @media(max-width:820px){
+  .hoshu .hr{grid-template-columns:minmax(0,1fr) auto}
+  .hoshu .hm{grid-column:1/-1;white-space:normal}
   .nrow .tg{display:none}
   .trow2{grid-template-columns:52px minmax(0,1fr) auto}
   .trow2 .kd,.trow2 .dl{display:none}
@@ -602,7 +638,7 @@ section.notes .note.starred .body{font-size:15px;font-weight:600}
 const DEMO = false;
 const SUPABASE_URL = DEMO ? '' : 'https://mmcgxgzplvtenlyzxhty.supabase.co';
 const SUPABASE_ANON_KEY = DEMO ? '' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tY2d4Z3pwbHZ0ZW5seXp4aHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODAwMTMsImV4cCI6MjA4OTM1NjAxM30.0qaVx5ymqB63YJ7rHQe0I56sqp3M8CVv4ZwRVmhjHWU';
-const LS = DEMO ? 'kmdemo3_' : 'km_';   /* この端末に保存するときの名前の頭 */
+const LS = DEMO ? 'kmdemo5_' : 'km_';   /* この端末に保存するときの名前の頭 */
 
 /* ===========================================================
    担当者の一覧は Supabase に保存されます。
@@ -806,11 +842,19 @@ if(DEMO){
     hokensha:'協会けんぽ', jimu:'なし', kojo:'翌月', shime:'末日', harai:'翌月25日', roudou:'調整なし',
     keiro:'メール添付', k_how:'メール', d_how:'メール', hozon:'OneDrive', madoguchi:'総務担当', renraku:'メール'};
   SEED.clients = [
-    Object.assign({}, base, {id:'demo1', name:'株式会社サンプル商事', wage_no:'101', kubun:'手続き・給与計算', shutan:'志田', fukutan:'武田'}),
+    Object.assign({}, base, {id:'demo1', name:'株式会社サンプル商事', wage_no:'101', kubun:'手続き・給与計算', shutan:'志田', fukutan:'武田',
+      hoshu:[{n:'現場手当', k:'非固定的', m:'出勤日数で変わる'},
+             {n:'調整手当', k:'固定的', m:''},
+             {n:'皆勤手当', k:'非固定的', m:'欠勤すると不支給'},
+             {n:'通勤手当', k:'計算ルール', m:'6か月定期は6で割って1か月分にする'},
+             {n:'在宅勤務手当', k:'報酬に含まない', m:'実費精算分のみ（定額分は固定的）'}],
+      hoshu_memo:'昇給は毎年4月。5月支給で4月分の差額を遡及して払う'}),
     Object.assign({}, base, {id:'demo2', name:'有限会社みどり運送', wage_no:'102', kubun:'手続き', shutan:'大江', fukutan:'嵯峨山', hokensha:'健保組合', kenpo_name:'〇〇運輸健康保険組合'}),
     Object.assign({}, base, {id:'demo3', name:'株式会社テスト製作所', wage_no:'103', kubun:'給与計算', shutan:'石山', fukutan:'武田'}),
-    Object.assign({}, base, {id:'demo4', name:'医療法人さくら会', wage_no:'104', kubun:'手続き・給与計算', shutan:'志田', fukutan:'大江'}),
-    Object.assign({}, base, {id:'demo5', name:'株式会社ひかり食品', wage_no:'105', kubun:'相談顧問', shutan:'武田', fukutan:'嵯峨山'}),
+    Object.assign({}, base, {id:'demo4', name:'医療法人さくら会', wage_no:'104', kubun:'手続き・給与計算', shutan:'志田', fukutan:'大江',
+      hoshu:[{n:'夜勤手当', k:'非固定的', m:'回数×単価'},
+             {n:'通勤手当', k:'計算ルール', m:'月途中入社は日割りした額で計算'}]}),
+    Object.assign({}, base, {id:'demo5', name:'株式会社ひかり食品', wage_no:'105', kubun:'相談顧問', shutan:'武田', fukutan:'嵯峨山', hoshu_none:true}),
   ];
   SEED.notes = [
     {id:1, client:'demo1', body:'算定基礎届は社長の確認後に提出する（6月20日までに確認依頼を送る）', tags:['算定'], star:true, link:'', created:'2026-06-01', checked:'2026-06-01'},
@@ -1467,6 +1511,7 @@ function filtered(){
     if(state.note && !notesOf(c.id).length) return false;
     if(q){
       const hay = [c.name,c.wage_no,c.shutan,c.fukutan,c.follow,c.madoguchi,c.dare,c.k_to,c.d_to,c.sokyu,c.bikou]
+        .concat([hoshuText(c)])
         .concat(notesOf(c.id).map(n=>n.body))
         .concat(notesOf(c.id).flatMap(n=>n.tags)).join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
@@ -1644,6 +1689,135 @@ function emptyFields(c){
   return out.sort((a,b)=>b.req-a.req);
 }
 
+/* =====================================================================
+   報酬の扱い（月変・算定）
+   基本給・役職手当のように見ればわかるものは書かず、扱いを迷いやすい手当や
+   通勤手当の按分のような計算の決まりだけを、会社ごとに1行ずつ書いておく欄です。
+   顧問先データ（clients の data）の中に hoshu として保存するので、テーブルの変更はいりません。
+   ===================================================================== */
+const HOSHU_KINDS = ['固定的','非固定的','報酬に含まない','計算ルール'];
+const HOSHU_CLS   = {'固定的':'k1','非固定的':'k2','報酬に含まない':'k3','計算ルール':'k4'};
+const HOSHU_NAMES = ['通勤手当','皆勤手当','精勤手当','調整手当','現場手当','職務手当','資格手当','住宅手当','家族手当',
+  '食事手当','営業手当','歩合給','インセンティブ','夜勤手当','宿日直手当','固定残業代','出張手当','在宅勤務手当','寸志','現物給与'];
+const hoshuOf = c => Array.isArray(c.hoshu) ? c.hoshu : [];
+let hsMemoEdit = null;   /* メモをその場で編集している顧問先 */
+/* 一覧の文字にしたもの（検索・CSV用） */
+const hoshuText = c => hoshuOf(c).map(r=>r.n+'：'+r.k+(r.m?'（'+r.m+'）':''))
+  .concat(c.hoshu_none && !hoshuOf(c).length ? ['特になし'] : [])
+  .concat(c.hoshu_memo ? ['メモ：'+c.hoshu_memo] : []).join(' / ');
+
+function hoshuHtml(c){
+  const list = hoshuOf(c);
+  return `<div class="vcard hoshu">
+    <div class="ch"><b>報酬の扱い（月変・算定）</b><button class="lnk2" id="hsAdd">＋ 追加</button></div>
+    ${list.length ? list.map((r,i)=>`
+      <div class="hr" data-hi="${i}" title="クリックで編集">
+        <span class="hn">${esc(r.n)}</span>
+        <span class="hk ${HOSHU_CLS[r.k]||''}">${esc(r.k)}</span>
+        <span class="hm">${esc(r.m||'')}</span>
+      </div>`).join('')
+    : c.hoshu_none
+      ? `<div class="hnil"><b>特になし</b><span>扱いに注意が必要な手当や、特別な計算ルールはありません</span><button class="lnk2" id="hsNoneOff">取り消す</button></div>`
+      : `<div class="hnone">登録なし<span>お客さんに確認した手当や、計算の決まりをここに足していきます</span>
+           <button class="hsnone" id="hsNoneOn">特になし にする</button></div>`}
+    ${hsMemoEdit===c.id ? `
+      <div class="hmemo editing">
+        <div class="ml">メモ</div>
+        <textarea id="hsMemoT" rows="3" placeholder="例：昇給は4月。5月支給で遡及差額あり／日給者と月給者が混在">${esc(c.hoshu_memo||'')}</textarea>
+        <div class="mb"><span>Ctrl＋Enterで保存</span><button id="hsMemoCancel">取消</button><button class="pri" id="hsMemoSave">保存</button></div>
+      </div>`
+    : c.hoshu_memo
+      ? `<div class="hmemo" id="hsMemo" title="クリックで編集"><div class="ml">メモ</div><div class="mt">${esc(c.hoshu_memo)}</div></div>`
+      : `<button class="hmadd" id="hsMemo">＋ メモを書く<span>（手当ごとに分けられないこと）</span></button>`}
+  </div>`;
+}
+
+function hoshuDialog(c, i){
+  const isNew = i == null;
+  const r = isNew ? {n:'', k:'', m:''} : Object.assign({}, hoshuOf(c)[i]);
+  const used = hoshuOf(c).map(x=>x.n);
+  const box = modal.open(`
+    <h3>報酬の扱い｜${esc(c.name)}</h3>
+    <div class="in">
+      <label>手当・項目の名前</label>
+      <input type="text" id="hsN" list="hsNames" value="${esc(r.n)}" placeholder="例：現場手当">
+      <datalist id="hsNames">${HOSHU_NAMES.filter(n=>!used.includes(n)||n===r.n).map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+      <label>扱い</label>
+      <div class="kpick">${HOSHU_KINDS.map(k=>`<button type="button" class="tgl ${k===r.k?'on':''}" data-hk="${esc(k)}">${esc(k)}</button>`).join('')}</div>
+      <label>ひとこと（任意）</label>
+      <input type="text" id="hsM" value="${esc(r.m||'')}" placeholder="例：出勤日数で変わる／6か月定期は6で割る">
+      <p class="note" style="margin:8px 0 0">基本給や役職手当のように、見ればわかるものは書かなくて大丈夫です。</p>
+    </div>
+    <div class="foot">
+      ${isNew ? '' : '<button id="hsDel" style="margin-right:auto;color:var(--warn)">削除</button>'}
+      <button id="hsCancel">キャンセル</button>
+      <button class="pri" id="hsSave">${isNew?'追加':'保存'}</button>
+    </div>`);
+  let kind = r.k;
+  box.querySelectorAll('[data-hk]').forEach(b=>{
+    b.onclick = ()=>{ kind = b.dataset.hk; box.querySelectorAll('[data-hk]').forEach(x=>x.classList.toggle('on', x===b)); };
+  });
+  const save = async ()=>{
+    const n = box.querySelector('#hsN').value.trim();
+    const m = box.querySelector('#hsM').value.trim();
+    if(!n){ toast('手当・項目の名前を入れてください'); box.querySelector('#hsN').focus(); return; }
+    if(!kind){ toast('扱いを選んでください'); return; }
+    const before = hoshuOf(c).slice();
+    const list = before.slice();
+    if(isNew) list.push({n, k:kind, m}); else list[i] = {n, k:kind, m};
+    c.hoshu = list;
+    const noneBefore = !!c.hoshu_none;
+    c.hoshu_none = false;
+    if(await saveClient(c, true)){ modal.close(); render(); toast(isNew?'追加しました':'保存しました'); }
+    else { c.hoshu = before; c.hoshu_none = noneBefore; }
+  };
+  box.querySelector('#hsSave').onclick = save;
+  box.querySelector('#hsCancel').onclick = modal.close;
+  box.querySelectorAll('input').forEach(el=>el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); save(); } }));
+  const del = box.querySelector('#hsDel');
+  if(del) del.onclick = async ()=>{
+    const before = hoshuOf(c).slice();
+    c.hoshu = before.filter((_,j)=>j!==i);
+    if(await saveClient(c, true)){
+      modal.close(); render();
+      toast('削除しました', async ()=>{ c.hoshu = before; if(await saveClient(c, true)){ render(); toast('元に戻しました'); } });
+    } else c.hoshu = before;
+  };
+  box.querySelector('#hsN').focus();
+}
+
+function bindHoshu(d, c){
+  const a = d.querySelector('#hsAdd');
+  if(a) a.onclick = ()=>hoshuDialog(c, null);
+  d.querySelectorAll('.hoshu .hr[data-hi]').forEach(r=>{ r.onclick = ()=>hoshuDialog(c, +r.dataset.hi); });
+  const setNone = async v => {
+    c.hoshu_none = v;
+    if(await saveClient(c, true)){ render(); toast(v ? '「特になし」にしました' : '「特になし」を取り消しました'); }
+    else c.hoshu_none = !v;
+  };
+  const on = d.querySelector('#hsNoneOn');  if(on)  on.onclick  = ()=>setNone(true);
+  const off = d.querySelector('#hsNoneOff'); if(off) off.onclick = ()=>setNone(false);
+
+  const m = d.querySelector('#hsMemo');
+  if(m) m.onclick = ()=>{ hsMemoEdit = c.id; renderDetail(); const t = d.querySelector('#hsMemoT'); if(t){ t.focus(); t.setSelectionRange(t.value.length, t.value.length); } };
+  const t = d.querySelector('#hsMemoT');
+  if(t){
+    const save = async ()=>{
+      const before = c.hoshu_memo || '';
+      c.hoshu_memo = t.value.replace(/\s+$/,'');
+      if(c.hoshu_memo === before){ hsMemoEdit = null; renderDetail(); return; }
+      if(await saveClient(c, true)){ hsMemoEdit = null; render(); toast(c.hoshu_memo ? 'メモを保存しました' : 'メモを消しました'); }
+      else c.hoshu_memo = before;
+    };
+    d.querySelector('#hsMemoSave').onclick = save;
+    d.querySelector('#hsMemoCancel').onclick = ()=>{ hsMemoEdit = null; renderDetail(); };
+    t.addEventListener('keydown', e=>{
+      if(e.key==='Enter' && (e.ctrlKey||e.metaKey)){ e.preventDefault(); save(); }
+      if(e.key==='Escape'){ hsMemoEdit = null; renderDetail(); }
+    });
+  }
+}
+
 function viewHtml(c, gaps, ns, notesBlock){
   const empt  = emptyFields(c);
   /* よく見る項目。会社名のすぐ下に並べて、下の「基本情報」まで見に行かなくて済むようにします。
@@ -1668,7 +1842,8 @@ function viewHtml(c, gaps, ns, notesBlock){
       return `<div class="vrow"><div class="l">${l}</div><div class="v${isExc(k,v)?' x':''}">${esc(v)}</div></div>`;
     }).join('');
     return `<div class="vcard"><div class="ch"><b>${title}</b>${blank?`<span>未入力 ${blank}</span>`:''}</div>`+
-      (body || `<div class="none">まだ入力がありません</div>`)+`</div>`;
+      (body || `<div class="none">まだ入力がありません</div>`)+
+      `</div>` + (title==='賃金入力' ? hoshuHtml(c) : '');
   }).join('');
 
   return `
@@ -2056,6 +2231,7 @@ function renderDetail(){
   };
   bindTabs(d);
   bindLogs(d, c);
+  bindHoshu(d, c);
 }
 
 /* =====================================================================
@@ -2659,7 +2835,7 @@ function bindTodo(d){
 }
 /* 顧問先を開く（一覧のクリックと、要対応からの移動で共通） */
 function openClient(c, tab){
-  sel = c; noteFilter=''; tagEditOpen=null; editMode=false; noteMore=false; noteAddOpen=false; noteOpen=null;
+  sel = c; noteFilter=''; tagEditOpen=null; editMode=false; noteMore=false; noteAddOpen=false; noteOpen=null; hsMemoEdit=null;
   noteEditOpen=null; noteDraft=''; noteFocus=false;
   detailTab = tab || 'karte';
   logUI = {kind:'', q:'', histOpen:false, trash:false}; logExpand = null;
@@ -2785,12 +2961,13 @@ document.getElementById('csv').onclick = ()=>{
     ['k_to','社保控除表の送付先'],['k_how','社保控除表の送付方法'],['d_to','公文書の送付先'],
     ['d_how','公文書の送付方法'],['bikou','備考']];
   const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  const lines = [cols.map(c=>q(c[1])).concat(q('特記事項')).join(',')];
+  const lines = [cols.map(c=>q(c[1])).concat(q('報酬の扱い（月変・算定）'), q('特記事項')).join(',')];
   sortRows(filtered()).forEach(c=>{
     const ns = notesOf(c.id).map(n=>
       (n.star?'★':'') + (n.tags.length?'['+n.tags.join(',')+'] ':'') + n.body
       + (n.link?' <'+n.link+'>':'')).join(' / ');
-    lines.push(cols.map(col=>q(c[col[0]])).concat(q(ns)).join(','));
+    const hs = hoshuText(c);
+    lines.push(cols.map(col=>q(c[col[0]])).concat(q(hs), q(ns)).join(','));
   });
   const blob = new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
